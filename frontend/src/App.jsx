@@ -1,0 +1,91 @@
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import MainLayout from './components/layout/MainLayout'
+import Home from './pages/Home'
+import Dashboard from './pages/Dashboard'
+import Login from './pages/auth/Login'
+import Register from './pages/auth/Register'
+import { AuthProvider } from './context/AuthContext'
+import Settings from './pages/Settings'
+import Profile from './pages/profile/Profile'
+import EditProfile from './pages/profile/EditProfile'
+import NotFound from './pages/NotFound'
+import Weather from './pages/Weather'
+import Resources from './pages/Resources'
+import Marketplace from './pages/marketplace/Marketplace'
+import LandListings from './pages/marketplace/LandListings'
+import ProduceListings from './pages/marketplace/ProduceListings'
+import ServiceListings from './pages/marketplace/ServiceListings'
+import ListingDetails from './pages/marketplace/ListingDetails'
+import CreateListing from './pages/marketplace/CreateListing'
+import Community from './pages/community/Community'
+import CommunityDiscussions from './pages/community/CommunityDiscussions'
+import CommunityEvents from './pages/community/CommunityEvents'
+import CommunityQA from './pages/community/CommunityQA'
+import PostDetails from './pages/community/PostDetails'
+import SupportTeam from './pages/SupportTeam'
+import LivestockManagement from './pages/LivestockManagement'
+import SoilCropPlanner from './pages/SoilCropPlanner'
+import Investments from './pages/Investments'
+import { Suspense } from 'react'
+import { CircularProgress, Box } from '@mui/material'
+import PageContainer from './components/layout/PageContainer'
+
+// Wrap page components with PageContainer for consistent layout
+const withPageContainer = (Component, props = {}) => {
+  return (
+    <PageContainer {...props}>
+      <Component />
+    </PageContainer>
+  );
+};
+
+function App() {
+  return (
+    <Router>
+      <AuthProvider>
+        <Suspense fallback={
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+            <CircularProgress />
+          </Box>
+        }>
+          <Routes>
+            <Route path="/" element={<MainLayout />}>
+              <Route index element={<Home />} />
+              <Route path="dashboard" element={withPageContainer(Dashboard)} />
+              <Route path="settings" element={withPageContainer(Settings)} />
+              <Route path="profile" element={withPageContainer(Profile)} />
+              <Route path="profile/edit" element={withPageContainer(EditProfile)} />
+              <Route path="weather" element={withPageContainer(Weather)} />
+              <Route path="resources" element={withPageContainer(Resources)} />
+              <Route path="support-team" element={withPageContainer(SupportTeam)} />
+              <Route path="livestock-management" element={withPageContainer(LivestockManagement)} />
+              <Route path="soil-crop-planner" element={withPageContainer(SoilCropPlanner)} />
+              <Route path="investments" element={withPageContainer(Investments)} />
+              
+              {/* Marketplace Routes */}
+              <Route path="marketplace" element={withPageContainer(Marketplace)} />
+              <Route path="marketplace/land" element={withPageContainer(LandListings)} />
+              <Route path="marketplace/produce" element={withPageContainer(ProduceListings)} />
+              <Route path="marketplace/services" element={withPageContainer(ServiceListings)} />
+              <Route path="marketplace/listing/:id" element={withPageContainer(ListingDetails)} />
+              <Route path="marketplace/create" element={withPageContainer(CreateListing)} />
+              
+              {/* Community Routes */}
+              <Route path="community" element={withPageContainer(Community)} />
+              <Route path="community/discussions" element={withPageContainer(CommunityDiscussions)} />
+              <Route path="community/events" element={withPageContainer(CommunityEvents)} />
+              <Route path="community/qa" element={withPageContainer(CommunityQA)} />
+              <Route path="community/post/:id" element={withPageContainer(PostDetails)} />
+              
+              <Route path="*" element={withPageContainer(NotFound)} />
+            </Route>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+          </Routes>
+        </Suspense>
+      </AuthProvider>
+    </Router>
+  )
+}
+
+export default App
