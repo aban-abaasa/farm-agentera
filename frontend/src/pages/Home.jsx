@@ -177,7 +177,7 @@ const Home = () => {
                     }
                   }}
                 >
-                  Connect, Collaborate, Grow Together
+                  Connectt, Collaborate, Grow Together
                 </Typography>
                 
                 {/* Description */}
