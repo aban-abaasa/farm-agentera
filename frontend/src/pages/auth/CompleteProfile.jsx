@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import {
@@ -10,10 +10,8 @@ import {
   Container,
   FormControl,
   FormControlLabel,
-  FormHelperText,
   FormLabel,
   Grid,
-  Link,
   MenuItem,
   Paper,
   Radio,
@@ -47,41 +45,29 @@ const farmingTypes = [
   'Other'
 ];
 
-const Register = () => {
+const CompleteProfile = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [registrationSuccess, setRegistrationSuccess] = useState(false);
-  const [pageLoading, setPageLoading] = useState(true);
-  const { register, user, loading } = useAuth();
+  const [success, setSuccess] = useState(false);
+  const { user, updateProfile, loading, profileStatus } = useAuth();
   const navigate = useNavigate();
   
-  // Redirect if user is already logged in
+  // Redirect if user is not logged in or if profile is already complete
   useEffect(() => {
-    if (!loading) {
-      if (user) {
+    if (!loading && !profileStatus.isChecking) {
+      if (!user) {
+        navigate('/login', { replace: true });
+      } else if (profileStatus.isComplete) {
         navigate('/dashboard', { replace: true });
       }
-      setPageLoading(false);
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, profileStatus, navigate]);
 
-  const steps = ['Account Information', 'Personal Details', 'Farming Profile'];
+  const steps = ['Personal Details', 'Farming Profile'];
 
   const validationSchemas = [
-    // Step 1: Account Information
-    Yup.object({
-      email: Yup.string()
-        .email('Invalid email address')
-        .required('Email is required'),
-      password: Yup.string()
-        .required('Password is required')
-        .min(8, 'Password must be at least 8 characters'),
-      confirmPassword: Yup.string()
-        .oneOf([Yup.ref('password'), null], 'Passwords must match')
-        .required('Confirm Password is required')
-    }),
-    // Step 2: Personal Details
+    // Step 1: Personal Details
     Yup.object({
       firstName: Yup.string()
         .required('First name is required')
@@ -94,7 +80,7 @@ const Register = () => {
       location: Yup.string()
         .required('Location is required')
     }),
-    // Step 3: Farming Profile
+    // Step 2: Farming Profile
     Yup.object({
       role: Yup.string()
         .required('Role is required'),
@@ -111,46 +97,45 @@ const Register = () => {
 
   const formik = useFormik({
     initialValues: {
-      email: '',
-      password: '',
-      confirmPassword: '',
-      firstName: '',
-      lastName: '',
-      phone: '',
-      location: '',
-      role: 'farmer',
-      farmingType: '',
-      farmSize: '',
-      bio: ''
+      firstName: user?.first_name || '',
+      lastName: user?.last_name || '',
+      phone: user?.phone_number || '',
+      location: user?.location || '',
+      role: user?.role || 'farmer',
+      farmingType: user?.farmer_type || '',
+      farmSize: user?.farm_size || '',
+      bio: user?.bio || ''
     },
     validationSchema: validationSchemas[activeStep],
-          onSubmit: async (values) => {
+    onSubmit: async (values) => {
       if (activeStep < steps.length - 1) {
         setActiveStep(activeStep + 1);
       } else {
         setError('');
         setIsSubmitting(true);
         try {
-          // Destructure confirmPassword out as we don't need to send it to the API
-          const { confirmPassword: _confirmPassword, ...userData } = values;
-          
           // Map form fields to the expected format for the API
-          const formattedUserData = {
-            ...userData,
-            // Convert farmSize to number if it exists
-            farmSize: userData.farmSize ? parseFloat(userData.farmSize) : null,
-            // Map farmingType to farmer_type for database consistency
-            farmingType: userData.farmingType || null
+          const profileData = {
+            first_name: values.firstName,
+            last_name: values.lastName,
+            phone_number: values.phone,
+            location: values.location,
+            role: values.role,
+            farmer_type: values.farmingType,
+            farm_size: values.farmSize ? parseFloat(values.farmSize) : null,
+            bio: values.bio,
+            updated_at: new Date().toISOString()
           };
           
-          await register(formattedUserData);
-          setRegistrationSuccess(true);
-          // Navigate to dashboard or show success message
+          await updateProfile(profileData);
+          setSuccess(true);
+          
+          // Navigate to dashboard after short delay
           setTimeout(() => {
-            navigate('/login');
-          }, 3000);
+            navigate('/dashboard');
+          }, 2000);
         } catch (err) {
-          setError(err.message || 'Registration failed. Please try again.');
+          setError(err.message || 'Failed to update profile. Please try again.');
         } finally {
           setIsSubmitting(false);
         }
@@ -163,7 +148,7 @@ const Register = () => {
   };
 
   // Show loading indicator while checking authentication
-  if (pageLoading) {
+  if (loading || profileStatus.isChecking) {
     return (
       <Container component="main" maxWidth="sm" sx={{ mt: 8, display: 'flex', justifyContent: 'center' }}>
         <CircularProgress />
@@ -171,15 +156,20 @@ const Register = () => {
     );
   }
 
+  // Don't render anything if user is not logged in or profile is already complete
+  if (!user || profileStatus.isComplete) {
+    return null;
+  }
+
   return (
     <Container component="main" maxWidth="sm">
       <Paper elevation={3} sx={{ p: 4, my: 8, borderRadius: 2 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <Typography component="h1" variant="h5" fontWeight="bold" gutterBottom>
-            Create Your Account
+            Complete Your Profile
           </Typography>
           <Typography variant="body2" color="text.secondary" mb={4} textAlign="center">
-            Join our community of Ugandan farmers and unlock new opportunities
+            Please provide some additional information to complete your profile
           </Typography>
 
           <Stepper activeStep={activeStep} alternativeLabel sx={{ width: '100%', mb: 4 }}>
@@ -196,62 +186,14 @@ const Register = () => {
             </Alert>
           )}
 
-          {registrationSuccess ? (
+          {success ? (
             <Alert severity="success" sx={{ width: '100%', mb: 2 }}>
-              Registration successful! Please check your email to verify your account.
-              You will be redirected to the login page shortly.
+              Profile updated successfully! Redirecting to dashboard...
             </Alert>
           ) : (
             <Box component="form" onSubmit={formik.handleSubmit} sx={{ mt: 1, width: '100%' }}>
               {activeStep === 0 && (
-                // Step 1: Account Information
-                <>
-                  <TextField
-                    margin="normal"
-                    fullWidth
-                    id="email"
-                    label="Email Address"
-                    name="email"
-                    autoComplete="email"
-                    autoFocus
-                    value={formik.values.email}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    error={formik.touched.email && Boolean(formik.errors.email)}
-                    helperText={formik.touched.email && formik.errors.email}
-                  />
-                  <TextField
-                    margin="normal"
-                    fullWidth
-                    name="password"
-                    label="Password"
-                    type="password"
-                    id="password"
-                    autoComplete="new-password"
-                    value={formik.values.password}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    error={formik.touched.password && Boolean(formik.errors.password)}
-                    helperText={formik.touched.password && formik.errors.password}
-                  />
-                  <TextField
-                    margin="normal"
-                    fullWidth
-                    name="confirmPassword"
-                    label="Confirm Password"
-                    type="password"
-                    id="confirmPassword"
-                    value={formik.values.confirmPassword}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    error={formik.touched.confirmPassword && Boolean(formik.errors.confirmPassword)}
-                    helperText={formik.touched.confirmPassword && formik.errors.confirmPassword}
-                  />
-                </>
-              )}
-
-              {activeStep === 1 && (
-                // Step 2: Personal Details
+                // Step 1: Personal Details
                 <>
                   <TextField
                     margin="normal"
@@ -314,8 +256,8 @@ const Register = () => {
                 </>
               )}
 
-              {activeStep === 2 && (
-                // Step 3: Farming Profile
+              {activeStep === 1 && (
+                // Step 2: Farming Profile
                 <>
                   <FormControl component="fieldset" margin="normal">
                     <FormLabel component="legend">I am a:</FormLabel>
@@ -402,20 +344,10 @@ const Register = () => {
                   disabled={isSubmitting}
                 >
                   {activeStep === steps.length - 1
-                    ? (isSubmitting ? 'Creating Account...' : 'Create Account')
+                    ? (isSubmitting ? 'Saving...' : 'Complete Profile')
                     : 'Next'}
                 </Button>
               </Box>
-
-              {activeStep === 0 && (
-                <Grid container justifyContent="flex-end" sx={{ mt: 2 }}>
-                  <Grid item>
-                    <Link component={RouterLink} to="/login" variant="body2">
-                      Already have an account? Sign in
-                    </Link>
-                  </Grid>
-                </Grid>
-              )}
             </Box>
           )}
         </Box>
@@ -424,4 +356,4 @@ const Register = () => {
   );
 };
 
-export default Register; 
+export default CompleteProfile; 

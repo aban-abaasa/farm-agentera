@@ -1,128 +1,114 @@
 #!/usr/bin/env python3
 """
-Initialize Supabase database with schema files.
-This script reads SQL schema files and executes them against the Supabase database.
+Database initialization script for AGRI-TECH platform.
+This script reads and executes SQL files in the schemas directory in the correct order.
 """
 
 import os
 import sys
-import glob
-import logging
-import argparse
-from pathlib import Path
+import psycopg2
+from psycopg2 import sql
 from dotenv import load_dotenv
-from supabase import create_client, Client
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout)
-    ]
-)
-logger = logging.getLogger(__name__)
+# Load environment variables from .env file
+load_dotenv()
 
-def load_environment_variables():
-    """Load environment variables from .env file"""
-    load_dotenv()
+# Database connection parameters from environment variables
+DB_URL = os.getenv('DATABASE_URL')
+
+# If no DATABASE_URL is provided, try to construct it from individual parameters
+if not DB_URL:
+    DB_HOST = os.getenv('DB_HOST')
+    DB_PORT = os.getenv('DB_PORT', '5432')
+    DB_NAME = os.getenv('DB_NAME')
+    DB_USER = os.getenv('DB_USER')
+    DB_PASSWORD = os.getenv('DB_PASSWORD')
     
-    supabase_url = os.environ.get('SUPABASE_URL')
-    supabase_key = os.environ.get('SUPABASE_SERVICE_KEY')
-    
-    if not supabase_url or not supabase_key:
-        logger.error("Missing required environment variables: SUPABASE_URL, SUPABASE_SERVICE_KEY")
+    if not all([DB_HOST, DB_NAME, DB_USER, DB_PASSWORD]):
+        print("Error: Database connection parameters not found in environment variables.")
+        print("Please provide either DATABASE_URL or all of: DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD")
         sys.exit(1)
     
-    return supabase_url, supabase_key
+    DB_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-def get_supabase_client(url, key) -> Client:
-    """Create and return a Supabase client"""
+# Order of schema files to execute
+SCHEMA_FILES_ORDER = [
+    "01_auth_tables.sql",
+    "02_resources_tables.sql",
+    "03_events_tables.sql",
+    "04_marketplace_tables.sql",
+    "05_community_tables.sql"
+]
+
+def execute_sql_file(conn, file_path):
+    """Execute an SQL file against the database."""
     try:
-        return create_client(url, key)
-    except Exception as e:
-        logger.error(f"Failed to create Supabase client: {e}")
-        sys.exit(1)
-
-def get_schema_files(schema_dir):
-    """Get all SQL schema files in order by prefix number"""
-    schema_path = Path(schema_dir)
-    if not schema_path.exists() or not schema_path.is_dir():
-        logger.error(f"Schema directory not found: {schema_dir}")
-        sys.exit(1)
-    
-    # Get all .sql files and sort them by name (which starts with a number)
-    schema_files = sorted(glob.glob(str(schema_path / "*.sql")))
-    
-    if not schema_files:
-        logger.error(f"No SQL schema files found in {schema_dir}")
-        sys.exit(1)
-    
-    return schema_files
-
-def execute_schema_file(client: Client, file_path):
-    """Execute a SQL schema file against the Supabase database"""
-    try:
-        with open(file_path, 'r') as file:
-            sql_content = file.read()
-            
-        # Split the SQL content into separate statements
-        # This is a simple split by semicolon, which may not work for complex SQL
-        statements = sql_content.split(';')
+        with open(file_path, 'r') as f:
+            sql_content = f.read()
         
-        for statement in statements:
-            # Skip empty statements
-            statement = statement.strip()
-            if not statement:
-                continue
-                
-            # Execute the statement
-            logger.info(f"Executing SQL statement...")
-            # Note: For production use, the actual SQL execution would happen
-            # via pgAdmin, the Supabase dashboard, or using the REST API
-            # to execute raw SQL. The current supabase-py client doesn't
-            # support raw SQL execution directly.
-            # 
-            # For demo purposes, we're just showing this placeholder
-            # response = client.rpc('execute_sql', { 'sql': statement }).execute()
-            
-            # Instead, we'll just log the statement (for demonstration)
-            logger.debug(statement)
-            
-        logger.info(f"Executed schema file: {file_path}")
+        with conn.cursor() as cur:
+            print(f"Executing {file_path}...")
+            cur.execute(sql_content)
+        
+        conn.commit()
+        print(f"Successfully executed {file_path}")
         return True
     except Exception as e:
-        logger.error(f"Error executing schema file {file_path}: {e}")
+        conn.rollback()
+        print(f"Error executing {file_path}: {str(e)}")
         return False
 
-def main():
-    """Main function to initialize the database"""
-    parser = argparse.ArgumentParser(description='Initialize Supabase database with schema files')
-    parser.add_argument('--schema-dir', default='./schemas', help='Directory containing schema files')
-    args = parser.parse_args()
+def initialize_database():
+    """Initialize the database by executing schema files in order."""
+    try:
+        print(f"Connecting to database...")
+        conn = psycopg2.connect(DB_URL)
+        print("Connected successfully!")
+        
+        # Get the directory where this script is located
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        schemas_dir = os.path.join(script_dir, "schemas")
+        
+        if not os.path.exists(schemas_dir):
+            print(f"Error: Schemas directory not found at {schemas_dir}")
+            return False
+        
+        # Execute schema files in order
+        all_successful = True
+        for schema_file in SCHEMA_FILES_ORDER:
+            file_path = os.path.join(schemas_dir, schema_file)
+            if os.path.exists(file_path):
+                if not execute_sql_file(conn, file_path):
+                    all_successful = False
+            else:
+                print(f"Warning: Schema file {schema_file} not found at {file_path}")
+                all_successful = False
+        
+        # Execute additional SQL files if needed
+        additional_sql_files = [
+            os.path.join(script_dir, "add_is_deleted_column.sql"),
+        ]
+        
+        for sql_file in additional_sql_files:
+            if os.path.exists(sql_file):
+                if not execute_sql_file(conn, sql_file):
+                    all_successful = False
+            else:
+                print(f"Warning: Additional SQL file {sql_file} not found")
+        
+        conn.close()
+        
+        if all_successful:
+            print("Database initialization completed successfully!")
+        else:
+            print("Database initialization completed with some errors. Check the logs above.")
+        
+        return all_successful
     
-    # Load environment variables
-    supabase_url, supabase_key = load_environment_variables()
-    
-    # Get Supabase client
-    client = get_supabase_client(supabase_url, supabase_key)
-    
-    # Get schema files
-    schema_files = get_schema_files(args.schema_dir)
-    
-    # Execute each schema file
-    success = True
-    for file_path in schema_files:
-        logger.info(f"Processing schema file: {file_path}")
-        if not execute_schema_file(client, file_path):
-            success = False
-            logger.error(f"Failed to execute schema file: {file_path}")
-    
-    if success:
-        logger.info("Database initialization completed successfully")
-    else:
-        logger.error("Database initialization failed")
-        sys.exit(1)
+    except Exception as e:
+        print(f"Error initializing database: {str(e)}")
+        return False
 
 if __name__ == "__main__":
-    main() 
+    success = initialize_database()
+    sys.exit(0 if success else 1) 

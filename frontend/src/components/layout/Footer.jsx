@@ -1,4 +1,4 @@
-import { Box, Container, Grid, Typography, Link, IconButton, TextField, Button, Divider, Paper } from '@mui/material';
+import { Box, Container, Grid, Typography, Link, IconButton, TextField, Button, Divider, Paper, Tooltip } from '@mui/material';
 import { Facebook, Twitter, Instagram, LinkedIn, Send, Phone, Email, LocationOn } from '@mui/icons-material';
 
 const Footer = () => {
@@ -76,19 +76,43 @@ const Footer = () => {
                   }
                 }
               }}>
-                <IconButton aria-label="facebook">
-                  <Facebook />
-                </IconButton>
-                <IconButton aria-label="twitter">
+                <Tooltip title="Visit our Facebook Page" placement="top">
+                  <IconButton aria-label="facebook" component="a" href="https://facebook.com/farmagentuganda" target="_blank" rel="noopener noreferrer"
+                    sx={{
+                      bgcolor: '#fff',
+                      color: '#1877f3',
+                      border: '2px solid #1877f3',
+                      fontSize: 32,
+                      mr: 1,
+                      '&:hover': {
+                        bgcolor: '#1877f3',
+                        color: '#fff',
+                      }
+                    }}
+                  >
+                    <Facebook fontSize="inherit" />
+                  </IconButton>
+                </Tooltip>
+                <IconButton aria-label="twitter" component="a" href="https://twitter.com/farmagentuganda" target="_blank" rel="noopener noreferrer">
                   <Twitter />
                 </IconButton>
-                <IconButton aria-label="instagram">
+                <IconButton aria-label="instagram" component="a" href="https://instagram.com/farmagentuganda" target="_blank" rel="noopener noreferrer">
                   <Instagram />
                 </IconButton>
-                <IconButton aria-label="linkedin">
+                <IconButton aria-label="linkedin" component="a" href="https://linkedin.com/company/farmagentuganda" target="_blank" rel="noopener noreferrer">
                   <LinkedIn />
                 </IconButton>
               </Box>
+              <Button
+                variant="contained"
+                color="primary"
+                href="https://facebook.com/farmagentuganda"
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{ mt: 2, fontWeight: 'bold', bgcolor: '#1877f3', '&:hover': { bgcolor: '#145db2' } }}
+              >
+                Follow us on Facebook
+              </Button>
             </Box>
           </Grid>
           

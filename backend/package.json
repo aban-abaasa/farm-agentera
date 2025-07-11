@@ -1,0 +1,28 @@
+{
+    "name": "agri-tech-backend",
+    "version": "1.0.0",
+    "description": "Backend API for AGRI-TECH platform",
+    "main": "server.js",
+      "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "db:init": "node initialize_db.js",
+    "db:init:auth": "node initialize_db.js auth",
+    "db:init:marketplace": "node initialize_db.js marketplace",
+    "db:migrate-mock": "node db/migrate_mock_data.js",
+    "storage:init": "node initialize_storage.js",
+    "storage:init:verbose": "node initialize_storage.js --verbose",
+    "storage:policies": "node initialize_db.js --file=db/storage_policies.sql"
+  },
+    "dependencies": {
+      "@supabase/supabase-js": "^2.39.0",
+      "cors": "^2.8.5",
+      "dotenv": "^16.3.1",
+      "express": "^4.18.2",
+      "pg": "^8.11.3",
+      "postgres": "^3.4.3"
+    },
+    "devDependencies": {
+      "nodemon": "^3.0.2"
+    }
+  }

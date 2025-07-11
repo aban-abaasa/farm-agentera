@@ -1,326 +1,510 @@
-import { 
-  fetchData, 
-  fetchById, 
-  insertRecord,
-  updateRecord,
-  deleteRecord,
-  searchRecords, 
-  countRecords
-} from '../../lib/supabase/dbHelpers';
-
-// Tables in Supabase
-const LISTINGS_TABLE = 'marketplace_listings';
-const LAND_LISTINGS_TABLE = 'land_listings';
-const PRODUCE_LISTINGS_TABLE = 'produce_listings';
-const SERVICE_LISTINGS_TABLE = 'service_listings';
+import { supabase } from '../../lib/supabase/client';
 
 /**
- * Fetch all listings with optional filtering
+ * Get all marketplace listings with optional filtering
  * @param {Object} options - Query options
- * @returns {Promise} - Listings data
+ * @param {string} options.type - Filter by listing type ('land', 'produce', 'service')
+ * @param {string} options.status - Filter by status ('active', 'sold', 'expired', 'unavailable')
+ * @param {string} options.location - Filter by location
+ * @param {number} options.limit - Maximum number of results to return
+ * @param {number} options.offset - Number of results to skip (for pagination)
+ * @param {string} options.sortBy - Field to sort by
+ * @param {boolean} options.ascending - Sort direction (true for ascending, false for descending)
+ * @returns {Promise<{data: Array, error: Object}>} - Listings data or error
  */
-export async function getAllListings(options = {}) {
-  return await fetchData(LISTINGS_TABLE, options);
-}
-
-/**
- * Fetch a single listing by ID
- * @param {number|string} id - Listing ID
- * @returns {Promise} - Listing data
- */
-export async function getListingById(id) {
-  return await fetchById(LISTINGS_TABLE, id);
-}
-
-/**
- * Search listings by query
- * @param {string} query - Search query
- * @param {number} limit - Number of results to return
- * @returns {Promise} - Search results
- */
-export async function searchListings(query, limit = 20) {
-  return await searchRecords(LISTINGS_TABLE, query, ['title', 'description'], limit);
-}
-
-/**
- * Create a new listing
- * @param {Object} listing - Listing data
- * @param {string} listingType - Type of listing (land, produce, service)
- * @returns {Promise} - New listing and its details
- */
-export async function createListing(listing, listingType) {
-  // First, create the base listing
-  const { data: newListing, error } = await insertRecord(LISTINGS_TABLE, { 
-    ...listing, 
-    type: listingType,
-    created_at: new Date().toISOString(),
-    status: 'active'
-  });
-  
-  if (error || !newListing) return { data: null, error };
-  
-  // Then, create the specific listing type with additional details
-  const specificTable = getTableForType(listingType);
-  let specificData = listing.details || {};
-  
-  const { data: details, error: detailsError } = await insertRecord(specificTable, { 
-    ...specificData,
-    listing_id: newListing[0].id
-  });
-  
-  if (detailsError) return { data: newListing, error: detailsError };
-  
-  return { 
-    data: { 
-      ...newListing[0],
-      details: details[0]
-    }, 
-    error: null
-  };
-}
-
-/**
- * Update an existing listing
- * @param {number|string} id - Listing ID
- * @param {Object} updates - Fields to update
- * @param {string} listingType - Type of listing (land, produce, service)
- * @returns {Promise} - Updated listing
- */
-export async function updateListing(id, updates, listingType) {
-  // Update base listing
-  const { data: updatedListing, error } = await updateRecord(LISTINGS_TABLE, { 
-    ...updates, 
-    updated_at: new Date().toISOString() 
-  }, { id });
-  
-  if (error || !updatedListing) return { data: null, error };
-  
-  // Update specific details if provided
-  if (updates.details) {
-    const specificTable = getTableForType(listingType);
+export const getListings = async (options = {}) => {
+  try {
+    let query = supabase
+      .from('marketplace_listings')
+      .select('*');
     
-    const { error: detailsError } = await updateRecord(specificTable, updates.details, { 
-      listing_id: id 
+    // Apply filters if provided
+    if (options.type) {
+      query = query.eq('type', options.type);
+    }
+    
+    if (options.status) {
+      query = query.eq('status', options.status);
+    } else {
+      // By default, only show active listings
+      query = query.eq('status', 'active');
+    }
+    
+    if (options.location) {
+      query = query.ilike('location', `%${options.location}%`);
+    }
+    
+    // Apply sorting
+    if (options.sortBy) {
+      query = query.order(options.sortBy, { ascending: options.ascending ?? true });
+    } else {
+      // Default sort by created_at in descending order (newest first)
+      query = query.order('created_at', { ascending: false });
+    }
+    
+    // Apply pagination
+    if (options.limit) {
+      query = query.limit(options.limit);
+    }
+    
+    if (options.offset) {
+      query = query.range(options.offset, options.offset + (options.limit || 10) - 1);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error fetching listings:', error);
+    return { data: null, error };
+  }
+};
+
+/**
+ * Get a specific listing by ID with its specialized details
+ * @param {number} id - Listing ID
+ * @param {string} type - Listing type ('land', 'produce', 'service')
+ * @returns {Promise<{data: Object, error: Object}>} - Listing data or error
+ */
+export const getListingById = async (id, type) => {
+  try {
+    // First get the base listing
+    const { data: listing, error: listingError } = await supabase
+      .from('marketplace_listings')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (listingError) throw listingError;
+    if (!listing) throw new Error('Listing not found');
+    
+    // Get the specialized details based on the type
+    let detailsTable = '';
+    switch (type || listing.type) {
+      case 'land':
+        detailsTable = 'land_listings';
+        break;
+      case 'produce':
+        detailsTable = 'produce_listings';
+        break;
+      case 'service':
+        detailsTable = 'service_listings';
+        break;
+      default:
+        throw new Error('Invalid listing type');
+    }
+    
+    const { data: details, error: detailsError } = await supabase
+      .from(detailsTable)
+      .select('*')
+      .eq('listing_id', id)
+      .single();
+    
+    if (detailsError) throw detailsError;
+    
+    // Get the seller/owner information
+    const { data: owner, error: ownerError } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name, avatar_url, phone_number, email, location, role, is_verified')
+      .eq('id', listing.user_id)
+      .single();
+    
+    if (ownerError) throw ownerError;
+    
+    // Combine all data
+    const combinedData = {
+      ...listing,
+      details,
+      owner: {
+        id: owner.id,
+        name: `${owner.first_name || ''} ${owner.last_name || ''}`.trim(),
+        avatar: owner.avatar_url,
+        phone: owner.phone_number,
+        email: owner.email,
+        location: owner.location,
+        role: owner.role,
+        isVerified: owner.is_verified
+      }
+    };
+    
+    return { data: combinedData, error: null };
+  } catch (error) {
+    console.error('Error fetching listing details:', error);
+    return { data: null, error };
+  }
+};
+
+/**
+ * Create a new marketplace listing
+ * @param {Object} listingData - Base listing data
+ * @param {Object} detailsData - Specialized details data
+ * @returns {Promise<{data: Object, error: Object}>} - Created listing or error
+ */
+export const createListing = async (listingData, detailsData) => {
+  try {
+    // Start a transaction
+    const { data, error } = await supabase.rpc('create_listing', {
+      listing_data: listingData,
+      details_data: detailsData,
+      listing_type: listingData.type
     });
     
-    if (detailsError) return { data: updatedListing, error: detailsError };
-  }
-  
-  return { data: updatedListing, error: null };
-}
-
-/**
- * Delete a listing
- * @param {number|string} id - Listing ID
- * @param {string} listingType - Type of listing (land, produce, service)
- * @returns {Promise} - Deletion result
- */
-export async function deleteListing(id, listingType) {
-  // First delete the specific listing details
-  const specificTable = getTableForType(listingType);
-  await deleteRecord(specificTable, { listing_id: id });
-  
-  // Then delete the base listing
-  return await deleteRecord(LISTINGS_TABLE, { id });
-}
-
-/**
- * Get land listings with optional filtering
- * @param {Object} options - Query options
- * @returns {Promise} - Land listings
- */
-export async function getLandListings(options = {}) {
-  // Enhanced query to join land_listings table with listings table
-  try {
-    const { supabase } = await import('../../lib/supabase/client');
-    
-    let query = supabase
-      .from(LISTINGS_TABLE)
-      .select(`
-        *,
-        land_details:${LAND_LISTINGS_TABLE}(*)
-      `)
-      .eq('type', 'land')
-      .order('created_at', { ascending: false });
-    
-    // Apply limit
-    if (options.limit) {
-      query = query.limit(options.limit);
-    }
-    
-    const { data, error } = await query;
-    
     if (error) throw error;
+    
     return { data, error: null };
   } catch (error) {
-    console.error('Error fetching land listings:', error);
+    console.error('Error creating listing:', error);
     return { data: null, error };
   }
-}
+};
 
 /**
- * Get produce listings with optional filtering
- * @param {Object} options - Query options
- * @returns {Promise} - Produce listings
+ * Update an existing marketplace listing
+ * @param {number} id - Listing ID
+ * @param {Object} listingData - Base listing data to update
+ * @param {Object} detailsData - Specialized details data to update
+ * @returns {Promise<{data: Object, error: Object}>} - Updated listing or error
  */
-export async function getProduceListings(options = {}) {
-  // Enhanced query to join produce_listings table with listings table
+export const updateListing = async (id, listingData, detailsData) => {
   try {
-    const { supabase } = await import('../../lib/supabase/client');
+    // First update the base listing
+    const { data: updatedListing, error: listingError } = await supabase
+      .from('marketplace_listings')
+      .update({
+        ...listingData,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
     
-    let query = supabase
-      .from(LISTINGS_TABLE)
-      .select(`
-        *,
-        produce_details:${PRODUCE_LISTINGS_TABLE}(*)
-      `)
-      .eq('type', 'produce')
-      .order('created_at', { ascending: false });
+    if (listingError) throw listingError;
     
-    // Apply limit
-    if (options.limit) {
-      query = query.limit(options.limit);
+    // Determine the details table based on the listing type
+    let detailsTable = '';
+    switch (listingData.type || updatedListing.type) {
+      case 'land':
+        detailsTable = 'land_listings';
+        break;
+      case 'produce':
+        detailsTable = 'produce_listings';
+        break;
+      case 'service':
+        detailsTable = 'service_listings';
+        break;
+      default:
+        throw new Error('Invalid listing type');
     }
     
-    const { data, error } = await query;
+    // Update the specialized details
+    const { data: updatedDetails, error: detailsError } = await supabase
+      .from(detailsTable)
+      .update({
+        ...detailsData,
+        updated_at: new Date().toISOString()
+      })
+      .eq('listing_id', id)
+      .select()
+      .single();
     
-    if (error) throw error;
-    return { data, error: null };
+    if (detailsError) throw detailsError;
+    
+    return { 
+      data: { 
+        ...updatedListing, 
+        details: updatedDetails 
+      }, 
+      error: null 
+    };
   } catch (error) {
-    console.error('Error fetching produce listings:', error);
+    console.error('Error updating listing:', error);
     return { data: null, error };
   }
-}
+};
 
 /**
- * Get service listings with optional filtering
- * @param {Object} options - Query options
- * @returns {Promise} - Service listings
+ * Delete a marketplace listing
+ * @param {number} id - Listing ID
+ * @returns {Promise<{success: boolean, error: Object}>} - Success status or error
  */
-export async function getServiceListings(options = {}) {
-  // Enhanced query to join service_listings table with listings table
+export const deleteListing = async (id) => {
   try {
-    const { supabase } = await import('../../lib/supabase/client');
-    
-    let query = supabase
-      .from(LISTINGS_TABLE)
-      .select(`
-        *,
-        service_details:${SERVICE_LISTINGS_TABLE}(*)
-      `)
-      .eq('type', 'service')
-      .order('created_at', { ascending: false });
-    
-    // Apply limit
-    if (options.limit) {
-      query = query.limit(options.limit);
-    }
-    
-    const { data, error } = await query;
+    // Deleting the base listing will cascade delete the specialized details
+    const { error } = await supabase
+      .from('marketplace_listings')
+      .delete()
+      .eq('id', id);
     
     if (error) throw error;
-    return { data, error: null };
-  } catch (error) {
-    console.error('Error fetching service listings:', error);
-    return { data: null, error };
-  }
-}
-
-/**
- * Get the specific table name for a listing type
- * @param {string} type - Listing type
- * @returns {string} - Table name
- */
-function getTableForType(type) {
-  switch (type.toLowerCase()) {
-    case 'land':
-      return LAND_LISTINGS_TABLE;
-    case 'produce':
-      return PRODUCE_LISTINGS_TABLE;
-    case 'service':
-      return SERVICE_LISTINGS_TABLE;
-    default:
-      throw new Error(`Unknown listing type: ${type}`);
-  }
-}
-
-/**
- * Get listings by user ID
- * @param {number|string} userId - User ID
- * @returns {Promise} - User's listings
- */
-export async function getUserListings(userId) {
-  return await fetchData(LISTINGS_TABLE, {
-    filters: { user_id: userId },
-    orderBy: 'created_at',
-    ascending: false
-  });
-}
-
-/**
- * Mark a listing as sold/rented/unavailable
- * @param {number|string} id - Listing ID
- * @returns {Promise} - Updated listing
- */
-export async function markListingAsUnavailable(id) {
-  return await updateRecord(LISTINGS_TABLE, { 
-    status: 'unavailable',
-    updated_at: new Date().toISOString() 
-  }, { id });
-}
-
-/**
- * Get saved/favorite listings for a user
- * @param {number|string} userId - User ID
- * @returns {Promise} - Saved listings
- */
-export async function getSavedListings(userId) {
-  try {
-    const { supabase } = await import('../../lib/supabase/client');
     
+    return { success: true, error: null };
+  } catch (error) {
+    console.error('Error deleting listing:', error);
+    return { success: false, error };
+  }
+};
+
+/**
+ * Save a listing for a user
+ * @param {number} listingId - Listing ID
+ * @param {string} userId - User ID
+ * @returns {Promise<{success: boolean, error: Object}>} - Success status or error
+ */
+export const saveListing = async (listingId, userId) => {
+  try {
+    const { error } = await supabase
+      .from('user_saved_listings')
+      .insert({
+        user_id: userId,
+        listing_id: listingId
+      });
+    
+    if (error) throw error;
+    
+    return { success: true, error: null };
+  } catch (error) {
+    console.error('Error saving listing:', error);
+    return { success: false, error };
+  }
+};
+
+/**
+ * Unsave a listing for a user
+ * @param {number} listingId - Listing ID
+ * @param {string} userId - User ID
+ * @returns {Promise<{success: boolean, error: Object}>} - Success status or error
+ */
+export const unsaveListing = async (listingId, userId) => {
+  try {
+    const { error } = await supabase
+      .from('user_saved_listings')
+      .delete()
+      .eq('user_id', userId)
+      .eq('listing_id', listingId);
+    
+    if (error) throw error;
+    
+    return { success: true, error: null };
+  } catch (error) {
+    console.error('Error unsaving listing:', error);
+    return { success: false, error };
+  }
+};
+
+/**
+ * Get saved listings for a user
+ * @param {string} userId - User ID
+ * @returns {Promise<{data: Array, error: Object}>} - Saved listings or error
+ */
+export const getSavedListings = async (userId) => {
+  try {
     const { data, error } = await supabase
       .from('user_saved_listings')
       .select(`
         listing_id,
-        listings:marketplace_listings(*)
+        marketplace_listings (*)
       `)
       .eq('user_id', userId);
     
     if (error) throw error;
     
-    // Format the data to return just the listings
-    const listings = data.map(item => item.listings);
+    // Transform the data to a more usable format
+    const listings = data.map(item => item.marketplace_listings);
     
     return { data: listings, error: null };
   } catch (error) {
     console.error('Error fetching saved listings:', error);
     return { data: null, error };
   }
-}
+};
 
 /**
- * Save/favorite a listing for a user
- * @param {number|string} userId - User ID
- * @param {number|string} listingId - Listing ID
- * @returns {Promise} - Result
+ * Get listings for a specific user
+ * @param {string} userId - User ID
+ * @param {Object} options - Query options (same as getListings)
+ * @returns {Promise<{data: Array, error: Object}>} - User's listings or error
  */
-export async function saveListing(userId, listingId) {
-  return await insertRecord('user_saved_listings', {
-    user_id: userId,
-    listing_id: listingId,
-    created_at: new Date().toISOString()
-  });
-}
+export const getUserListings = async (userId, options = {}) => {
+  try {
+    let query = supabase
+      .from('marketplace_listings')
+      .select('*')
+      .eq('user_id', userId);
+    
+    // Apply filters if provided
+    if (options.type) {
+      query = query.eq('type', options.type);
+    }
+    
+    if (options.status) {
+      query = query.eq('status', options.status);
+    }
+    
+    // Apply sorting
+    if (options.sortBy) {
+      query = query.order(options.sortBy, { ascending: options.ascending ?? true });
+    } else {
+      // Default sort by created_at in descending order (newest first)
+      query = query.order('created_at', { ascending: false });
+    }
+    
+    // Apply pagination
+    if (options.limit) {
+      query = query.limit(options.limit);
+    }
+    
+    if (options.offset) {
+      query = query.range(options.offset, options.offset + (options.limit || 10) - 1);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error fetching user listings:', error);
+    return { data: null, error };
+  }
+};
 
 /**
- * Remove a saved/favorite listing for a user
- * @param {number|string} userId - User ID
- * @param {number|string} listingId - Listing ID
- * @returns {Promise} - Result
+ * Increment view count for a listing
+ * @param {number} id - Listing ID
+ * @returns {Promise<{success: boolean, error: Object}>} - Success status or error
  */
-export async function removeSavedListing(userId, listingId) {
-  return await deleteRecord('user_saved_listings', {
-    user_id: userId,
-    listing_id: listingId
-  });
-} 
+export const incrementListingView = async (id) => {
+  try {
+    const { error } = await supabase.rpc('increment_listing_view', { listing_id: id });
+    
+    if (error) throw error;
+    
+    return { success: true, error: null };
+  } catch (error) {
+    console.error('Error incrementing view count:', error);
+    return { success: false, error };
+  }
+};
+
+/**
+ * Change the status of a listing
+ * @param {number} id - Listing ID
+ * @param {string} status - New status ('active', 'sold', 'expired', 'unavailable')
+ * @returns {Promise<{success: boolean, error: Object}>} - Success status or error
+ */
+export const changeListingStatus = async (id, status) => {
+  try {
+    const { error } = await supabase
+      .from('marketplace_listings')
+      .update({ 
+        status,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id);
+    
+    if (error) throw error;
+    
+    return { success: true, error: null };
+  } catch (error) {
+    console.error('Error changing listing status:', error);
+    return { success: false, error };
+  }
+};
+
+/**
+ * Search listings by keyword
+ * @param {string} keyword - Search keyword
+ * @param {Object} options - Query options (same as getListings)
+ * @returns {Promise<{data: Array, error: Object}>} - Search results or error
+ */
+export const searchListings = async (keyword, options = {}) => {
+  try {
+    let query = supabase
+      .from('marketplace_listings')
+      .select('*')
+      .or(`title.ilike.%${keyword}%,description.ilike.%${keyword}%,location.ilike.%${keyword}%`);
+    
+    // Apply filters if provided
+    if (options.type) {
+      query = query.eq('type', options.type);
+    }
+    
+    if (options.status) {
+      query = query.eq('status', options.status);
+    } else {
+      // By default, only show active listings
+      query = query.eq('status', 'active');
+    }
+    
+    // Apply sorting
+    if (options.sortBy) {
+      query = query.order(options.sortBy, { ascending: options.ascending ?? true });
+    } else {
+      // Default sort by created_at in descending order (newest first)
+      query = query.order('created_at', { ascending: false });
+    }
+    
+    // Apply pagination
+    if (options.limit) {
+      query = query.limit(options.limit);
+    }
+    
+    if (options.offset) {
+      query = query.range(options.offset, options.offset + (options.limit || 10) - 1);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error searching listings:', error);
+    return { data: null, error };
+  }
+}; 
+
+/**
+ * Upload listing images to storage
+ * @param {string} userId - User ID
+ * @param {File[]} files - Image files to upload
+ * @param {string} [listingType=''] - Type of listing (land, produce, service)
+ * @returns {Promise<{data: string[], error: Object}>} - Array of image URLs or error
+ */
+export const uploadListingImages = async (userId, files, listingType = '') => {
+  try {
+    // Import the storage service
+    const { uploadMultipleFiles } = await import('./storageService');
+    
+    // Determine the folder path based on listing type
+    let folderPath = `listings/${userId}`;
+    if (listingType && ['land', 'produce', 'service'].includes(listingType)) {
+      folderPath = `listings/${listingType}/${userId}`;
+    }
+    
+    // Upload multiple files to the determined folder
+    const { urls, errors } = await uploadMultipleFiles(
+      'marketplace',
+      folderPath,
+      files,
+      {
+        maxSizeMB: 5,
+        allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+        upsert: false
+      }
+    );
+    
+    // Log any errors that occurred during upload
+    if (errors.length > 0) {
+      console.warn('Some images failed to upload:', errors);
+    }
+    
+    // Return the URLs of successfully uploaded images
+    return { data: urls, error: errors.length > 0 ? { message: 'Some uploads failed', details: errors } : null };
+  } catch (error) {
+    console.error('Error uploading images:', error);
+    return { data: null, error };
+  }
+}; 

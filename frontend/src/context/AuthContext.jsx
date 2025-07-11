@@ -1,5 +1,16 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import { 
+  signIn, 
+  signUp, 
+  signOut, 
+  getSession,
+  onAuthStateChange,
+  getUserProfile,
+  updateUserProfile,
+  deleteUserAccount,
+  signInWithGoogle,
+  isProfileComplete
+} from '../services/api/authService';
 
 const AuthContext = createContext();
 
@@ -8,138 +19,200 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [profileStatus, setProfileStatus] = useState({ isComplete: true, isChecking: true });
 
   useEffect(() => {
-    // Check for existing token in localStorage and validate it
-    const token = localStorage.getItem('token');
-    if (token) {
-      checkAuthStatus(token);
-    } else {
-      setLoading(false);
-    }
+    // Check for existing session with Supabase
+    checkAuthStatus();
+
+    // Set up auth state change listener
+    const unsubscribe = onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        fetchUserData(session.user.id);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setProfileStatus({ isComplete: true, isChecking: false });
+      }
+    });
+
+    // Cleanup subscription
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
   }, []);
 
-  const checkAuthStatus = async (token) => {
+  const checkAuthStatus = async () => {
     try {
-      // In a real app, you would validate the token with your backend
-      // For now, we'll simulate by decoding a user from localStorage
-      const userData = JSON.parse(localStorage.getItem('userData'));
-      if (userData) {
-        setUser(userData);
+      const { data, error } = await getSession();
+      
+      if (error || !data.session) {
+        setLoading(false);
+        setProfileStatus({ isComplete: true, isChecking: false });
+        return;
       }
+      
+      await fetchUserData(data.session.user.id);
       setLoading(false);
     } catch (error) {
       console.error('Authentication error:', error);
-      logout();
       setLoading(false);
+      setProfileStatus({ isComplete: true, isChecking: false });
+    }
+  };
+
+  const fetchUserData = async (userId) => {
+    try {
+      // Get user profile from Supabase
+      const { data: profile, error } = await getUserProfile(userId);
+      
+      if (error || !profile) {
+        throw error || new Error('User profile not found');
+      }
+      
+      setUser(profile);
+      
+      // Check if profile is complete
+      const { isComplete } = await isProfileComplete(userId);
+      setProfileStatus({ isComplete, isChecking: false });
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      logout();
     }
   };
 
   const login = async (credentials) => {
     try {
-      // In a real app, this would be an API call to your backend
-      // For now, we'll simulate a successful login with mock data
+      const { data, error } = await signIn(credentials.email, credentials.password);
       
-      // Simulate API response delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (error) throw error;
       
-      // Mock user data (in a real app, this would come from your API)
-      const userData = {
-        id: '1',
-        name: 'John Doe',
-        email: credentials.email,
-        role: 'farmer',
-        location: 'Kampala, Uganda',
-        avatar: null,
-        joinedDate: new Date().toISOString()
-      };
+      if (data?.user) {
+        await fetchUserData(data.user.id);
+        return data.user;
+      }
       
-      // Mock token (in a real app, this would be a JWT from your API)
-      const token = 'mock-jwt-token';
-      
-      // Save to localStorage
-      localStorage.setItem('token', token);
-      localStorage.setItem('userData', JSON.stringify(userData));
-      
-      setUser(userData);
-      return userData;
+      throw new Error('Login failed. User data not found.');
     } catch (error) {
       console.error('Login error:', error);
-      throw new Error(error.response?.data?.message || 'Login failed. Please try again.');
+      throw new Error(error.message || 'Login failed. Please try again.');
+    }
+  };
+
+  const loginWithGoogle = async () => {
+    try {
+      const { data, error } = await signInWithGoogle();
+      
+      if (error) throw error;
+      
+      return { data, error: null };
+    } catch (error) {
+      console.error('Google login error:', error);
+      throw new Error(error.message || 'Google login failed. Please try again.');
     }
   };
 
   const register = async (userData) => {
     try {
-      // In a real app, this would be an API call to your backend
-      // For now, we'll simulate a successful registration with mock data
+      // Extract user auth data and profile data
+      const { email, password, ...profileData } = userData;
       
-      // Simulate API response delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { data, error } = await signUp(email, password, profileData);
       
-      // Mock registration response
-      const newUser = {
-        id: Math.floor(Math.random() * 1000).toString(),
-        name: userData.name,
-        email: userData.email,
-        role: userData.role || 'farmer',
-        location: userData.location,
-        avatar: null,
-        joinedDate: new Date().toISOString()
-      };
+      if (error) throw error;
       
-      // Mock token
-      const token = 'mock-jwt-token';
+      if (data?.user) {
+        // In Supabase, user might need email verification first
+        // So we might not set the user here depending on your setup
+        return data.user;
+      }
       
-      // Save to localStorage
-      localStorage.setItem('token', token);
-      localStorage.setItem('userData', JSON.stringify(newUser));
-      
-      setUser(newUser);
-      return newUser;
+      throw new Error('Registration failed. User data not found.');
     } catch (error) {
       console.error('Registration error:', error);
-      throw new Error(error.response?.data?.message || 'Registration failed. Please try again.');
+      throw new Error(error.message || 'Registration failed. Please try again.');
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userData');
-    setUser(null);
+  const logout = async () => {
+    try {
+      await signOut();
+      setUser(null);
+      setProfileStatus({ isComplete: true, isChecking: false });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const updateProfile = async (updatedData) => {
     try {
-      // In a real app, this would be an API call to your backend
-      // For now, we'll simulate a successful profile update
+      if (!user?.id) throw new Error('User not authenticated');
       
-      // Simulate API response delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { data, error } = await updateUserProfile(user.id, updatedData);
       
-      const updatedUser = {
-        ...user,
-        ...updatedData,
-      };
+      if (error) throw error;
       
-      // Update in localStorage
-      localStorage.setItem('userData', JSON.stringify(updatedUser));
+      setUser({...user, ...data[0]});
       
-      setUser(updatedUser);
-      return updatedUser;
+      // Check if profile is now complete
+      if (!profileStatus.isComplete) {
+        const { isComplete } = await isProfileComplete(user.id);
+        setProfileStatus({ isComplete, isChecking: false });
+      }
+      
+      return data[0];
     } catch (error) {
       console.error('Profile update error:', error);
-      throw new Error(error.response?.data?.message || 'Profile update failed. Please try again.');
+      throw new Error(error.message || 'Profile update failed. Please try again.');
+    }
+  };
+  
+  const deleteAccount = async (password) => {
+    try {
+      if (!user?.id) throw new Error('User not authenticated');
+      
+      // Re-authenticate the user before deletion (optional but recommended)
+      if (password) {
+        const { error: authError } = await signIn(user.email, password);
+        if (authError) throw new Error('Password verification failed. Please try again.');
+      }
+      
+      // Delete the user account
+      const { success, error, isConnectionError } = await deleteUserAccount(user.id);
+      
+      if (!success) {
+        // Handle connection errors specially
+        if (isConnectionError) {
+          throw new Error(
+            error.message || 
+            'Cannot connect to the server. Please check your internet connection and try again later.'
+          );
+        }
+        throw error;
+      }
+      
+      // Clear user data from state
+      setUser(null);
+      setProfileStatus({ isComplete: true, isChecking: false });
+      return { success: true };
+    } catch (error) {
+      console.error('Account deletion error:', error);
+      // Pass through the specific error message
+      throw error instanceof Error ? error : new Error('Account deletion failed. Please try again.');
     }
   };
 
   const value = {
     user,
     loading,
+    profileStatus,
     login,
+    loginWithGoogle,
     register,
     logout,
-    updateProfile
+    updateProfile,
+    deleteAccount
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

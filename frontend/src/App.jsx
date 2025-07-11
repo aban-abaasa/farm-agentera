@@ -1,9 +1,11 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import MainLayout from './components/layout/MainLayout'
 import Home from './pages/Home'
 import Dashboard from './pages/Dashboard'
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
+import AuthCallback from './pages/auth/AuthCallback'
+import CompleteProfile from './pages/auth/CompleteProfile'
 import { AuthProvider } from './context/AuthContext'
 import Settings from './pages/Settings'
 import Profile from './pages/profile/Profile'
@@ -29,6 +31,7 @@ import Investments from './pages/Investments'
 import { Suspense } from 'react'
 import { CircularProgress, Box } from '@mui/material'
 import PageContainer from './components/layout/PageContainer'
+import ProtectedRoute from './components/ProtectedRoute'
 
 // Wrap page components with PageContainer for consistent layout
 const withPageContainer = (Component, props = {}) => {
@@ -49,38 +52,50 @@ function App() {
           </Box>
         }>
           <Routes>
+            {/* Public routes */}
             <Route path="/" element={<MainLayout />}>
               <Route index element={<Home />} />
-              <Route path="dashboard" element={withPageContainer(Dashboard)} />
-              <Route path="settings" element={withPageContainer(Settings)} />
-              <Route path="profile" element={withPageContainer(Profile)} />
-              <Route path="profile/edit" element={withPageContainer(EditProfile)} />
-              <Route path="weather" element={withPageContainer(Weather)} />
-              <Route path="resources" element={withPageContainer(Resources)} />
-              <Route path="support-team" element={withPageContainer(SupportTeam)} />
-              <Route path="livestock-management" element={withPageContainer(LivestockManagement)} />
-              <Route path="soil-crop-planner" element={withPageContainer(SoilCropPlanner)} />
-              <Route path="investments" element={withPageContainer(Investments)} />
-              
-              {/* Marketplace Routes */}
-              <Route path="marketplace" element={withPageContainer(Marketplace)} />
-              <Route path="marketplace/land" element={withPageContainer(LandListings)} />
-              <Route path="marketplace/produce" element={withPageContainer(ProduceListings)} />
-              <Route path="marketplace/services" element={withPageContainer(ServiceListings)} />
-              <Route path="marketplace/listing/:id" element={withPageContainer(ListingDetails)} />
-              <Route path="marketplace/create" element={withPageContainer(CreateListing)} />
-              
-              {/* Community Routes */}
-              <Route path="community" element={withPageContainer(Community)} />
-              <Route path="community/discussions" element={withPageContainer(CommunityDiscussions)} />
-              <Route path="community/events" element={withPageContainer(CommunityEvents)} />
-              <Route path="community/qa" element={withPageContainer(CommunityQA)} />
-              <Route path="community/post/:id" element={withPageContainer(PostDetails)} />
-              
               <Route path="*" element={withPageContainer(NotFound)} />
             </Route>
+            
+            {/* Auth routes - accessible only when NOT logged in */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            
+            {/* Profile completion route - special case */}
+            <Route path="/complete-profile" element={<CompleteProfile />} />
+            
+            {/* Protected routes - require authentication */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/" element={<MainLayout />}>
+                <Route path="dashboard" element={withPageContainer(Dashboard)} />
+                <Route path="settings" element={withPageContainer(Settings)} />
+                <Route path="profile/:id" element={withPageContainer(Profile)} />
+                <Route path="profile/edit" element={withPageContainer(EditProfile)} />
+                <Route path="weather" element={withPageContainer(Weather)} />
+                <Route path="resources" element={withPageContainer(Resources)} />
+                <Route path="support-team" element={withPageContainer(SupportTeam)} />
+                <Route path="livestock-management" element={withPageContainer(LivestockManagement)} />
+                <Route path="soil-crop-planner" element={withPageContainer(SoilCropPlanner)} />
+                <Route path="investments" element={withPageContainer(Investments)} />
+                
+                {/* Marketplace Routes */}
+                <Route path="marketplace" element={withPageContainer(Marketplace)} />
+                <Route path="marketplace/land" element={withPageContainer(LandListings)} />
+                <Route path="marketplace/produce" element={withPageContainer(ProduceListings)} />
+                <Route path="marketplace/services" element={withPageContainer(ServiceListings)} />
+                <Route path="marketplace/listing/:id" element={withPageContainer(ListingDetails)} />
+                <Route path="marketplace/create" element={withPageContainer(CreateListing)} />
+                
+                {/* Community Routes */}
+                <Route path="community" element={withPageContainer(Community)} />
+                <Route path="community/discussions" element={withPageContainer(CommunityDiscussions)} />
+                <Route path="community/events" element={withPageContainer(CommunityEvents)} />
+                <Route path="community/qa" element={withPageContainer(CommunityQA)} />
+                <Route path="community/post/:id" element={withPageContainer(PostDetails)} />
+              </Route>
+            </Route>
           </Routes>
         </Suspense>
       </AuthProvider>

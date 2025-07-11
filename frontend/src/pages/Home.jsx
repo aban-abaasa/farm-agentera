@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { 
   Box, Button, Card, CardContent, Container, 
@@ -17,51 +17,72 @@ const Home = () => {
   const { user } = useAuth();
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
+  // Track which card is being hovered
+  const [hoveredCard, setHoveredCard] = useState(null);
 
+  // Features array with added animation properties
   const features = [
     {
       icon: <Agriculture fontSize="large" sx={{ color: '#4caf50' }} />,
       title: 'Land Management',
       description: 'Find available farmland for lease, purchase, or partnership. Connect with landowners and collaborate on agricultural projects.',
       link: '/marketplace/land',
-      color: '#e8f5e9'
+      color: '#e8f5e9',
+      animationDelay: '0s'
     },
     {
       icon: <ShoppingCart fontSize="large" sx={{ color: '#ff9800' }} />,
       title: 'Marketplace',
       description: 'Buy and sell agricultural produce, livestock, equipment, and more with farmers across Uganda.',
       link: '/marketplace/produce',
-      color: '#fff8e1'
+      color: '#fff8e1',
+      animationDelay: '0.1s'
     },
     {
       icon: <Layers fontSize="large" sx={{ color: '#2196f3' }} />,
       title: 'Services Exchange',
       description: 'Offer your farming expertise or hire skilled agricultural services for your farm operations.',
       link: '/marketplace/services',
-      color: '#e3f2fd'
+      color: '#e3f2fd',
+      animationDelay: '0.2s'
     },
     {
       icon: <GroupWork fontSize="large" sx={{ color: '#9c27b0' }} />,
       title: 'Community Forums',
       description: 'Connect with fellow farmers, share knowledge, ask questions, and collaborate on agricultural initiatives.',
       link: '/community',
-      color: '#f3e5f5'
+      color: '#f3e5f5',
+      animationDelay: '0.3s'
     },
     {
       icon: <Park fontSize="large" sx={{ color: '#00796b' }} />,
       title: 'Resource Center',
       description: 'Access valuable farming resources, best practices, training materials, and educational content.',
       link: '/resources',
-      color: '#e0f2f1'
+      color: '#e0f2f1',
+      animationDelay: '0.4s'
     },
     {
       icon: <CloudQueue fontSize="large" sx={{ color: '#0288d1' }} />,
       title: 'Weather Updates',
       description: 'Stay informed with localized weather forecasts, seasonal predictions, and farming calendars.',
       link: '/weather',
-      color: '#e1f5fe'
+      color: '#e1f5fe',
+      animationDelay: '0.5s'
     }
   ];
+
+  // Animation for cards on page load
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const cards = document.querySelectorAll('.feature-card');
+      cards.forEach((card) => {
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+      });
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <Box>
@@ -468,25 +489,70 @@ const Home = () => {
               </Typography>
             </Box>
             
-            <Grid container spacing={4} justifyContent="center">
+            {/* Features flexbox layout */}
+            <Box 
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+                gap: 3,
+                mx: -1.5, // Compensate for padding in the container
+              }}
+            >
               {features.map((feature, index) => (
-                <Grid item key={index} xs={12} sm={6} md={4}>
+                <Box
+                  key={index}
+                  className="feature-card"
+                  sx={{
+                    width: {
+                      xs: 'calc(100% - 24px)',     // 1 column on mobile
+                      sm: 'calc(50% - 24px)',      // 2 columns on small screens
+                      md: 'calc(33.333% - 24px)',  // 3 columns on medium screens
+                      lg: 'calc(25% - 24px)',      // 4 columns on large screens
+                      xl: 'calc(20% - 24px)',      // 5 columns on extra-large screens
+                    },
+                    minWidth: '280px',  // Ensure minimum width for readability
+                    maxWidth: '380px',  // Maximum width for consistency
+                    margin: '12px',
+                    opacity: 0,
+                    transform: 'translateY(40px)',
+                    transition: `all 0.6s ease ${feature.animationDelay}`,
+                  }}
+                  onMouseEnter={() => setHoveredCard(index)}
+                  onMouseLeave={() => setHoveredCard(null)}
+                >
                   <Card 
                     sx={{ 
                       height: '100%', 
                       display: 'flex', 
                       flexDirection: 'column',
-                      transition: 'all 0.3s ease',
                       borderRadius: 4,
                       border: '1px solid rgba(0,0,0,0.05)',
                       overflow: 'hidden',
+                      position: 'relative',
+                      transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                       '&:hover': {
-                        transform: 'translateY(-8px)',
-                        boxShadow: '0 12px 30px rgba(0,0,0,0.1)',
+                        transform: 'translateY(-12px) scale(1.03)',
+                        boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
+                        '&::before': {
+                          opacity: 1,
+                        },
                         '& .feature-icon-wrapper': {
-                          transform: 'scale(1.1)',
-                        }
-                      } 
+                          transform: 'scale(1.15) rotate(10deg)',
+                        },
+                      },
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: '5px',
+                        background: 'linear-gradient(90deg, #4caf50, #8bc34a)',
+                        opacity: 0,
+                        transition: 'opacity 0.3s ease',
+                      },
+                      zIndex: hoveredCard === index ? 10 : 1,
                     }}
                   >
                     <Box sx={{ 
@@ -508,7 +574,7 @@ const Home = () => {
                           mr: 2,
                           bgcolor: 'white',
                           boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                          transition: 'transform 0.3s ease'
+                          transition: 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
                         }}
                       >
                         {feature.icon}
@@ -522,7 +588,13 @@ const Home = () => {
                       </Typography>
                     </Box>
                     
-                    <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                    <CardContent sx={{ 
+                      flexGrow: 1, 
+                      p: 3, 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      justifyContent: 'space-between'
+                    }}>
                       <Typography color="text.secondary" sx={{ mb: 3 }}>
                         {feature.description}
                       </Typography>
@@ -531,34 +603,67 @@ const Home = () => {
                         component={RouterLink} 
                         to={feature.link}
                         color="primary"
-                        endIcon={<ArrowForward />}
+                        endIcon={
+                          <ArrowForward sx={{
+                            transform: hoveredCard === index ? 'translateX(4px)' : 'translateX(0)',
+                            transition: 'transform 0.3s ease'
+                          }}/>
+                        }
                         sx={{ 
                           textTransform: 'none',
                           fontWeight: 'medium',
+                          mt: 'auto', // Push to bottom
+                          alignSelf: 'flex-start', // Align to left
                           '&:hover': {
                             background: 'none',
-                            '& .MuiSvgIcon-root': {
-                              transform: 'translateX(4px)'
-                            }
-                          },
-                          '& .MuiSvgIcon-root': {
-                            transition: 'transform 0.2s ease'
                           }
                         }}
                       >
                         Learn More
                       </Button>
                     </CardContent>
+                    
+                    {/* Animated corner accent */}
+                    <Box 
+                      sx={{ 
+                        position: 'absolute',
+                        bottom: 0,
+                        right: 0,
+                        width: '60px',
+                        height: '60px',
+                        background: `radial-gradient(circle at bottom right, ${feature.color}, transparent 70%)`,
+                        opacity: 0.7,
+                        transition: 'all 0.3s ease',
+                        transform: hoveredCard === index ? 'scale(1.5)' : 'scale(1)',
+                      }} 
+                    />
                   </Card>
-                </Grid>
+                </Box>
               ))}
-            </Grid>
+            </Box>
           </Container>
         </Box>
 
         {/* Testimonials */}
-        <Box sx={{ py: 10, bgcolor: '#ffffff' }}>
-          <Container maxWidth="xl">
+        <Box sx={{ 
+          py: 10, 
+          bgcolor: '#ffffff',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          {/* Background patterns */}
+          <Box sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            opacity: 0.03,
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000000' fill-opacity='1' fill-rule='evenodd'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E")`,
+            zIndex: 0
+          }} />
+
+          <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1 }}>
             <Box sx={{ textAlign: 'center', mb: 8 }}>
               <Typography 
                 component="span" 
@@ -580,7 +685,12 @@ const Home = () => {
                 variant="h3" 
                 fontWeight="bold" 
                 gutterBottom
-                sx={{ mb: 2 }}
+                sx={{ 
+                  mb: 2,
+                  background: 'linear-gradient(to right, #ff9800, #ff5722)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
               >
                 Success Stories
               </Typography>
@@ -593,61 +703,146 @@ const Home = () => {
               </Typography>
             </Box>
             
-            <Grid container spacing={4} justifyContent="center">
+            {/* Testimonial cards with carousel-like layout */}
+            <Box 
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+                gap: { xs: 4, md: 5 },
+                perspective: '1000px',
+              }}
+            >
               {testimonials.map((testimonial, index) => (
-                <Grid item key={index} xs={12} md={4}>
-                  <Card sx={{ 
-                    height: '100%', 
-                    display: 'flex', 
-                    flexDirection: 'column',
-                    borderRadius: 4,
-                    transition: 'all 0.3s ease',
-                    overflow: 'visible',
-                    position: 'relative',
-                    pt: 4,
+                <Box
+                  key={index}
+                  className="testimonial-card"
+                  sx={{
+                    width: {
+                      xs: '100%',
+                      sm: 'calc(50% - 32px)',
+                      lg: 'calc(33.333% - 32px)',
+                    },
+                    maxWidth: '450px',
+                    opacity: 0,
+                    transform: `translateY(40px) rotate(${index % 2 === 0 ? '-1deg' : '1deg'})`,
+                    animation: `fadeInUp 0.8s ease-out forwards ${0.2 + index * 0.15}s`,
+                    '@keyframes fadeInUp': {
+                      '0%': {
+                        opacity: 0,
+                        transform: `translateY(40px) rotate(${index % 2 === 0 ? '-1deg' : '1deg'})`,
+                      },
+                      '100%': {
+                        opacity: 1,
+                        transform: `translateY(0) rotate(${index % 2 === 0 ? '-1deg' : '1deg'})`,
+                      },
+                    },
+                    transition: 'all 0.4s ease',
                     '&:hover': {
-                      transform: 'translateY(-5px)',
-                      boxShadow: '0 12px 30px rgba(0,0,0,0.1)',
+                      transform: `translateY(-10px) rotate(${index % 2 === 0 ? '-1deg' : '1deg'})`,
                     }
-                  }}>
-                    {/* Avatar that's positioned on top of the card */}
-                    <Avatar 
-                      sx={{ 
-                        width: 64, 
-                        height: 64, 
-                        bgcolor: testimonial.bgColor,
+                  }}
+                >
+                  <Card 
+                    sx={{ 
+                      height: '100%', 
+                      display: 'flex', 
+                      flexDirection: 'column',
+                      borderRadius: 4,
+                      transition: 'all 0.3s ease',
+                      overflow: 'visible',
+                      position: 'relative',
+                      pt: 4,
+                      boxShadow: '0 10px 40px rgba(0,0,0,0.07)',
+                      border: '1px solid rgba(0,0,0,0.05)',
+                      '&:hover': {
+                        boxShadow: '0 15px 50px rgba(0,0,0,0.12)',
+                        '&::after': {
+                          transform: 'rotate(10deg)',
+                        }
+                      },
+                      '&::after': {
+                        content: '""',
                         position: 'absolute',
-                        top: -32,
-                        left: 24,
-                        border: '4px solid white',
-                        boxShadow: '0 4px 14px rgba(0,0,0,0.1)',
-                        fontSize: '1.25rem',
-                        fontWeight: 'bold'
+                        width: '100%',
+                        height: '100%',
+                        top: 12,
+                        left: 12,
+                        zIndex: -1,
+                        borderRadius: 4,
+                        background: `linear-gradient(135deg, ${testimonial.bgColor}33, ${testimonial.bgColor}11)`,
+                        transition: 'all 0.5s ease',
+                      }
+                    }}
+                  >
+                    {/* Avatar with shine effect */}
+                    <Box sx={{ position: 'relative' }}>
+                      <Avatar 
+                        sx={{ 
+                          width: 80, 
+                          height: 80, 
+                          bgcolor: testimonial.bgColor,
+                          position: 'absolute',
+                          top: -40,
+                          left: 24,
+                          border: '4px solid white',
+                          boxShadow: '0 4px 14px rgba(0,0,0,0.1)',
+                          fontSize: '1.75rem',
+                          fontWeight: 'bold',
+                          zIndex: 2
+                        }}
+                      >
+                        {testimonial.initial}
+                      </Avatar>
+                      
+                      {/* Shine effect */}
+                      <Box 
+                        sx={{
+                          position: 'absolute',
+                          top: -40,
+                          left: 24,
+                          width: 80,
+                          height: 80,
+                          borderRadius: '50%',
+                          background: 'linear-gradient(45deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.7) 50%, rgba(255,255,255,0) 100%)',
+                          zIndex: 3,
+                          opacity: 0.6,
+                          animation: `shine 4s infinite ${index * 0.5}s`,
+                          '@keyframes shine': {
+                            '0%': { transform: 'translateX(-80px) rotate(45deg)' },
+                            '20%, 100%': { transform: 'translateX(80px) rotate(45deg)' }
+                          }
+                        }}
+                      />
+                    </Box>
+                    
+                    <CardContent 
+                      sx={{ 
+                        flexGrow: 1, 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        justifyContent: 'space-between', 
+                        p: 4,
+                        pt: 5
                       }}
                     >
-                      {testimonial.initial}
-                    </Avatar>
-                    
-                    <CardContent sx={{ 
-                      flexGrow: 1, 
-                      display: 'flex', 
-                      flexDirection: 'column', 
-                      justifyContent: 'space-between', 
-                      p: 4 
-                    }}>
-                      <Box sx={{ position: 'relative' }}>
-                        {/* Quote mark */}
-                        <Box sx={{
+                      {/* Quote icon */}
+                      <Box 
+                        sx={{
                           position: 'absolute',
-                          top: -12,
-                          right: 0,
+                          right: 24,
+                          top: 20,
                           fontSize: '4rem',
-                          color: 'rgba(0,0,0,0.04)',
                           fontFamily: 'Georgia, serif',
-                          lineHeight: 1
-                        }}>
-                          "
-                        </Box>
+                          color: `${testimonial.bgColor}33`,
+                          lineHeight: 0.7,
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        "
+                      </Box>
+                      
+                      <Box sx={{ position: 'relative' }}>
                         <Typography 
                           variant="body1" 
                           paragraph 
@@ -655,7 +850,13 @@ const Home = () => {
                             fontSize: '1.1rem',
                             lineHeight: 1.6,
                             mb: 4,
-                            position: 'relative'
+                            fontStyle: 'italic',
+                            color: '#555',
+                            '&::first-letter': {
+                              fontSize: '1.5em',
+                              fontWeight: 'bold',
+                              color: testimonial.bgColor,
+                            }
                           }}
                         >
                           {testimonial.quote}
@@ -663,19 +864,95 @@ const Home = () => {
                       </Box>
                       
                       <Box>
-                        <Divider sx={{ my: 2 }} />
+                        <Divider 
+                          sx={{ 
+                            my: 2,
+                            '&::before': {
+                              width: '30px',
+                              borderTop: `3px solid ${testimonial.bgColor}` 
+                            }
+                          }} 
+                        />
                         <Typography variant="h6" fontWeight="bold">
                           {testimonial.name}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography 
+                          variant="body2" 
+                          color="text.secondary"
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1
+                          }}
+                        >
+                          <Box 
+                            component="span" 
+                            sx={{ 
+                              width: 8, 
+                              height: 8, 
+                              borderRadius: '50%', 
+                              bgcolor: testimonial.bgColor,
+                              display: 'inline-block'
+                            }} 
+                          />
                           {testimonial.role}
                         </Typography>
                       </Box>
                     </CardContent>
+                    
+                    {/* Decorative elements */}
+                    <Box 
+                      sx={{ 
+                        position: 'absolute',
+                        top: 0,
+                        right: 0,
+                        width: '80px',
+                        height: '80px',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <Box 
+                        sx={{
+                          position: 'absolute',
+                          top: -40,
+                          right: -40,
+                          width: '80px',
+                          height: '80px',
+                          background: testimonial.bgColor,
+                          transform: 'rotate(45deg)',
+                          opacity: 0.2
+                        }}
+                      />
+                    </Box>
                   </Card>
-                </Grid>
+                </Box>
               ))}
-            </Grid>
+            </Box>
+            
+            {/* View more testimonials button */}
+            <Box sx={{ textAlign: 'center', mt: 6 }}>
+              <Button 
+                variant="outlined" 
+                color="primary" 
+                endIcon={<ArrowForward />}
+                component={RouterLink}
+                to="/community"
+                sx={{
+                  borderRadius: 5,
+                  px: 4,
+                  py: 1,
+                  borderWidth: 2,
+                  '&:hover': {
+                    borderWidth: 2,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                    transform: 'translateY(-3px)'
+                  },
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                More Success Stories
+              </Button>
+            </Box>
           </Container>
         </Box>
 

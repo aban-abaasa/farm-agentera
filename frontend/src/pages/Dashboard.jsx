@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import {
   Box,
@@ -20,7 +20,8 @@ import {
   alpha,
   Tooltip,
   Stack,
-  Badge
+  Badge,
+  CircularProgress
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -40,11 +41,24 @@ import {
   WavingHand as WavingHandIcon
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
-import { mockListings, mockMessages, mockRecommendations, mockCommunityActivity } from '../mocks/dashboard';
+import { getUserListings, getListings } from '../services/api/marketplaceService';
+import { getUserProfile } from '../services/api/authService';
+import { mockMessages, mockCommunityActivity } from '../mocks/dashboard';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const theme = useTheme();
+  const [isLoading, setIsLoading] = useState(true);
+  const [listings, setListings] = useState([]);
+  const [recommendedListings, setRecommendedListings] = useState([]);
+  const [userProfile, setUserProfile] = useState(null);
+  const [stats, setStats] = useState({
+    activeListings: 0,
+    purchases: 5, // Mock data for now
+    connections: 10, // Mock data for now
+    newMessages: 2 // Mock data for now
+  });
+  
   const [weatherData] = useState({
     location: 'Kampala, Uganda',
     temperature: '24°C',
@@ -54,33 +68,82 @@ const Dashboard = () => {
     wind: '8 km/h',
     rainfall: '20%'
   });
-
-  // Stats
-  const stats = [
+  
+  // Fetch user's listings and stats
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!user?.id) return;
+      
+      setIsLoading(true);
+      try {
+        // Get user profile
+        const { data: profile, error: profileError } = await getUserProfile(user.id);
+        if (profileError) throw profileError;
+        setUserProfile(profile);
+        
+        // Get user's active listings
+        const { data: userListings, error: listingsError } = await getUserListings(user.id, {
+          limit: 5,
+          status: 'active'
+        });
+        
+        if (listingsError) throw listingsError;
+        setListings(userListings || []);
+        
+        // Get recommended listings (for now just fetch recent listings not by this user)
+        const { data: recommendations, error: recsError } = await getListings({
+          limit: 3
+        });
+        
+        if (recsError) throw recsError;
+        
+        // Filter out any listings that belong to the current user
+        const filteredRecs = recommendations?.filter(listing => listing.user_id !== user.id) || [];
+        setRecommendedListings(filteredRecs);
+        
+        // Update stats based on real data
+        setStats({
+          activeListings: userListings?.length || 0,
+          purchases: 5, // Mock data for now
+          connections: 10, // Mock data for now
+          newMessages: 2 // Mock data for now
+        });
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchUserData();
+  }, [user?.id]);
+  
+  // Stats array for display
+  const statsArray = [
     { 
       icon: <ApartmentIcon sx={{ fontSize: 40 }} color="primary" />, 
-      value: '2', 
+      value: stats.activeListings.toString(), 
       label: 'Active Listings',
       color: theme.palette.primary.light,
       bgColor: alpha(theme.palette.primary.light, 0.12)
     },
     { 
       icon: <ShoppingCartIcon sx={{ fontSize: 40 }} color="secondary" />, 
-      value: '5', 
+      value: stats.purchases.toString(), 
       label: 'Purchases',
       color: theme.palette.secondary.light,
       bgColor: alpha(theme.palette.secondary.light, 0.12)
     },
     { 
       icon: <ShowChartIcon sx={{ fontSize: 40 }} style={{ color: '#4caf50' }} />, 
-      value: '10', 
+      value: stats.connections.toString(), 
       label: 'Connections',
       color: '#4caf50',
       bgColor: alpha('#4caf50', 0.12)
     },
     { 
       icon: <MessageIcon sx={{ fontSize: 40 }} style={{ color: '#ff9800' }} />, 
-      value: '2', 
+      value: stats.newMessages.toString(), 
       label: 'New Messages',
       color: '#ff9800',
       bgColor: alpha('#ff9800', 0.12)
@@ -132,7 +195,11 @@ const Dashboard = () => {
                 }}
               >
                 <WavingHandIcon sx={{ color: '#FFD700', fontSize: { xs: '1.8rem', md: '2.2rem' } }} />
-                Welcome back, {user?.name || 'Farmer'}
+                Welcome back, {userProfile ? 
+                  userProfile.first_name ? 
+                    (userProfile.last_name ? `${userProfile.first_name} ${userProfile.last_name}` : userProfile.first_name) 
+                    : 'Farmer'
+                  : 'Farmer'}
               </Typography>
               <Typography 
                 variant="h6" 
@@ -225,7 +292,7 @@ const Dashboard = () => {
 
         {/* Stats Cards */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          {stats.map((stat, index) => (
+          {statsArray.map((stat, index) => (
             <Grid item xs={12} sm={6} md={3} key={index}>
               <Card 
                 sx={{ 
@@ -349,9 +416,13 @@ const Dashboard = () => {
                 </Button>
               </Box>
               
-              {mockListings.length > 0 ? (
+              {isLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+                  <CircularProgress />
+                </Box>
+              ) : listings.length > 0 ? (
                 <Box>
-                  {mockListings.map((listing, index) => (
+                  {listings.map((listing, index) => (
                     <Box 
                       key={listing.id}
                       sx={{ 
@@ -360,7 +431,7 @@ const Dashboard = () => {
                         '&:hover': {
                           bgcolor: 'rgba(0,0,0,0.02)'
                         },
-                        borderBottom: index < mockListings.length - 1 ? '1px solid' : 'none',
+                        borderBottom: index < listings.length - 1 ? '1px solid' : 'none',
                         borderColor: 'divider',
                       }}
                     >
@@ -382,7 +453,7 @@ const Dashboard = () => {
                               </Typography>
                               <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
                                 <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
-                                  {listing.price}
+                                  {typeof listing.price === 'number' ? `${listing.price.toLocaleString()} UGX` : listing.price}
                                 </Typography>
                                 <Chip 
                                   label={listing.status.charAt(0).toUpperCase() + listing.status.slice(1)} 
@@ -406,7 +477,7 @@ const Dashboard = () => {
                               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                 <PersonIcon sx={{ fontSize: 18, color: 'text.secondary', mr: 0.5 }} />
                                 <Typography variant="body2" color="text.secondary">
-                                  {listing.views}
+                                  {listing.views || 0}
                                 </Typography>
                               </Box>
                             </Tooltip>
@@ -414,7 +485,7 @@ const Dashboard = () => {
                               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                 <MessageIcon sx={{ fontSize: 18, color: 'text.secondary', mr: 0.5 }} />
                                 <Typography variant="body2" color="text.secondary">
-                                  {listing.inquiries}
+                                  0
                                 </Typography>
                               </Box>
                             </Tooltip>
@@ -851,112 +922,116 @@ const Dashboard = () => {
               </Box>
               
               <Box sx={{ p: 2 }}>
-                {mockRecommendations.map((rec) => (
-                  <Card 
-                    key={rec.id} 
-                    sx={{ 
-                      mb: 2, 
-                      borderRadius: 2,
-                      boxShadow: 'none',
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
-                      }
-                    }}
-                  >
-                    <CardActionArea 
-                      component={RouterLink} 
-                      to={`/marketplace/listing/${rec.id}`}
-                      sx={{ p: 2 }}
+                {isLoading ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                    <CircularProgress size={30} />
+                  </Box>
+                ) : recommendedListings.length > 0 ? (
+                  recommendedListings.map((rec) => (
+                    <Card 
+                      key={rec.id} 
+                      sx={{ 
+                        mb: 2, 
+                        borderRadius: 2,
+                        boxShadow: 'none',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                          boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
+                        }
+                      }}
                     >
-                      <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
-                        <Avatar 
-                          sx={{ 
-                            mr: 2, 
-                            bgcolor: rec.type === 'land' 
-                              ? 'primary.light' 
-                              : rec.type === 'partner' 
-                                ? '#9c27b0' 
-                                : 'secondary.light',
-                            width: 50,
-                            height: 50
-                          }}
-                        >
-                          {rec.type === 'land' && <ApartmentIcon />}
-                          {rec.type === 'partner' && <GroupIcon />}
-                          {rec.type === 'service' && <ShoppingCartIcon />}
-                        </Avatar>
-                        <Box sx={{ flexGrow: 1 }}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <Typography variant="subtitle1" fontWeight="bold" component="div">
-                              {rec.title}
-                            </Typography>
-                            <Chip 
-                              label={`${rec.match}% Match`} 
-                              size="small"
-                              sx={{ 
-                                bgcolor: rec.match > 90 
-                                  ? alpha('#4caf50', 0.1) 
-                                  : rec.match > 85 
-                                    ? alpha('#ff9800', 0.1) 
-                                    : alpha('#2196f3', 0.1),
-                                color: rec.match > 90 
-                                  ? '#2e7d32' 
-                                  : rec.match > 85 
-                                    ? '#e65100' 
-                                    : '#0d47a1',
-                                fontWeight: 'medium',
-                                fontSize: '0.7rem',
-                                height: 24
-                              }}
-                            />
-                          </Box>
-                          <Typography 
-                            variant="body2" 
-                            color="text.secondary"
+                      <CardActionArea 
+                        component={RouterLink} 
+                        to={`/marketplace/listing/${rec.id}`}
+                        sx={{ p: 2 }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                          <Avatar 
                             sx={{ 
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
-                              overflow: 'hidden',
-                              mb: 1.5,
-                              mt: 0.5,
-                              lineHeight: 1.4
+                              mr: 2, 
+                              bgcolor: rec.type === 'land' 
+                                ? 'primary.light' 
+                                : rec.type === 'partner' 
+                                  ? '#9c27b0' 
+                                  : 'secondary.light',
+                              width: 50,
+                              height: 50
                             }}
                           >
-                            {rec.description}
+                            {rec.type === 'land' && <ApartmentIcon />}
+                            {rec.type === 'service' && <ShoppingCartIcon />}
+                            {rec.type !== 'land' && rec.type !== 'service' && <GroupIcon />}
+                          </Avatar>
+                          <Box sx={{ flexGrow: 1 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                              <Typography variant="subtitle1" fontWeight="bold" component="div">
+                                {rec.title}
+                              </Typography>
+                              <Chip 
+                                label="Recommended" 
+                                size="small"
+                                sx={{ 
+                                  bgcolor: alpha('#4caf50', 0.1),
+                                  color: '#2e7d32',
+                                  fontWeight: 'medium',
+                                  fontSize: '0.7rem',
+                                  height: 24
+                                }}
+                              />
+                            </Box>
+                            <Typography 
+                              variant="body2" 
+                              color="text.secondary"
+                              sx={{ 
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                                mb: 1.5,
+                                mt: 0.5,
+                                lineHeight: 1.4
+                              }}
+                            >
+                              {rec.description}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 'auto' }}>
+                          <Chip
+                            icon={rec.type === 'land' 
+                              ? <ApartmentIcon fontSize="small" /> 
+                              : rec.type === 'service' 
+                                ? <ShoppingCartIcon fontSize="small" />
+                                : <GroupIcon fontSize="small" />}
+                            label={rec.type.charAt(0).toUpperCase() + rec.type.slice(1)}
+                            size="small"
+                            sx={{ 
+                              bgcolor: 'background.default',
+                              fontWeight: 'medium'
+                            }}
+                          />
+                          <Typography 
+                            variant="body2" 
+                            color="primary.main"
+                            fontWeight="medium"
+                          >
+                            {rec.price || rec.location || ''}
                           </Typography>
                         </Box>
-                      </Box>
-                      
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 'auto' }}>
-                        <Chip
-                          icon={rec.type === 'land' 
-                            ? <ApartmentIcon fontSize="small" /> 
-                            : rec.type === 'partner' 
-                              ? <GroupIcon fontSize="small" />
-                              : <ShoppingCartIcon fontSize="small" />}
-                          label={rec.type.charAt(0).toUpperCase() + rec.type.slice(1)}
-                          size="small"
-                          sx={{ 
-                            bgcolor: 'background.default',
-                            fontWeight: 'medium'
-                          }}
-                        />
-                        <Typography 
-                          variant="body2" 
-                          color="primary.main"
-                          fontWeight="medium"
-                        >
-                          {rec.price || rec.location || ''}
-                        </Typography>
-                      </Box>
-                    </CardActionArea>
-                  </Card>
-                ))}
+                      </CardActionArea>
+                    </Card>
+                  ))
+                ) : (
+                  <Box sx={{ py: 4, textAlign: 'center' }}>
+                    <Typography color="text.secondary">
+                      No recommendations available at this time
+                    </Typography>
+                  </Box>
+                )}
               </Box>
               
               <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>

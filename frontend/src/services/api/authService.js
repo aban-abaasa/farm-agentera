@@ -9,27 +9,50 @@ import { supabase } from '../../lib/supabase/client';
  */
 export async function signUp(email, password, userData = {}) {
   try {
-    // Create the user account
+    // Create the user account with all relevant user metadata
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
-      password
+      password,
+      options: {
+        data: {
+          first_name: userData.firstName || '',
+          last_name: userData.lastName || '',
+          phone: userData.phone || '',
+          location: userData.location || '',
+          role: userData.role || 'user',
+          farmer_type: userData.farmingType || '',
+          farm_size: userData.farmSize || null,
+          bio: userData.bio || ''
+        }
+      }
     });
     
     if (authError) throw authError;
     
-    if (authData.user) {
-      // Create user profile with additional information
-      const { error: profileError } = await supabase
+    // The profile will be created automatically by the database trigger
+    // But we'll update it with any additional fields not handled by the trigger
+    if (authData?.user?.id) {
+      // Wait a moment to ensure the trigger has had time to create the profile
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Update the profile with additional fields
+      const { error: updateError } = await supabase
         .from('profiles')
-        .insert({
-          id: authData.user.id,
-          email: email,
-          first_name: userData.firstName || '',
-          last_name: userData.lastName || '',
-          created_at: new Date().toISOString()
-        });
-        
-      if (profileError) throw profileError;
+        .update({
+          phone_number: userData.phone || null,
+          location: userData.location || null,
+          role: userData.role || 'user',
+          farmer_type: userData.farmingType || null,
+          farm_size: userData.farmSize ? parseFloat(userData.farmSize) : null,
+          bio: userData.bio || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', authData.user.id);
+      
+      if (updateError) {
+        console.error('Error updating profile after signup:', updateError);
+        // Continue despite error - the user is still created
+      }
     }
     
     return { data: authData, error: null };
@@ -184,28 +207,33 @@ export async function updateUserProfile(userId, updates) {
  */
 export async function uploadAvatar(userId, file) {
   try {
-    // Generate a unique file name
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${userId}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = `avatars/${fileName}`;
+    // Import the storage service
+    const { uploadFile } = await import('./storageService');
     
-    // Upload the file
-    const { error: uploadError } = await supabase.storage
-      .from('user-content')
-      .upload(filePath, file);
+    // Generate a unique filename for the avatar
+    const fileExt = file.name.split('.').pop().toLowerCase();
+    const filename = `${userId}-${Date.now()}-${Math.random().toString(36).substring(2, 10)}.${fileExt}`;
+    
+    // Upload the file to the avatars folder with a simpler path structure
+    const { url: avatarUrl, path, error: uploadError } = await uploadFile(
+      'user-content', 
+      'avatars', 
+      file, 
+      { 
+        customFilename: filename, // Use custom filename instead of path with userId
+        maxSizeMB: 2,
+        allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+        upsert: true
+      }
+    );
     
     if (uploadError) throw uploadError;
-    
-    // Get the public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('user-content')
-      .getPublicUrl(filePath);
     
     // Update the user profile with the avatar URL
     const { data, error } = await supabase
       .from('profiles')
       .update({ 
-        avatar_url: publicUrl,
+        avatar_url: avatarUrl,
         updated_at: new Date().toISOString() 
       })
       .eq('id', userId)
@@ -215,7 +243,7 @@ export async function uploadAvatar(userId, file) {
     
     return { 
       data: { 
-        avatar_url: publicUrl,
+        avatar_url: avatarUrl,
         profile: data[0] 
       }, 
       error: null 
@@ -253,4 +281,125 @@ export function onAuthStateChange(callback) {
   });
   
   return data.subscription.unsubscribe;
+}
+
+/**
+ * Delete user account
+ * @param {string} userId - User ID to delete
+ * @returns {Promise} - Result of deletion operation
+ */
+export async function deleteUserAccount(userId) {
+  try {
+    // Get the current session to get the access token
+    const { data: sessionData } = await supabase.auth.getSession();
+    
+    if (!sessionData?.session?.access_token) {
+      throw new Error('No active session found. Please log in again.');
+    }
+    
+    // Call the backend API to delete the user
+    const API_URL = 'http://localhost:5000'; // This should be configured in your environment
+    
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const response = await fetch(`${API_URL}/api/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionData.session.access_token}`
+        },
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to delete account: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Sign out the user after successful deletion
+      await signOut();
+      
+      return { success: true, error: null, message: data.message };
+    } catch (fetchError) {
+      // Handle specific network errors
+      if (fetchError.name === 'AbortError') {
+        throw new Error('Connection to server timed out. Please try again later.');
+      } else if (fetchError.message.includes('Failed to fetch') || !window.navigator.onLine) {
+        throw new Error('Cannot connect to the server. Please check your internet connection and try again.');
+      } else {
+        throw fetchError;
+      }
+    }
+  } catch (error) {
+    console.error('Error deleting user account:', error);
+    return { 
+      success: false, 
+      error,
+      isConnectionError: error.message.includes('Cannot connect') || 
+                         error.message.includes('timed out') || 
+                         error.message.includes('Failed to fetch')
+    };
+  }
+} 
+
+/**
+ * Sign in with Google
+ * @returns {Promise} - Authentication data
+ */
+export async function signInWithGoogle() {
+  try {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent'
+        }
+      }
+    });
+    
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error signing in with Google:', error);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Check if user profile is complete
+ * @param {string} userId - User ID
+ * @returns {Promise<boolean>} - True if profile is complete
+ */
+export async function isProfileComplete(userId) {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('first_name, last_name, phone_number, location, role')
+      .eq('id', userId)
+      .single();
+    
+    if (error) throw error;
+    
+    // Check if essential fields are filled
+    const isComplete = Boolean(
+      data.first_name && 
+      data.last_name && 
+      data.phone_number && 
+      data.location && 
+      data.role
+    );
+    
+    return { isComplete, data, error: null };
+  } catch (error) {
+    console.error('Error checking profile completion:', error);
+    return { isComplete: false, data: null, error };
+  }
 } 

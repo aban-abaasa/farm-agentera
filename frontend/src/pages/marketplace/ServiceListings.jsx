@@ -1,22 +1,127 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { serviceListingsMockData } from '../../mocks/serviceListings';
-import { 
-  Typography, Box, Paper, TextField, InputAdornment, 
+import {
+  Typography, Box, Paper, TextField, InputAdornment,
   FormControl, Select, MenuItem, Button, Chip,
   Card, CardMedia, CardContent, CardActionArea, Grid,
-  InputLabel, Divider, Rating, Avatar
+  InputLabel, Divider, Rating, Avatar, Modal, Fade, Backdrop, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, IconButton
 } from '@mui/material';
+import { Star as StarIcon, Phone as PhoneIcon, Email as EmailIcon, Edit as EditIcon } from '@mui/icons-material';
+
+const BookingModal = ({ open, onClose, service }) => {
+  const [form, setForm] = useState({ name: '', phone: '', date: '', message: '' });
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setSubmitted(true);
+    setTimeout(() => {
+      setSubmitted(false);
+      onClose();
+    }, 1500);
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      closeAfterTransition
+      BackdropComponent={Backdrop}
+      BackdropProps={{ timeout: 300 }}
+    >
+      <Fade in={open}>
+        <Box sx={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          bgcolor: 'background.paper',
+          borderRadius: 3,
+          boxShadow: 24,
+          p: 4,
+          minWidth: { xs: 320, sm: 400 },
+          maxWidth: '90vw',
+        }}>
+          <Typography variant="h6" fontWeight={700} mb={2}>
+            Book Service: {service?.title}
+          </Typography>
+          {submitted ? (
+            <Box textAlign="center" py={3}>
+              <Typography color="success.main" fontWeight={600}>Booking Sent!</Typography>
+            </Box>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              <TextField
+                label="Your Name"
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                fullWidth
+                required
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                label="Phone Number"
+                name="phone"
+                value={form.phone}
+                onChange={handleChange}
+                fullWidth
+                required
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                label="Preferred Date"
+                name="date"
+                type="date"
+                value={form.date}
+                onChange={handleChange}
+                fullWidth
+                required
+                InputLabelProps={{ shrink: true }}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                label="Message (optional)"
+                name="message"
+                value={form.message}
+                onChange={handleChange}
+                fullWidth
+                multiline
+                minRows={2}
+                sx={{ mb: 2 }}
+              />
+              <Button type="submit" variant="contained" color="primary" fullWidth>
+                Send Booking
+              </Button>
+            </form>
+          )}
+        </Box>
+      </Fade>
+    </Modal>
+  );
+};
+
+const mockCurrentUser = { id: 1, name: 'Demo Provider' };
 
 const ServiceListings = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [expandedId, setExpandedId] = useState(null);
+  const [bookingService, setBookingService] = useState(null);
+  const [editModal, setEditModal] = useState({ open: false, listing: null });
+  const [listings, setListings] = useState(serviceListingsMockData);
+  const [callDialog, setCallDialog] = useState({ open: false, phone: '' });
 
   // Filter and sort listings
-  const filteredListings = serviceListingsMockData
-    .filter(listing => 
-      (searchTerm === '' || 
+  const filteredListings = listings
+    .filter(listing =>
+      (searchTerm === '' ||
         listing.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         listing.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
         listing.description.toLowerCase().includes(searchTerm.toLowerCase())) &&
@@ -38,6 +143,9 @@ const ServiceListings = () => {
   // Get unique categories for filter
   const categories = [...new Set(serviceListingsMockData.map(item => item.category))];
 
+  // Helper for availability
+  const getAvailability = (provider) => provider.available ? { label: 'Available', color: 'success' } : { label: 'Unavailable', color: 'error' };
+
   return (
     <div className="w-full max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
       {/* Header section */}
@@ -46,15 +154,15 @@ const ServiceListings = () => {
           Agricultural Services
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '800px' }}>
-          Find specialized agricultural services from equipment rental and labor to consulting and technical expertise. 
+          Find specialized agricultural services from equipment rental and labor to consulting and technical expertise.
           Connect with service providers to improve your farming operations.
         </Typography>
       </Box>
 
       {/* Search and filter section */}
-      <Paper 
-        elevation={3} 
-        sx={{ 
+      <Paper
+        elevation={3}
+        sx={{
           borderRadius: 3,
           overflow: 'hidden',
           mb: 4,
@@ -72,17 +180,17 @@ const ServiceListings = () => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <svg 
-                      xmlns="http://www.w3.org/2000/svg" 
-                      className="h-5 w-5" 
-                      viewBox="0 0 20 20" 
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
                       fill="currentColor"
                       style={{ color: '#9e9e9e' }}
                     >
-                      <path 
-                        fillRule="evenodd" 
-                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" 
-                        clipRule="evenodd" 
+                      <path
+                        fillRule="evenodd"
+                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                        clipRule="evenodd"
                       />
                     </svg>
                   </InputAdornment>
@@ -124,8 +232,8 @@ const ServiceListings = () => {
             </FormControl>
           </Grid>
           <Grid item xs={12} md={1}>
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               color="primary"
               component={Link}
               to="/marketplace/create"
@@ -135,7 +243,7 @@ const ServiceListings = () => {
                   <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
                 </svg>
               }
-              sx={{ 
+              sx={{
                 borderRadius: 2,
                 py: 1.5,
                 textTransform: 'none',
@@ -158,11 +266,11 @@ const ServiceListings = () => {
           Showing {filteredListings.length} service {filteredListings.length === 1 ? 'listing' : 'listings'}
         </Typography>
         {searchTerm || filterCategory ? (
-          <Button 
+          <Button
             variant="outlined"
             size="small"
             onClick={() => { setSearchTerm(''); setFilterCategory(''); setSortBy('newest'); }}
-            sx={{ 
+            sx={{
               borderRadius: 2,
               textTransform: 'none'
             }}
@@ -174,23 +282,37 @@ const ServiceListings = () => {
 
       {/* Listings grid */}
       <Grid container spacing={4}>
-        {filteredListings.map((listing) => (
-          <Grid item xs={12} sm={6} lg={4} key={listing.id}>
-            <Card 
-              sx={{ 
-                height: '100%', 
-                display: 'flex', 
-                flexDirection: 'column',
-                borderRadius: 3,
-                overflow: 'hidden',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  transform: 'translateY(-8px)',
-                  boxShadow: 6
-                }
-              }}
-            >
-              <CardActionArea component={Link} to={`/marketplace/listing/${listing.id}`} sx={{ flexGrow: 0 }}>
+        {filteredListings.length === 0 ? (
+          <Grid item xs={12}>
+            <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 3, color: 'text.secondary' }}>
+              <Typography variant="h6" fontWeight={600} mb={2}>No services found</Typography>
+              <Typography variant="body2">Try adjusting your search or filter criteria.</Typography>
+            </Paper>
+          </Grid>
+        ) : filteredListings.map((listing) => {
+          const isExpanded = expandedId === listing.id;
+          const availability = getAvailability(listing.provider);
+          return (
+            <Grid item xs={12} sm={6} lg={4} key={listing.id}>
+              <Card
+                sx={{
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  borderRadius: 3,
+                  overflow: 'hidden',
+                  transition: 'all 0.3s cubic-bezier(.4,2,.6,1)',
+                  boxShadow: isExpanded ? 8 : 2,
+                  transform: isExpanded ? 'scale(1.03)' : 'none',
+                  '&:hover': {
+                    boxShadow: 8,
+                    transform: 'scale(1.03)'
+                  }
+                }}
+                onClick={() => setExpandedId(isExpanded ? null : listing.id)}
+                tabIndex={0}
+                aria-expanded={isExpanded}
+              >
                 <Box sx={{ position: 'relative' }}>
                   <CardMedia
                     component="img"
@@ -198,139 +320,196 @@ const ServiceListings = () => {
                     image={listing.image}
                     alt={listing.title}
                   />
-                  <Box 
-                    sx={{ 
-                      position: 'absolute', 
-                      top: 0, 
-                      right: 0, 
-                      bgcolor: 'primary.main',
-                      color: 'white',
-                      px: 1,
-                      py: 0.5,
-                      borderBottomLeftRadius: 8,
-                      fontSize: '0.75rem',
-                      fontWeight: 'bold',
-                      textTransform: 'uppercase'
+                  <Chip
+                    label={availability.label}
+                    color={availability.color}
+                    size="small"
+                    sx={{
+                      position: 'absolute',
+                      top: 12,
+                      left: 12,
+                      fontWeight: 600,
+                      letterSpacing: 0.5
                     }}
-                  >
-                    {listing.category}
-                  </Box>
+                  />
+                  <Chip
+                    label={listing.category}
+                    size="small"
+                    sx={{
+                      position: 'absolute',
+                      top: 12,
+                      right: 12,
+                      bgcolor: 'rgba(255,255,255,0.9)',
+                      fontWeight: 500
+                    }}
+                  />
+                  {listing.featured && (
+                    <StarIcon sx={{
+                      position: 'absolute',
+                      top: 12,
+                      left: 48,
+                      color: 'warning.main',
+                      fontSize: 28,
+                      zIndex: 2
+                    }} />
+                  )}
+                  {listing.provider.id === mockCurrentUser.id && (
+                    <Tooltip title="Edit Listing" placement="top">
+                      <IconButton
+                        size="small"
+                        sx={{ position: 'absolute', top: 12, right: 48, bgcolor: 'background.paper', zIndex: 3 }}
+                        onClick={e => { e.stopPropagation(); setEditModal({ open: true, listing }); }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  )}
                 </Box>
-              </CardActionArea>
-              
-              <CardContent sx={{ flexGrow: 1, p: 3, display: 'flex', flexDirection: 'column' }}>
-                <Box sx={{ mb: 'auto' }}>
-                  <Typography variant="h6" component="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
+                <CardContent sx={{ flexGrow: 1, pb: 2 }}>
+                  <Typography variant="h6" fontWeight={700} mb={0.5} color="text.primary">
                     {listing.title}
                   </Typography>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="h6" color="primary.main" fontWeight="bold">
-                      {listing.price}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {listing.location}
-                    </Typography>
-                  </Box>
-                  
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                    {listing.description}
+                  <Typography variant="body2" color="text.secondary" mb={1}>
+                    {listing.location}
                   </Typography>
-                  
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
-                    <Chip 
-                      label={listing.availability} 
-                      size="small" 
-                      color="secondary"
-                      sx={{ borderRadius: 1 }}
-                    />
-                    {listing.features.slice(0, 2).map((feature, index) => (
-                      <Chip 
-                        key={index} 
-                        label={feature} 
-                        size="small" 
-                        color="primary" 
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <Avatar src={listing.provider.avatar} sx={{ width: 28, height: 28, mr: 1 }} />
+                    <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                      {listing.provider.name}
+                    </Typography>
+                    <Rating value={listing.provider.rating} precision={0.1} readOnly size="small" sx={{ ml: 1 }} />
+                    <Typography variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>
+                      ({listing.provider.reviews || 0})
+                    </Typography>
+                  </Box>
+                  {/* Always-visible contact buttons */}
+                  <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                    <Tooltip title={`Call ${listing.provider.phone}`} placement="top">
+                      <Button
                         variant="outlined"
-                        sx={{ borderRadius: 1 }}
-                      />
-                    ))}
+                        color="primary"
+                        size="small"
+                        startIcon={<PhoneIcon />}
+                        onClick={e => { e.stopPropagation(); setCallDialog({ open: true, phone: listing.provider.phone }); }}
+                        sx={{ minWidth: 0, px: 1.5 }}
+                      >
+                        Call
+                      </Button>
+                    </Tooltip>
+                    <Dialog open={callDialog.open} onClose={() => setCallDialog({ open: false, phone: '' })}>
+                      <DialogTitle>Confirm Call</DialogTitle>
+                      <DialogContent>
+                        <Typography>Do you want to call <b>{callDialog.phone}</b>?</Typography>
+                      </DialogContent>
+                      <DialogActions>
+                        <Button onClick={() => setCallDialog({ open: false, phone: '' })}>Cancel</Button>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          onClick={() => { window.location.href = `tel:${callDialog.phone}`; setCallDialog({ open: false, phone: '' }); }}
+                        >
+                          Call Now
+                        </Button>
+                      </DialogActions>
+                    </Dialog>
+                    <Tooltip title={`Email ${listing.provider.email}`} placement="top">
+                      <Button
+                        variant="outlined"
+                        color="secondary"
+                        size="small"
+                        startIcon={<EmailIcon />}
+                        href={`mailto:${listing.provider.email}?subject=Service%20Request%20for%20${encodeURIComponent(listing.title)}&body=Hello%20${encodeURIComponent(listing.provider.name)},%0A%0AI%20am%20interested%20in%20your%20service%20listing%20%22${encodeURIComponent(listing.title)}%22.%20Please%20provide%20more%20details.%0A%0AThank%20you!`}
+                        onClick={e => e.stopPropagation()}
+                        sx={{ minWidth: 0, px: 1.5 }}
+                      >
+                        Email
+                      </Button>
+                    </Tooltip>
                   </Box>
-                </Box>
-                
-                <Divider sx={{ my: 2 }} />
-                
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Avatar 
-                      sx={{ 
-                        width: 32, 
-                        height: 32, 
-                        bgcolor: 'grey.200', 
-                        color: 'text.primary',
-                        fontSize: '0.875rem',
-                        fontWeight: 'medium',
-                        mr: 1.5
-                      }}
-                    >
-                      {listing.provider.name.charAt(0)}
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body2" fontWeight="medium">
-                        {listing.provider.name}
+                  {/* Clickable phone/email in expanded view */}
+                  {isExpanded && (
+                    <>
+                      <Divider sx={{ my: 1.5 }} />
+                      <Typography variant="body2" color="text.secondary" mb={1}>
+                        <b>Experience:</b> {listing.provider.completedJobs} jobs completed
                       </Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Rating value={listing.provider.rating} readOnly size="small" precision={0.5} />
-                      </Box>
-                    </Box>
-                  </Box>
-                  <Box sx={{ textAlign: 'right' }}>
-                    <Typography variant="caption" color="text.secondary" display="block">
-                      {listing.provider.completedJobs} jobs completed
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {new Date(listing.postedDate).toLocaleDateString()}
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
+                      <Typography variant="body2" color="text.secondary" mb={1}>
+                        <b>Contact:</b> 
+                        <a href={`tel:${listing.provider.phone}`} style={{ color: '#1976d2', textDecoration: 'none', marginRight: 8 }} onClick={e => e.stopPropagation()}>{listing.provider.phone}</a>
+                        |
+                        <a href={`mailto:${listing.provider.email}`} style={{ color: '#1976d2', textDecoration: 'none', marginLeft: 8 }} onClick={e => e.stopPropagation()}>{listing.provider.email}</a>
+                      </Typography>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        sx={{ mt: 1, borderRadius: 2, fontWeight: 600 }}
+                        onClick={e => { e.stopPropagation(); setBookingService(listing); }}
+                      >
+                        Quick Book
+                      </Button>
+                    </>
+                  )}
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1, minHeight: 36 }}>
+                    {isExpanded ? listing.description : `${listing.description.slice(0, 60)}${listing.description.length > 60 ? '...' : ''}`}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          );
+        })}
       </Grid>
-
-      {filteredListings.length === 0 && (
-        <Paper 
-          elevation={0} 
-          sx={{ 
-            textAlign: 'center', 
-            py: 8, 
-            px: 3, 
-            borderRadius: 3,
-            bgcolor: 'background.paper',
-            border: '1px dashed rgba(0,0,0,0.1)'
-          }}
-        >
-          <Typography variant="h5" component="h3" fontWeight="medium" color="text.primary" sx={{ mb: 2 }}>
-            No service listings found
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-            Try adjusting your search or filters
-          </Typography>
-          <Button 
+      <BookingModal open={!!bookingService} onClose={() => setBookingService(null)} service={bookingService} />
+      {/* Edit Modal */}
+      <Dialog open={editModal.open} onClose={() => setEditModal({ open: false, listing: null })} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit Service Listing</DialogTitle>
+        <DialogContent>
+          {editModal.listing && (
+            <Box component="form" sx={{ mt: 2 }}>
+              <TextField
+                label="Title"
+                fullWidth
+                sx={{ mb: 2 }}
+                value={editModal.listing.title}
+                onChange={e => setEditModal({ ...editModal, listing: { ...editModal.listing, title: e.target.value } })}
+              />
+              <TextField
+                label="Description"
+                fullWidth
+                multiline
+                minRows={3}
+                sx={{ mb: 2 }}
+                value={editModal.listing.description}
+                onChange={e => setEditModal({ ...editModal, listing: { ...editModal.listing, description: e.target.value } })}
+              />
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel>Category</InputLabel>
+                <Select
+                  value={editModal.listing.category}
+                  label="Category"
+                  onChange={e => setEditModal({ ...editModal, listing: { ...editModal.listing, category: e.target.value } })}
+                >
+                  {categories.map(category => (
+                    <MenuItem key={category} value={category}>{category}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditModal({ open: false, listing: null })}>Cancel</Button>
+          <Button
             variant="contained"
-            color="primary"
-            onClick={() => { setSearchTerm(''); setFilterCategory(''); setSortBy('newest'); }}
-            sx={{ 
-              borderRadius: 2,
-              px: 4,
-              py: 1.5,
-              textTransform: 'none',
-              fontWeight: 'bold'
+            onClick={() => {
+              setListings(listings.map(l => l.id === editModal.listing.id ? { ...editModal.listing } : l));
+              setEditModal({ open: false, listing: null });
             }}
           >
-            Clear All Filters
+            Save Changes
           </Button>
-        </Paper>
-      )}
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };
