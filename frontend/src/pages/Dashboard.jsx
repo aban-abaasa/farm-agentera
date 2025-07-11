@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import {
   Box,
@@ -21,7 +21,8 @@ import {
   Tooltip,
   Stack,
   Badge,
-  CircularProgress
+  CircularProgress,
+  useMediaQuery
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -49,18 +50,29 @@ import { mockCommunityActivity } from '../mocks/dashboard';
 const Dashboard = () => {
   const { user } = useAuth();
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [isLoading, setIsLoading] = useState(true);
   const [listings, setListings] = useState([]);
   const [recommendedListings, setRecommendedListings] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
   const [messages, setMessages] = useState([]);
   const [messagesLoading, setMessagesLoading] = useState(true);
+  const [scrollPosition, setScrollPosition] = useState(0);
   const [stats, setStats] = useState({
     activeListings: 0,
     purchases: 5, // Mock data for now
     connections: 10, // Mock data for now
     newMessages: 0 
   });
+
+  // Handle horizontal scroll position for mobile indicator
+  const handleStatsScroll = (e) => {
+    const container = e.target;
+    const scrollLeft = container.scrollLeft;
+    const scrollWidth = container.scrollWidth - container.clientWidth;
+    const scrollPercentage = scrollLeft / scrollWidth;
+    setScrollPosition(scrollPercentage);
+  };
   
   const [weatherData] = useState({
     location: 'Kampala, Uganda',
@@ -336,89 +348,272 @@ const Dashboard = () => {
         </Box>
 
         {/* Stats Cards */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          {statsArray.map((stat, index) => (
-            <Grid item xs={12} sm={6} md={3} key={index}>
-              <Card 
-                sx={{ 
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  borderRadius: 3,
-                  p: 3,
-                  transition: 'transform 0.3s, box-shadow 0.3s',
-                  '&:hover': {
-                    transform: 'translateY(-5px)',
-                    boxShadow: '0 12px 20px rgba(0,0,0,0.1)'
-                  }
-                }}
-              >
-                {/* Background decorative shape */}
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: -24,
-                    right: -24,
-                    width: 100,
-                    height: 100,
-                    borderRadius: '50%',
-                    backgroundColor: stat.bgColor,
-                    zIndex: 0
-                  }}
-                />
-                
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', zIndex: 1 }}>
-                  <Box>
-                    <Typography variant="h3" component="div" fontWeight="bold" sx={{ mb: 0.5 }}>
-                      {stat.value}
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary" fontWeight="medium">
-                      {stat.label}
-                    </Typography>
-                  </Box>
-                  <Avatar
-                    sx={{
-                      bgcolor: stat.bgColor,
-                      color: stat.color,
-                      width: 56,
-                      height: 56,
-                      boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-                    }}
-                  >
-                    {stat.icon}
-                  </Avatar>
-                </Box>
-                
-                {/* Trend indicator */}
-                <Box 
+        <Box sx={{ mb: 4 }}>
+          {/* Desktop Grid Layout */}
+          <Grid 
+            container 
+            spacing={3} 
+            sx={{ 
+              display: { xs: 'none', md: 'flex' } 
+            }}
+          >
+            {statsArray.map((stat, index) => (
+              <Grid item xs={12} sm={6} md={3} key={index}>
+                <Card 
                   sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    mt: 'auto', 
-                    pt: 2,
-                    zIndex: 1
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    borderRadius: 3,
+                    p: 3,
+                    transition: 'transform 0.3s, box-shadow 0.3s',
+                    '&:hover': {
+                      transform: 'translateY(-5px)',
+                      boxShadow: '0 12px 20px rgba(0,0,0,0.1)'
+                    }
                   }}
                 >
-                  <Chip
-                    icon={<TrendingUpIcon fontSize="small" />}
-                    label={`${[10, 5, 8, 15][index]}% this week`}
-                    size="small"
-                    sx={{ 
-                      bgcolor: alpha(stat.color, 0.1),
-                      color: stat.color,
-                      fontWeight: 'medium',
-                      '& .MuiChip-icon': {
-                        color: stat.color
-                      }
+                  {/* Background decorative shape */}
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: -24,
+                      right: -24,
+                      width: 100,
+                      height: 100,
+                      borderRadius: '50%',
+                      backgroundColor: stat.bgColor,
+                      zIndex: 0
                     }}
                   />
-                </Box>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+                  
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', zIndex: 1 }}>
+                    <Box>
+                      <Typography variant="h3" component="div" fontWeight="bold" sx={{ mb: 0.5 }}>
+                        {stat.value}
+                      </Typography>
+                      <Typography variant="body1" color="text.secondary" fontWeight="medium">
+                        {stat.label}
+                      </Typography>
+                    </Box>
+                    <Avatar
+                      sx={{
+                        bgcolor: stat.bgColor,
+                        color: stat.color,
+                        width: 56,
+                        height: 56,
+                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                      }}
+                    >
+                      {stat.icon}
+                    </Avatar>
+                  </Box>
+                  
+                  {/* Trend indicator */}
+                  <Box 
+                    sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      mt: 'auto', 
+                      pt: 2,
+                      zIndex: 1
+                    }}
+                  >
+                    <Chip
+                      icon={<TrendingUpIcon fontSize="small" />}
+                      label={`${[10, 5, 8, 15][index]}% this week`}
+                      size="small"
+                      sx={{ 
+                        bgcolor: alpha(stat.color, 0.1),
+                        color: stat.color,
+                        fontWeight: 'medium',
+                        '& .MuiChip-icon': {
+                          color: stat.color
+                        }
+                      }}
+                    />
+                  </Box>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+
+          {/* Mobile Horizontal Scroll Layout */}
+          <Box 
+            sx={{ 
+              display: { xs: 'block', md: 'none' } 
+            }}
+          >
+            <Box
+              onScroll={handleStatsScroll}
+              sx={{
+                display: 'flex',
+                overflowX: 'auto',
+                overflowY: 'hidden',
+                gap: 2,
+                pb: 2,
+                px: 1,
+                mx: -1,
+                scrollBehavior: 'smooth',
+                WebkitOverflowScrolling: 'touch',
+                scrollSnapType: 'x mandatory',
+                '&::-webkit-scrollbar': {
+                  height: 6,
+                },
+                '&::-webkit-scrollbar-track': {
+                  background: 'rgba(0,0,0,0.05)',
+                  borderRadius: 3,
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                  borderRadius: 3,
+                  '&:hover': {
+                    background: `linear-gradient(90deg, ${theme.palette.primary.dark}, ${theme.palette.secondary.dark})`,
+                  }
+                },
+                '@media (max-width: 600px)': {
+                  '&::-webkit-scrollbar': {
+                    display: 'none'
+                  }
+                }
+              }}
+            >
+              {statsArray.map((stat, index) => (
+                <Card 
+                  key={index}
+                  sx={{ 
+                    minWidth: '240px',
+                    maxWidth: '280px',
+                    width: '240px',
+                    scrollSnapAlign: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    borderRadius: 3,
+                    p: 2.5,
+                    transition: 'transform 0.3s, box-shadow 0.3s',
+                    flexShrink: 0,
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                    border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+                    '&:hover': {
+                      transform: 'translateY(-3px)',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.12)'
+                    },
+                    '&:first-of-type': {
+                      ml: 1,
+                    },
+                    '&:last-of-type': {
+                      mr: 1,
+                    }
+                  }}
+                >
+                  {/* Background decorative shape */}
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: -20,
+                      right: -20,
+                      width: 80,
+                      height: 80,
+                      borderRadius: '50%',
+                      backgroundColor: stat.bgColor,
+                      zIndex: 0
+                    }}
+                  />
+                  
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', zIndex: 1, mb: 1 }}>
+                    <Box>
+                      <Typography variant="h4" component="div" fontWeight="bold" sx={{ mb: 0.5, fontSize: '2rem' }}>
+                        {stat.value}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" fontWeight="medium" sx={{ fontSize: '0.875rem' }}>
+                        {stat.label}
+                      </Typography>
+                    </Box>
+                    <Avatar
+                      sx={{
+                        bgcolor: stat.bgColor,
+                        color: stat.color,
+                        width: 48,
+                        height: 48,
+                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                      }}
+                    >
+                      {React.cloneElement(stat.icon, { sx: { fontSize: 28 } })}
+                    </Avatar>
+                  </Box>
+                  
+                  {/* Trend indicator */}
+                  <Box 
+                    sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      mt: 'auto', 
+                      pt: 1,
+                      zIndex: 1
+                    }}
+                  >
+                    <Chip
+                      icon={<TrendingUpIcon fontSize="small" />}
+                      label={`${[10, 5, 8, 15][index]}% this week`}
+                      size="small"
+                      sx={{ 
+                        bgcolor: alpha(stat.color, 0.1),
+                        color: stat.color,
+                        fontWeight: 'medium',
+                        fontSize: '0.75rem',
+                        height: 24,
+                        '& .MuiChip-icon': {
+                          color: stat.color
+                        }
+                      }}
+                    />
+                  </Box>
+                </Card>
+              ))}
+            </Box>
+
+            {/* Mobile scroll indicator */}
+            <Box 
+              sx={{ 
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                mt: 2,
+                gap: 1,
+                opacity: 0.8
+              }}
+            >
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                Swipe to view all stats
+              </Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 0.5,
+                  ml: 1
+                }}
+              >
+                {[...Array(2)].map((_, index) => (
+                  <Box
+                    key={index}
+                    sx={{
+                      width: scrollPosition < (index + 1) * 0.5 ? 8 : 6,
+                      height: scrollPosition < (index + 1) * 0.5 ? 8 : 6,
+                      borderRadius: '50%',
+                      bgcolor: scrollPosition < (index + 1) * 0.5 ? 'primary.main' : 'action.disabled',
+                      transition: 'all 0.3s ease',
+                      transform: scrollPosition < (index + 1) * 0.5 ? 'scale(1.2)' : 'scale(1)'
+                    }}
+                  />
+                ))}
+              </Box>
+            </Box>
+          </Box>
+        </Box>
 
         <Grid container spacing={4}>
           {/* Main Content */}
