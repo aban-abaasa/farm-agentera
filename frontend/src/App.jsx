@@ -28,6 +28,7 @@ import SupportTeam from './pages/SupportTeam'
 import LivestockManagement from './pages/LivestockManagement'
 import SoilCropPlanner from './pages/SoilCropPlanner'
 import Investments from './pages/Investments'
+import Messages from './pages/Messages'
 import { Suspense } from 'react'
 import { CircularProgress, Box } from '@mui/material'
 import PageContainer from './components/layout/PageContainer'
@@ -79,6 +80,7 @@ function App() {
                 <Route path="livestock-management" element={withPageContainer(LivestockManagement)} />
                 <Route path="soil-crop-planner" element={withPageContainer(SoilCropPlanner)} />
                 <Route path="investments" element={withPageContainer(Investments)} />
+                <Route path="messages" element={withPageContainer(Messages)} />
                 
                 {/* Marketplace Routes */}
                 <Route path="marketplace" element={withPageContainer(Marketplace)} />

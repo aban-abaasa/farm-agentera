@@ -52,6 +52,7 @@ Schemas:
   events      Initialize events tables (03_events_tables.sql)
   marketplace Initialize marketplace tables (04_marketplace_tables.sql)
   community   Initialize community tables (05_community_tables.sql)
+  messages    Initialize messaging tables (06_messages_tables.sql)
 
 Examples:
   node initialize_db.js                                   # Initialize all schemas
@@ -89,7 +90,8 @@ const SCHEMA_MAP = {
   'resources': "02_resources_tables.sql",
   'events': "03_events_tables.sql",
   'marketplace': "04_marketplace_tables.sql",
-  'community': "05_community_tables.sql"
+  'community': "05_community_tables.sql",
+  'messages': "06_messages_tables.sql"
 };
 
 // Default order of schema files to execute
@@ -98,7 +100,8 @@ const SCHEMA_FILES_ORDER = [
   "02_resources_tables.sql",
   "03_events_tables.sql",
   "04_marketplace_tables.sql",
-  "05_community_tables.sql"
+  "05_community_tables.sql",
+  "06_messages_tables.sql"
 ];
 
 /**

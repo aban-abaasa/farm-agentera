@@ -43,7 +43,8 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { getUserListings, getListings } from '../services/api/marketplaceService';
 import { getUserProfile } from '../services/api/authService';
-import { mockMessages, mockCommunityActivity } from '../mocks/dashboard';
+import { getConversations, getUnreadMessageCount } from '../services/api/messageService';
+import { mockCommunityActivity } from '../mocks/dashboard';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -52,11 +53,13 @@ const Dashboard = () => {
   const [listings, setListings] = useState([]);
   const [recommendedListings, setRecommendedListings] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [messagesLoading, setMessagesLoading] = useState(true);
   const [stats, setStats] = useState({
     activeListings: 0,
     purchases: 5, // Mock data for now
     connections: 10, // Mock data for now
-    newMessages: 2 // Mock data for now
+    newMessages: 0 
   });
   
   const [weatherData] = useState({
@@ -75,6 +78,7 @@ const Dashboard = () => {
       if (!user?.id) return;
       
       setIsLoading(true);
+      setMessagesLoading(true);
       try {
         // Get user profile
         const { data: profile, error: profileError } = await getUserProfile(user.id);
@@ -101,17 +105,58 @@ const Dashboard = () => {
         const filteredRecs = recommendations?.filter(listing => listing.user_id !== user.id) || [];
         setRecommendedListings(filteredRecs);
         
+        // Fetch conversations/messages
+        const { data: conversationsData, error: conversationsError } = await getConversations({ limit: 5 });
+        if (conversationsError) throw conversationsError;
+        
+        // Get unread message count
+        const { count: unreadCount, error: unreadError } = await getUnreadMessageCount();
+        if (unreadError) throw unreadError;
+        
+        // Transform conversations data to match the messages format for the UI
+        const formattedMessages = (conversationsData || []).map(conv => {
+          // Find the other participant in direct conversations
+          let sender = 'Unknown';
+          let avatar = null;
+          
+          if (conv.conversation_participants) {
+            const otherParticipant = conv.conversation_participants.find(
+              p => p.user_id !== user.id && p.profiles
+            );
+            
+            if (otherParticipant?.profiles) {
+              const profile = otherParticipant.profiles;
+              sender = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User';
+              avatar = profile.avatar_url;
+            } else if (conv.is_group && conv.title) {
+              sender = conv.title;
+            }
+          }
+          
+          return {
+            id: conv.conversation_id,
+            sender: sender,
+            avatar: avatar,
+            message: conv.last_message || 'Started a conversation',
+            date: new Date(conv.last_message_at || conv.created_at).toLocaleDateString(),
+            unread: conv.unread_count > 0
+          };
+        });
+        
+        setMessages(formattedMessages);
+        
         // Update stats based on real data
         setStats({
           activeListings: userListings?.length || 0,
           purchases: 5, // Mock data for now
           connections: 10, // Mock data for now
-          newMessages: 2 // Mock data for now
+          newMessages: unreadCount || 0
         });
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
         setIsLoading(false);
+        setMessagesLoading(false);
       }
     };
     
@@ -797,9 +842,9 @@ const Dashboard = () => {
                   <Typography variant="h6" fontWeight="bold">
                     Messages
                   </Typography>
-                  {mockMessages.filter(m => m.unread).length > 0 && (
+                  {messages.filter(m => m.unread).length > 0 && (
                     <Badge
-                      badgeContent={mockMessages.filter(m => m.unread).length}
+                      badgeContent={messages.filter(m => m.unread).length}
                       color="error"
                       sx={{ ml: 1 }}
                     />
@@ -808,77 +853,95 @@ const Dashboard = () => {
               </Box>
               
               <List sx={{ width: '100%', p: 0 }}>
-                {mockMessages.map((message, index) => (
-                  <ListItem
-                    key={message.id}
-                    alignItems="flex-start"
-                    sx={{
-                      px: 3,
-                      py: 2,
-                      borderBottom: index < mockMessages.length - 1 ? '1px solid' : 'none',
-                      borderColor: 'divider',
-                      bgcolor: message.unread ? alpha(theme.palette.primary.light, 0.08) : 'transparent',
-                      transition: 'background-color 0.2s',
-                      '&:hover': {
-                        bgcolor: message.unread ? alpha(theme.palette.primary.light, 0.12) : 'rgba(0,0,0,0.02)'
-                      }
-                    }}
-                    button
-                    component={RouterLink}
-                    to="/messages"
-                  >
-                    <ListItemAvatar>
-                      <Badge
-                        variant="dot"
-                        color="error"
-                        invisible={!message.unread}
-                        anchorOrigin={{
-                          vertical: 'top',
-                          horizontal: 'right',
-                        }}
-                        sx={{
-                          '& .MuiBadge-badge': {
-                            top: 8,
-                            right: 8,
-                          },
-                        }}
-                      >
-                        <Avatar sx={{ bgcolor: message.unread ? 'primary.main' : 'grey.400' }}>
-                          {message.avatar || message.sender.charAt(0)}
-                        </Avatar>
-                      </Badge>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                          <Typography fontWeight={message.unread ? 'bold' : 'medium'}>
-                            {message.sender}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {message.date}
-                          </Typography>
-                        </Box>
-                      }
-                      secondary={
-                        <Typography
-                          variant="body2"
-                          color={message.unread ? 'text.primary' : 'text.secondary'}
+                {messagesLoading ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                    <CircularProgress size={30} />
+                  </Box>
+                ) : messages.length > 0 ? (
+                  messages.map((message, index) => (
+                    <ListItem
+                      key={message.id}
+                      alignItems="flex-start"
+                      sx={{
+                        px: 3,
+                        py: 2,
+                        borderBottom: index < messages.length - 1 ? '1px solid' : 'none',
+                        borderColor: 'divider',
+                        bgcolor: message.unread ? alpha(theme.palette.primary.light, 0.08) : 'transparent',
+                        transition: 'background-color 0.2s',
+                        '&:hover': {
+                          bgcolor: message.unread ? alpha(theme.palette.primary.light, 0.12) : 'rgba(0,0,0,0.02)'
+                        }
+                      }}
+                      button
+                      component={RouterLink}
+                      to="/messages"
+                    >
+                      <ListItemAvatar>
+                        <Badge
+                          variant="dot"
+                          color="error"
+                          invisible={!message.unread}
+                          anchorOrigin={{
+                            vertical: 'top',
+                            horizontal: 'right',
+                          }}
                           sx={{
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            lineHeight: 1.4,
-                            fontWeight: message.unread ? 'medium' : 'normal'
+                            '& .MuiBadge-badge': {
+                              top: 8,
+                              right: 8,
+                            },
                           }}
                         >
-                          {message.message}
-                        </Typography>
-                      }
-                    />
-                  </ListItem>
-                ))}
+                          <Avatar sx={{ bgcolor: message.unread ? 'primary.main' : 'grey.400' }}>
+                            {message.avatar || message.sender.charAt(0)}
+                          </Avatar>
+                        </Badge>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                            <Typography fontWeight={message.unread ? 'bold' : 'medium'}>
+                              {message.sender}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {message.date}
+                            </Typography>
+                          </Box>
+                        }
+                        secondary={
+                          <Typography
+                            variant="body2"
+                            color={message.unread ? 'text.primary' : 'text.secondary'}
+                            sx={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              lineHeight: 1.4,
+                              fontWeight: message.unread ? 'medium' : 'normal'
+                            }}
+                          >
+                            {message.message}
+                          </Typography>
+                        }
+                      />
+                    </ListItem>
+                  ))
+                ) : (
+                  <Box sx={{ py: 4, textAlign: 'center' }}>
+                    <Avatar sx={{ bgcolor: 'primary.light', mx: 'auto', mb: 2 }}>
+                      <MessageIcon />
+                    </Avatar>
+                    <Typography variant="body1" gutterBottom>
+                      No messages yet
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Start a conversation with other farmers
+                    </Typography>
+                  </Box>
+                )}
               </List>
               
               <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
