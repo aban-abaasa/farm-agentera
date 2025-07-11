@@ -354,11 +354,11 @@ export async function deleteUserAccount(userId) {
  */
 export async function signInWithGoogle() {
   try {
-    // Determine the correct redirect URL based on the current environment
-    // This ensures it works in both development and production
+    // Explicitly set the correct redirect URL with the proper port for localhost
+    // This fixes the issue with redirecting to localhost:3000 instead of localhost:5173
     const redirectTo = window.location.hostname === 'localhost' 
-      ? `${window.location.origin}/auth/callback`
-      : `${window.location.protocol}//${window.location.host}/auth/callback`;
+      ? 'http://localhost:5173/auth/callback'
+      : `${window.location.origin}/auth/callback`;
     
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
