@@ -12,16 +12,51 @@ import {
   isProfileComplete
 } from '../services/api/authService';
 
+// Development mode flag
+const DEV_MODE = import.meta.env.VITE_DEVELOPMENT === 'true';
+
+// Mock user for development mode
+const MOCK_USER = {
+  id: 'dev-user-123',
+  email: 'dev@example.com',
+  first_name: 'Dev',
+  last_name: 'User',
+  role: 'farmer',
+  phone_number: '+1234567890',
+  avatar_url: null,
+  created_at: new Date().toISOString()
+};
+
+// Create context
 const AuthContext = createContext();
 
-export const useAuth = () => useContext(AuthContext);
+// Create separate named function for the hook
+function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
+
+export { useAuth };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [profileStatus, setProfileStatus] = useState({ isComplete: true, isChecking: true });
+  const [user, setUser] = useState(DEV_MODE ? MOCK_USER : null);
+  const [loading, setLoading] = useState(!DEV_MODE);
+  const [profileStatus, setProfileStatus] = useState({ 
+    isComplete: DEV_MODE ? true : true, 
+    isChecking: !DEV_MODE 
+  });
 
   useEffect(() => {
+    // In development mode, skip authentication checks
+    if (DEV_MODE) {
+      console.log('🔧 Development mode: Authentication bypassed');
+      setLoading(false);
+      return;
+    }
+
     // Check for existing session with Supabase
     checkAuthStatus();
 
@@ -44,6 +79,9 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const checkAuthStatus = async () => {
+    // Skip in development mode
+    if (DEV_MODE) return;
+
     try {
       const { data, error } = await getSession();
       
@@ -63,6 +101,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const fetchUserData = async (userId) => {
+    // Skip in development mode
+    if (DEV_MODE) return;
+
     try {
       // Get user profile from Supabase
       const { data: profile, error } = await getUserProfile(userId);
@@ -83,6 +124,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = async (credentials) => {
+    // In development mode, return mock user
+    if (DEV_MODE) {
+      console.log('🔧 Development mode: Mock login successful');
+      return MOCK_USER;
+    }
+
     try {
       const { data, error } = await signIn(credentials.email, credentials.password);
       
@@ -101,6 +148,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   const loginWithGoogle = async () => {
+    // In development mode, return mock user
+    if (DEV_MODE) {
+      console.log('🔧 Development mode: Mock Google login successful');
+      return { data: { user: MOCK_USER }, error: null };
+    }
+
     try {
       const { data, error } = await signInWithGoogle();
       
@@ -114,6 +167,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (userData) => {
+    // In development mode, return mock user
+    if (DEV_MODE) {
+      console.log('🔧 Development mode: Mock registration successful');
+      return MOCK_USER;
+    }
+
     try {
       // Extract user auth data and profile data
       const { email, password, ...profileData } = userData;
@@ -136,6 +195,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
+    // In development mode, just reset to mock user
+    if (DEV_MODE) {
+      console.log('🔧 Development mode: Mock logout (resetting to mock user)');
+      setUser(MOCK_USER);
+      return;
+    }
+
     try {
       await signOut();
       setUser(null);
@@ -146,6 +212,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateProfile = async (updatedData) => {
+    // In development mode, update mock user
+    if (DEV_MODE) {
+      console.log('🔧 Development mode: Mock profile update');
+      const updatedUser = { ...MOCK_USER, ...updatedData };
+      setUser(updatedUser);
+      return updatedUser;
+    }
+
     try {
       if (!user?.id) throw new Error('User not authenticated');
       
@@ -169,6 +243,12 @@ export const AuthProvider = ({ children }) => {
   };
   
   const deleteAccount = async (password) => {
+    // In development mode, just log the action
+    if (DEV_MODE) {
+      console.log('🔧 Development mode: Mock account deletion (no action taken)');
+      return { success: true };
+    }
+
     try {
       if (!user?.id) throw new Error('User not authenticated');
       

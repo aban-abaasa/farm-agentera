@@ -115,7 +115,7 @@ const MainLayout = () => {
     >
       {isAuthenticated ? (
         <>
-          <MenuItem component={Link} to="/profile" onClick={handleProfileMenuClose}>
+          <MenuItem component={Link} to={`/profile/${user.id}`} onClick={handleProfileMenuClose}>
             <ListItemIcon>
               <ProfileIcon fontSize="small" />
             </ListItemIcon>
