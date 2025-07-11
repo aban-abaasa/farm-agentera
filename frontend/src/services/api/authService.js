@@ -215,7 +215,7 @@ export async function uploadAvatar(userId, file) {
     const filename = `${userId}-${Date.now()}-${Math.random().toString(36).substring(2, 10)}.${fileExt}`;
     
     // Upload the file to the avatars folder with a simpler path structure
-    const { url: avatarUrl, path, error: uploadError } = await uploadFile(
+    const { url: avatarUrl, error: uploadError } = await uploadFile(
       'user-content', 
       'avatars', 
       file, 
@@ -354,10 +354,16 @@ export async function deleteUserAccount(userId) {
  */
 export async function signInWithGoogle() {
   try {
+    // Determine the correct redirect URL based on the current environment
+    // This ensures it works in both development and production
+    const redirectTo = window.location.hostname === 'localhost' 
+      ? `${window.location.origin}/auth/callback`
+      : `${window.location.protocol}//${window.location.host}/auth/callback`;
+    
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent'
