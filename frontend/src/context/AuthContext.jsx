@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { 
   signIn, 
   signUp, 
@@ -15,6 +15,17 @@ import {
 // Development mode flag
 const DEV_MODE = import.meta.env.VITE_DEVELOPMENT === 'true';
 
+// Storage keys
+const STORAGE_KEYS = {
+  USER: 'farm_agent_user',
+  SESSION: 'farm_agent_session',
+  PROFILE_STATUS: 'farm_agent_profile_status',
+  LAST_CHECK: 'farm_agent_last_check'
+};
+
+// Session check interval (5 minutes)
+const SESSION_CHECK_INTERVAL = 5 * 60 * 1000;
+
 // Mock user for development mode
 const MOCK_USER = {
   id: 'dev-user-123',
@@ -25,6 +36,63 @@ const MOCK_USER = {
   phone_number: '+1234567890',
   avatar_url: null,
   created_at: new Date().toISOString()
+};
+
+// Utility functions for storage
+const storage = {
+  get: (key) => {
+    try {
+      const item = localStorage.getItem(key);
+      return item ? JSON.parse(item) : null;
+    } catch (error) {
+      console.error(`Error reading from storage (${key}):`, error);
+      return null;
+    }
+  },
+  
+  set: (key, value) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      console.error(`Error writing to storage (${key}):`, error);
+    }
+  },
+  
+  remove: (key) => {
+    try {
+      localStorage.removeItem(key);
+    } catch (error) {
+      console.error(`Error removing from storage (${key}):`, error);
+    }
+  },
+  
+  clear: () => {
+    try {
+      Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
+    } catch (error) {
+      console.error('Error clearing storage:', error);
+    }
+  }
+};
+
+// Check if cached session is still valid
+const isSessionValid = (session) => {
+  if (!session || !session.expires_at) return false;
+  
+  const expiresAt = new Date(session.expires_at);
+  const now = new Date();
+  
+  // Consider session valid if it expires more than 5 minutes from now
+  return expiresAt > new Date(now.getTime() + 5 * 60 * 1000);
+};
+
+// Check if we need to validate session with server
+const shouldCheckWithServer = () => {
+  const lastCheck = storage.get(STORAGE_KEYS.LAST_CHECK);
+  if (!lastCheck) return true;
+  
+  const now = Date.now();
+  return (now - lastCheck) > SESSION_CHECK_INTERVAL;
 };
 
 // Create context
@@ -42,68 +110,20 @@ function useAuth() {
 export { useAuth };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(DEV_MODE ? MOCK_USER : null);
-  const [loading, setLoading] = useState(!DEV_MODE);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [profileStatus, setProfileStatus] = useState({ 
-    isComplete: DEV_MODE ? true : true, 
-    isChecking: !DEV_MODE 
+    isComplete: true, 
+    isChecking: false 
   });
 
-  useEffect(() => {
-    // In development mode, skip authentication checks
-    if (DEV_MODE) {
-      console.log('🔧 Development mode: Authentication bypassed');
-      setLoading(false);
-      return;
-    }
-
-    // Check for existing session with Supabase
-    checkAuthStatus();
-
-    // Set up auth state change listener
-    const unsubscribe = onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        fetchUserData(session.user.id);
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-        setProfileStatus({ isComplete: true, isChecking: false });
-      }
-    });
-
-    // Cleanup subscription
-    return () => {
-      if (typeof unsubscribe === 'function') {
-        unsubscribe();
-      }
-    };
+  const handleSignOut = useCallback(() => {
+    setUser(null);
+    setProfileStatus({ isComplete: true, isChecking: false });
+    storage.clear();
   }, []);
 
-  const checkAuthStatus = async () => {
-    // Skip in development mode
-    if (DEV_MODE) return;
-
-    try {
-      const { data, error } = await getSession();
-      
-      if (error || !data.session) {
-        setLoading(false);
-        setProfileStatus({ isComplete: true, isChecking: false });
-        return;
-      }
-      
-      await fetchUserData(data.session.user.id);
-      setLoading(false);
-    } catch (error) {
-      console.error('Authentication error:', error);
-      setLoading(false);
-      setProfileStatus({ isComplete: true, isChecking: false });
-    }
-  };
-
-  const fetchUserData = async (userId) => {
-    // Skip in development mode
-    if (DEV_MODE) return;
-
+  const fetchUserData = useCallback(async (userId) => {
     try {
       // Get user profile from Supabase
       const { data: profile, error } = await getUserProfile(userId);
@@ -113,20 +133,142 @@ export const AuthProvider = ({ children }) => {
       }
       
       setUser(profile);
+      // Cache the user profile
+      storage.set(STORAGE_KEYS.USER, profile);
       
       // Check if profile is complete
       const { isComplete } = await isProfileComplete(userId);
-      setProfileStatus({ isComplete, isChecking: false });
+      const profileStatusData = { isComplete, isChecking: false };
+      setProfileStatus(profileStatusData);
+      // Cache profile status
+      storage.set(STORAGE_KEYS.PROFILE_STATUS, profileStatusData);
     } catch (error) {
       console.error('Error fetching user profile:', error);
-      logout();
+      handleSignOut();
     }
-  };
+  }, [handleSignOut]);
+
+  const checkAuthStatus = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await getSession();
+      
+      if (error || !data.session) {
+        setLoading(false);
+        setProfileStatus({ isComplete: true, isChecking: false });
+        return;
+      }
+      
+      // Cache the session
+      storage.set(STORAGE_KEYS.SESSION, data.session);
+      storage.set(STORAGE_KEYS.LAST_CHECK, Date.now());
+      
+      await fetchUserData(data.session.user.id);
+      setLoading(false);
+    } catch (error) {
+      console.error('Authentication error:', error);
+      setLoading(false);
+      setProfileStatus({ isComplete: true, isChecking: false });
+      storage.clear();
+    }
+  }, [fetchUserData]);
+
+  const validateSessionInBackground = useCallback(async () => {
+    try {
+      const { data, error } = await getSession();
+      storage.set(STORAGE_KEYS.LAST_CHECK, Date.now());
+      
+      if (error || !data.session) {
+        console.log('🔄 Background validation: Session invalid, signing out');
+        handleSignOut();
+        return;
+      }
+      
+      // Update cached session if we got a new one
+      storage.set(STORAGE_KEYS.SESSION, data.session);
+    } catch (error) {
+      console.error('Background session validation error:', error);
+      // Don't sign out on network errors, just log the error
+    }
+  }, [handleSignOut]);
+
+  // Initialize user from storage or development mode
+  useEffect(() => {
+    const initializeAuth = async () => {
+      // In development mode, skip authentication checks
+      if (DEV_MODE) {
+        console.log('🔧 Development mode: Authentication bypassed');
+        setUser(MOCK_USER);
+        setLoading(false);
+        return;
+      }
+
+      // Try to load user from cache first
+      const cachedUser = storage.get(STORAGE_KEYS.USER);
+      const cachedSession = storage.get(STORAGE_KEYS.SESSION);
+      const cachedProfileStatus = storage.get(STORAGE_KEYS.PROFILE_STATUS);
+
+      if (cachedUser && cachedSession) {
+        // Check if cached session is still valid
+        if (isSessionValid(cachedSession)) {
+          console.log('📱 Using cached authentication');
+          setUser(cachedUser);
+          if (cachedProfileStatus) {
+            setProfileStatus(cachedProfileStatus);
+          }
+          setLoading(false);
+
+          // Optionally validate with server in background if it's been a while
+          if (shouldCheckWithServer()) {
+            validateSessionInBackground();
+          }
+          return;
+        } else {
+          console.log('🔄 Cached session expired, clearing cache');
+          storage.clear();
+        }
+      }
+
+      // No valid cache, check with server
+      await checkAuthStatus();
+    };
+
+    initializeAuth();
+
+    // Set up auth state change listener for real-time updates
+    let unsubscribe;
+    if (!DEV_MODE) {
+      unsubscribe = onAuthStateChange((event, session) => {
+        console.log('🔄 Auth state changed:', event);
+        if (event === 'SIGNED_IN' && session) {
+          // Cache the new session
+          storage.set(STORAGE_KEYS.SESSION, session);
+          storage.set(STORAGE_KEYS.LAST_CHECK, Date.now());
+          fetchUserData(session.user.id);
+        } else if (event === 'SIGNED_OUT') {
+          handleSignOut();
+        } else if (event === 'TOKEN_REFRESHED' && session) {
+          // Update cached session with new tokens
+          storage.set(STORAGE_KEYS.SESSION, session);
+          storage.set(STORAGE_KEYS.LAST_CHECK, Date.now());
+        }
+      });
+    }
+
+    // Cleanup subscription
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
+  }, [checkAuthStatus, fetchUserData, validateSessionInBackground, handleSignOut]);
 
   const login = async (credentials) => {
     // In development mode, return mock user
     if (DEV_MODE) {
       console.log('🔧 Development mode: Mock login successful');
+      setUser(MOCK_USER);
+      storage.set(STORAGE_KEYS.USER, MOCK_USER);
       return MOCK_USER;
     }
 
@@ -135,7 +277,11 @@ export const AuthProvider = ({ children }) => {
       
       if (error) throw error;
       
-      if (data?.user) {
+      if (data?.user && data?.session) {
+        // Cache the session immediately
+        storage.set(STORAGE_KEYS.SESSION, data.session);
+        storage.set(STORAGE_KEYS.LAST_CHECK, Date.now());
+        
         await fetchUserData(data.user.id);
         return data.user;
       }
@@ -151,6 +297,8 @@ export const AuthProvider = ({ children }) => {
     // In development mode, return mock user
     if (DEV_MODE) {
       console.log('🔧 Development mode: Mock Google login successful');
+      setUser(MOCK_USER);
+      storage.set(STORAGE_KEYS.USER, MOCK_USER);
       return { data: { user: MOCK_USER }, error: null };
     }
 
@@ -159,6 +307,7 @@ export const AuthProvider = ({ children }) => {
       
       if (error) throw error;
       
+      // The actual user data will be handled by the auth state change listener
       return { data, error: null };
     } catch (error) {
       console.error('Google login error:', error);
@@ -170,6 +319,8 @@ export const AuthProvider = ({ children }) => {
     // In development mode, return mock user
     if (DEV_MODE) {
       console.log('🔧 Development mode: Mock registration successful');
+      setUser(MOCK_USER);
+      storage.set(STORAGE_KEYS.USER, MOCK_USER);
       return MOCK_USER;
     }
 
@@ -195,19 +346,21 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    // In development mode, just reset to mock user
+    // In development mode, reset to null and clear cache
     if (DEV_MODE) {
-      console.log('🔧 Development mode: Mock logout (resetting to mock user)');
-      setUser(MOCK_USER);
+      console.log('🔧 Development mode: Mock logout');
+      setUser(null);
+      storage.clear();
       return;
     }
 
     try {
       await signOut();
-      setUser(null);
-      setProfileStatus({ isComplete: true, isChecking: false });
+      handleSignOut();
     } catch (error) {
       console.error('Logout error:', error);
+      // Even if logout fails on server, clear local state
+      handleSignOut();
     }
   };
 
@@ -217,6 +370,7 @@ export const AuthProvider = ({ children }) => {
       console.log('🔧 Development mode: Mock profile update');
       const updatedUser = { ...MOCK_USER, ...updatedData };
       setUser(updatedUser);
+      storage.set(STORAGE_KEYS.USER, updatedUser);
       return updatedUser;
     }
 
@@ -227,12 +381,17 @@ export const AuthProvider = ({ children }) => {
       
       if (error) throw error;
       
-      setUser({...user, ...data[0]});
+      const updatedUser = {...user, ...data[0]};
+      setUser(updatedUser);
+      // Update cached user
+      storage.set(STORAGE_KEYS.USER, updatedUser);
       
       // Check if profile is now complete
       if (!profileStatus.isComplete) {
         const { isComplete } = await isProfileComplete(user.id);
-        setProfileStatus({ isComplete, isChecking: false });
+        const profileStatusData = { isComplete, isChecking: false };
+        setProfileStatus(profileStatusData);
+        storage.set(STORAGE_KEYS.PROFILE_STATUS, profileStatusData);
       }
       
       return data[0];
@@ -245,7 +404,8 @@ export const AuthProvider = ({ children }) => {
   const deleteAccount = async (password) => {
     // In development mode, just log the action
     if (DEV_MODE) {
-      console.log('🔧 Development mode: Mock account deletion (no action taken)');
+      console.log('🔧 Development mode: Mock account deletion');
+      handleSignOut();
       return { success: true };
     }
 
@@ -272,9 +432,8 @@ export const AuthProvider = ({ children }) => {
         throw error;
       }
       
-      // Clear user data from state
-      setUser(null);
-      setProfileStatus({ isComplete: true, isChecking: false });
+      // Clear user data from state and storage
+      handleSignOut();
       return { success: true };
     } catch (error) {
       console.error('Account deletion error:', error);

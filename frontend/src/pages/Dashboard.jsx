@@ -22,7 +22,6 @@ import {
   Stack,
   Badge,
   CircularProgress,
-  useMediaQuery
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -50,7 +49,6 @@ import { mockCommunityActivity } from '../mocks/dashboard';
 const Dashboard = () => {
   const { user } = useAuth();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [isLoading, setIsLoading] = useState(true);
   const [listings, setListings] = useState([]);
   const [recommendedListings, setRecommendedListings] = useState([]);
