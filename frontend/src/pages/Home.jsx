@@ -19,6 +19,16 @@ const Home = () => {
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
   // Track which card is being hovered
   const [hoveredCard, setHoveredCard] = useState(null);
+  const [scrollPosition, setScrollPosition] = useState(0);
+
+  // Handle horizontal scroll position for mobile indicator
+  const handleScroll = (e) => {
+    const container = e.target;
+    const scrollLeft = container.scrollLeft;
+    const scrollWidth = container.scrollWidth - container.clientWidth;
+    const scrollPercentage = scrollLeft / scrollWidth;
+    setScrollPosition(scrollPercentage);
+  };
 
   // Features array with added animation properties
   const features = [
@@ -489,157 +499,387 @@ const Home = () => {
               </Typography>
             </Box>
             
-            {/* Features flexbox layout */}
+            {/* Features layout - horizontal scroll on mobile, grid on desktop */}
             <Box 
               sx={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                justifyContent: 'center',
-                gap: 3,
-                mx: -1.5, // Compensate for padding in the container
+                display: { xs: 'block', md: 'flex' },
+                flexWrap: { md: 'wrap' },
+                justifyContent: { md: 'center' },
+                gap: { md: 3 },
+                mx: { md: -1.5 }, // Compensate for padding in the container on desktop
               }}
             >
-              {features.map((feature, index) => (
-                <Box
-                  key={index}
-                  className="feature-card"
-                  sx={{
-                    width: {
-                      xs: 'calc(100% - 24px)',     // 1 column on mobile
-                      sm: 'calc(50% - 24px)',      // 2 columns on small screens
-                      md: 'calc(33.333% - 24px)',  // 3 columns on medium screens
-                      lg: 'calc(25% - 24px)',      // 4 columns on large screens
-                      xl: 'calc(20% - 24px)',      // 5 columns on extra-large screens
-                    },
-                    minWidth: '280px',  // Ensure minimum width for readability
-                    maxWidth: '380px',  // Maximum width for consistency
-                    margin: '12px',
-                    opacity: 0,
-                    transform: 'translateY(40px)',
-                    transition: `all 0.6s ease ${feature.animationDelay}`,
-                  }}
-                  onMouseEnter={() => setHoveredCard(index)}
-                  onMouseLeave={() => setHoveredCard(null)}
-                >
-                  <Card 
-                    sx={{ 
-                      height: '100%', 
-                      display: 'flex', 
-                      flexDirection: 'column',
-                      borderRadius: 4,
-                      border: '1px solid rgba(0,0,0,0.05)',
-                      overflow: 'hidden',
-                      position: 'relative',
-                      transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                      '&:hover': {
-                        transform: 'translateY(-12px) scale(1.03)',
-                        boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
+              {/* Mobile horizontal scroll container */}
+              <Box
+                onScroll={handleScroll}
+                sx={{
+                  display: { xs: 'flex', md: 'none' },
+                  overflowX: 'auto',
+                  overflowY: 'hidden',
+                  gap: 3,
+                  pb: 2,
+                  px: 2,
+                  mx: -2, // Extend to screen edges
+                  scrollBehavior: 'smooth',
+                  WebkitOverflowScrolling: 'touch',
+                  scrollSnapType: 'x mandatory', // Add scroll snap for better UX
+                  '&::-webkit-scrollbar': {
+                    height: 8,
+                  },
+                  '&::-webkit-scrollbar-track': {
+                    background: 'rgba(0,0,0,0.05)',
+                    borderRadius: 4,
+                  },
+                  '&::-webkit-scrollbar-thumb': {
+                    background: 'linear-gradient(90deg, #4caf50, #8bc34a)',
+                    borderRadius: 4,
+                    '&:hover': {
+                      background: 'linear-gradient(90deg, #388e3c, #689f38)',
+                    }
+                  },
+                  // Add momentum scrolling for iOS
+                  '@media (max-width: 600px)': {
+                    scrollSnapType: 'x mandatory',
+                    '&::-webkit-scrollbar': {
+                      display: 'none'
+                    }
+                  }
+                }}
+              >
+                {features.map((feature, index) => (
+                  <Box
+                    key={index}
+                    className="feature-card"
+                    sx={{
+                      minWidth: '280px',
+                      maxWidth: '320px',
+                      width: '280px',
+                      scrollSnapAlign: 'center', // Add scroll snap alignment
+                      opacity: 0,
+                      transform: 'translateX(40px)',
+                      transition: `all 0.6s ease ${feature.animationDelay}`,
+                      '&:first-of-type': {
+                        ml: 2, // Add left margin to first item
+                      },
+                      '&:last-of-type': {
+                        mr: 2, // Add right margin to last item
+                      }
+                    }}
+                    onTouchStart={() => setHoveredCard(index)}
+                    onTouchEnd={() => setHoveredCard(null)}
+                  >
+                    <Card 
+                      sx={{ 
+                        height: '100%', 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        borderRadius: 4,
+                        border: '1px solid rgba(0,0,0,0.05)',
+                        overflow: 'hidden',
+                        position: 'relative',
+                        transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                        transform: hoveredCard === index ? 'translateY(-8px) scale(1.02)' : 'translateY(0) scale(1)',
+                        boxShadow: hoveredCard === index ? '0 15px 35px rgba(0,0,0,0.12)' : '0 8px 25px rgba(0,0,0,0.08)',
                         '&::before': {
-                          opacity: 1,
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          height: '5px',
+                          background: 'linear-gradient(90deg, #4caf50, #8bc34a)',
+                          opacity: hoveredCard === index ? 1 : 0,
+                          transition: 'opacity 0.3s ease',
                         },
                         '& .feature-icon-wrapper': {
-                          transform: 'scale(1.15) rotate(10deg)',
+                          transform: hoveredCard === index ? 'scale(1.15) rotate(10deg)' : 'scale(1) rotate(0deg)',
                         },
-                      },
-                      '&::before': {
-                        content: '""',
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: '5px',
-                        background: 'linear-gradient(90deg, #4caf50, #8bc34a)',
-                        opacity: 0,
-                        transition: 'opacity 0.3s ease',
-                      },
-                      zIndex: hoveredCard === index ? 10 : 1,
-                    }}
-                  >
-                    <Box sx={{ 
-                      p: 3, 
-                      display: 'flex', 
-                      alignItems: 'center',
-                      bgcolor: feature.color,
-                      borderBottom: '1px solid rgba(0,0,0,0.05)'
-                    }}>
-                      <Box 
-                        className="feature-icon-wrapper"
-                        sx={{ 
-                          width: 56, 
-                          height: 56, 
-                          borderRadius: '50%', 
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          mr: 2,
-                          bgcolor: 'white',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                          transition: 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-                        }}
-                      >
-                        {feature.icon}
+                      }}
+                    >
+                      <Box sx={{ 
+                        p: 3, 
+                        display: 'flex', 
+                        alignItems: 'center',
+                        bgcolor: feature.color,
+                        borderBottom: '1px solid rgba(0,0,0,0.05)'
+                      }}>
+                        <Box 
+                          className="feature-icon-wrapper"
+                          sx={{ 
+                            width: 48, 
+                            height: 48, 
+                            borderRadius: '50%', 
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            mr: 2,
+                            bgcolor: 'white',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                            transition: 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                          }}
+                        >
+                          {React.cloneElement(feature.icon, { fontSize: 'medium' })}
+                        </Box>
+                        <Typography 
+                          variant="h6" 
+                          component="h2" 
+                          fontWeight="bold"
+                          sx={{ fontSize: '1.1rem' }}
+                        >
+                          {feature.title}
+                        </Typography>
                       </Box>
-                      <Typography 
-                        variant="h5" 
-                        component="h2" 
-                        fontWeight="bold"
-                      >
-                        {feature.title}
-                      </Typography>
-                    </Box>
-                    
-                    <CardContent sx={{ 
-                      flexGrow: 1, 
-                      p: 3, 
-                      display: 'flex', 
-                      flexDirection: 'column', 
-                      justifyContent: 'space-between'
-                    }}>
-                      <Typography color="text.secondary" sx={{ mb: 3 }}>
-                        {feature.description}
-                      </Typography>
                       
-                      <Button 
-                        component={RouterLink} 
-                        to={feature.link}
-                        color="primary"
-                        endIcon={
-                          <ArrowForward sx={{
-                            transform: hoveredCard === index ? 'translateX(4px)' : 'translateX(0)',
-                            transition: 'transform 0.3s ease'
-                          }}/>
-                        }
-                        sx={{ 
-                          textTransform: 'none',
-                          fontWeight: 'medium',
-                          mt: 'auto', // Push to bottom
-                          alignSelf: 'flex-start', // Align to left
-                          '&:hover': {
-                            background: 'none',
+                      <CardContent sx={{ 
+                        flexGrow: 1, 
+                        p: 3, 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        justifyContent: 'space-between'
+                      }}>
+                        <Typography 
+                          color="text.secondary" 
+                          sx={{ 
+                            mb: 3, 
+                            fontSize: '0.9rem',
+                            lineHeight: 1.5
+                          }}
+                        >
+                          {feature.description}
+                        </Typography>
+                        
+                        <Button 
+                          component={RouterLink} 
+                          to={feature.link}
+                          color="primary"
+                          size="small"
+                          endIcon={
+                            <ArrowForward sx={{
+                              transform: hoveredCard === index ? 'translateX(4px)' : 'translateX(0)',
+                              transition: 'transform 0.3s ease'
+                            }}/>
                           }
-                        }}
-                      >
-                        Learn More
-                      </Button>
-                    </CardContent>
-                    
-                    {/* Animated corner accent */}
-                    <Box 
+                          sx={{ 
+                            textTransform: 'none',
+                            fontWeight: 'medium',
+                            mt: 'auto',
+                            alignSelf: 'flex-start',
+                            fontSize: '0.875rem',
+                            '&:hover': {
+                              background: 'none',
+                            }
+                          }}
+                        >
+                          Learn More
+                        </Button>
+                      </CardContent>
+                      
+                      {/* Animated corner accent */}
+                      <Box 
+                        sx={{ 
+                          position: 'absolute',
+                          bottom: 0,
+                          right: 0,
+                          width: '50px',
+                          height: '50px',
+                          background: `radial-gradient(circle at bottom right, ${feature.color}, transparent 70%)`,
+                          opacity: 0.7,
+                          transition: 'all 0.3s ease',
+                          transform: hoveredCard === index ? 'scale(1.3)' : 'scale(1)',
+                        }} 
+                      />
+                    </Card>
+                  </Box>
+                ))}
+              </Box>
+
+              {/* Desktop grid layout (hidden on mobile) */}
+              <Box
+                sx={{
+                  display: { xs: 'none', md: 'flex' },
+                  flexWrap: 'wrap',
+                  justifyContent: 'center',
+                  gap: 3,
+                  width: '100%'
+                }}
+              >
+                {features.map((feature, index) => (
+                  <Box
+                    key={index}
+                    className="feature-card"
+                    sx={{
+                      width: {
+                        md: 'calc(33.333% - 24px)',  // 3 columns on medium screens
+                        lg: 'calc(25% - 24px)',      // 4 columns on large screens
+                        xl: 'calc(20% - 24px)',      // 5 columns on extra-large screens
+                      },
+                      minWidth: '280px',
+                      maxWidth: '380px',
+                      margin: '12px',
+                      opacity: 0,
+                      transform: 'translateY(40px)',
+                      transition: `all 0.6s ease ${feature.animationDelay}`,
+                    }}
+                    onMouseEnter={() => setHoveredCard(index)}
+                    onMouseLeave={() => setHoveredCard(null)}
+                  >
+                    <Card 
                       sx={{ 
-                        position: 'absolute',
-                        bottom: 0,
-                        right: 0,
-                        width: '60px',
-                        height: '60px',
-                        background: `radial-gradient(circle at bottom right, ${feature.color}, transparent 70%)`,
-                        opacity: 0.7,
-                        transition: 'all 0.3s ease',
-                        transform: hoveredCard === index ? 'scale(1.5)' : 'scale(1)',
-                      }} 
-                    />
-                  </Card>
-                </Box>
-              ))}
+                        height: '100%', 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        borderRadius: 4,
+                        border: '1px solid rgba(0,0,0,0.05)',
+                        overflow: 'hidden',
+                        position: 'relative',
+                        transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                        '&:hover': {
+                          transform: 'translateY(-12px) scale(1.03)',
+                          boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
+                          '&::before': {
+                            opacity: 1,
+                          },
+                          '& .feature-icon-wrapper': {
+                            transform: 'scale(1.15) rotate(10deg)',
+                          },
+                        },
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          height: '5px',
+                          background: 'linear-gradient(90deg, #4caf50, #8bc34a)',
+                          opacity: 0,
+                          transition: 'opacity 0.3s ease',
+                        },
+                        zIndex: hoveredCard === index ? 10 : 1,
+                      }}
+                    >
+                      <Box sx={{ 
+                        p: 3, 
+                        display: 'flex', 
+                        alignItems: 'center',
+                        bgcolor: feature.color,
+                        borderBottom: '1px solid rgba(0,0,0,0.05)'
+                      }}>
+                        <Box 
+                          className="feature-icon-wrapper"
+                          sx={{ 
+                            width: 56, 
+                            height: 56, 
+                            borderRadius: '50%', 
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            mr: 2,
+                            bgcolor: 'white',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                            transition: 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                          }}
+                        >
+                          {feature.icon}
+                        </Box>
+                        <Typography 
+                          variant="h5" 
+                          component="h2" 
+                          fontWeight="bold"
+                        >
+                          {feature.title}
+                        </Typography>
+                      </Box>
+                      
+                      <CardContent sx={{ 
+                        flexGrow: 1, 
+                        p: 3, 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        justifyContent: 'space-between'
+                      }}>
+                        <Typography color="text.secondary" sx={{ mb: 3 }}>
+                          {feature.description}
+                        </Typography>
+                        
+                        <Button 
+                          component={RouterLink} 
+                          to={feature.link}
+                          color="primary"
+                          endIcon={
+                            <ArrowForward sx={{
+                              transform: hoveredCard === index ? 'translateX(4px)' : 'translateX(0)',
+                              transition: 'transform 0.3s ease'
+                            }}/>
+                          }
+                          sx={{ 
+                            textTransform: 'none',
+                            fontWeight: 'medium',
+                            mt: 'auto', // Push to bottom
+                            alignSelf: 'flex-start', // Align to left
+                            '&:hover': {
+                              background: 'none',
+                            }
+                          }}
+                        >
+                          Learn More
+                        </Button>
+                      </CardContent>
+                      
+                      {/* Animated corner accent */}
+                      <Box 
+                        sx={{ 
+                          position: 'absolute',
+                          bottom: 0,
+                          right: 0,
+                          width: '60px',
+                          height: '60px',
+                          background: `radial-gradient(circle at bottom right, ${feature.color}, transparent 70%)`,
+                          opacity: 0.7,
+                          transition: 'all 0.3s ease',
+                          transform: hoveredCard === index ? 'scale(1.5)' : 'scale(1)',
+                        }} 
+                      />
+                    </Card>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+
+            {/* Mobile scroll indicator */}
+            <Box 
+              sx={{ 
+                display: { xs: 'flex', md: 'none' },
+                justifyContent: 'center',
+                alignItems: 'center',
+                mt: 3,
+                gap: 1,
+                opacity: 0.8
+              }}
+            >
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+                Swipe to explore features
+              </Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 0.5,
+                  ml: 1
+                }}
+              >
+                {[...Array(3)].map((_, index) => (
+                  <Box
+                    key={index}
+                    sx={{
+                      width: scrollPosition < (index + 1) * 0.33 ? 8 : 6,
+                      height: scrollPosition < (index + 1) * 0.33 ? 8 : 6,
+                      borderRadius: '50%',
+                      bgcolor: scrollPosition < (index + 1) * 0.33 ? 'primary.main' : 'action.disabled',
+                      transition: 'all 0.3s ease',
+                      transform: scrollPosition < (index + 1) * 0.33 ? 'scale(1.2)' : 'scale(1)'
+                    }}
+                  />
+                ))}
+              </Box>
             </Box>
           </Container>
         </Box>
