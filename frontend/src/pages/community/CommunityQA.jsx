@@ -203,9 +203,9 @@ const CommunityQA = () => {
   };
 
   return (
-    <div className="container">
+    <Box sx={{ maxWidth: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 } }}>
       <Grid container spacing={3}>
-        <Grid item xs={12} md={8}>
+        <Grid item xs={12} lg={9} xl={10}>
           {/* Header and filter controls */}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Typography variant="h5" component="h2" fontWeight="bold">
@@ -563,7 +563,7 @@ const CommunityQA = () => {
         </Grid>
 
         {/* Sidebar */}
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} lg={3} xl={2}>
           <Box sx={{ position: 'sticky', top: 20 }}>
             {/* Ask Question Card */}
             <Card sx={{ mb: 3, borderRadius: 2, bgcolor: 'primary.light' }}>
@@ -708,7 +708,7 @@ const CommunityQA = () => {
         onClose={() => setAskQuestionOpen(false)}
         onQuestionCreated={handleQuestionCreated}
       />
-    </div>
+    </Box>
   );
 };
 

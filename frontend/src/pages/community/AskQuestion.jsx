@@ -25,7 +25,7 @@ import {
 
 import { createQuestion, getForumCategories, getPopularTags } from '../../services/api/communityService';
 
-const AskQuestion = ({ open, onClose, onQuestionCreated, user }) => {
+const AskQuestion = ({ open, onClose, onQuestionCreated }) => {
   const [formData, setFormData] = useState({
     title: '',
     content: '',
