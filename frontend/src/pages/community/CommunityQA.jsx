@@ -303,11 +303,11 @@ const CommunityQA = () => {
 
           {/* Sort controls */}
           <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Typography variant="body2" color="text.secondary">
+            {/* <Typography variant="body2" color="text.secondary">
               Showing {filteredQuestions.length} questions
               {selectedCategory !== 'all' && ` in ${qaCategories.find(c => c.id === selectedCategory)?.name}`}
               {searchTerm && ` matching "${searchTerm}"`}
-            </Typography>
+            </Typography> */}
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
                 Sort by:
