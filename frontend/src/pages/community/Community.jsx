@@ -556,8 +556,13 @@ const Community = () => {
         </Paper>
       </div>
 
+      {/* Main Content - Full Width */}
+      <div className="w-full">
+        {renderContent()}
+      </div>
+
       {/* Community Stats Cards - Horizontal Layout */}
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ mt: 6, mb: 4 }}>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <Card sx={{ borderRadius: 3, boxShadow: 2, border: '1px solid rgba(76,175,80,0.1)' }}>
             <CardContent sx={{ p: 3, textAlign: 'center' }}>
@@ -685,11 +690,6 @@ const Community = () => {
           </Card>
         </div>
       </Box>
-
-      {/* Main Content - Full Width */}
-      <div className="w-full">
-        {renderContent()}
-      </div>
 
       {/* New Post Modal */}
       <Dialog 
