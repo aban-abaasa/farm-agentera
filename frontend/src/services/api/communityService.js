@@ -1,6 +1,5 @@
 import { 
   fetchData, 
-  fetchById, 
   insertRecord,
   updateRecord,
   deleteRecord,
@@ -16,6 +15,15 @@ const CATEGORIES_TABLE = 'forum_categories';
 const TAGS_TABLE = 'forum_tags';
 const POST_TAGS_TABLE = 'post_tags';
 const QUESTION_TAGS_TABLE = 'question_tags';
+const POST_LIKES_TABLE = 'post_likes';
+const COMMENT_LIKES_TABLE = 'comment_likes';
+const POST_REACTIONS_TABLE = 'post_reactions';
+const EVENTS_TABLE = 'community_events';
+const EVENT_PARTICIPANTS_TABLE = 'event_participants';
+const USER_REPUTATION_TABLE = 'user_reputation';
+const COMMUNITY_BADGES_TABLE = 'community_badges';
+const POST_BOOKMARKS_TABLE = 'post_bookmarks';
+const NOTIFICATIONS_TABLE = 'community_notifications';
 
 /**
  * Fetch all discussion posts with optional filtering
@@ -23,7 +31,50 @@ const QUESTION_TAGS_TABLE = 'question_tags';
  * @returns {Promise} - Posts data
  */
 export async function getPosts(options = {}) {
-  return await fetchData(POSTS_TABLE, options);
+  try {
+    const { supabase } = await import('../../lib/supabase/client');
+    
+    let query = supabase
+      .from(POSTS_TABLE)
+      .select(`
+        *,
+        user:profiles(id, first_name, last_name, avatar_url),
+        category:${CATEGORIES_TABLE}(id, name, color_hex),
+        tags:${POST_TAGS_TABLE}(
+          tag:${TAGS_TABLE}(id, name, slug, color_hex)
+        ),
+        comments_count:${COMMENTS_TABLE}(count),
+        likes_count:${POST_LIKES_TABLE}(count)
+      `)
+      .eq('status', 'published')
+      .order('created_at', { ascending: false });
+
+    if (options.category_id) {
+      query = query.eq('category_id', options.category_id);
+    }
+
+    if (options.limit) {
+      query = query.limit(options.limit);
+    }
+
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    // Format the data
+    return { 
+      data: data?.map(post => ({
+        ...post,
+        tags: post.tags?.map(tagItem => tagItem.tag) || [],
+        comments_count: post.comments_count?.length || 0,
+        likes_count: post.likes_count?.length || 0
+      })) || [], 
+      error: null 
+    };
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+    return { data: [], error };
+  }
 }
 
 /**
@@ -407,4 +458,735 @@ export async function searchCommunityContent(query, type = 'all', limit = 20) {
     console.error(`Error searching community content:`, error);
     return { data: null, error };
   }
-} 
+}
+
+/**
+ * Like/Unlike a post
+ * @param {number|string} postId - Post ID
+ * @param {string} userId - User ID
+ * @returns {Promise} - Like result
+ */
+export async function togglePostLike(postId, userId) {
+  try {
+    const { supabase } = await import('../../lib/supabase/client');
+    
+    // Check if user already liked the post
+    const { data: existingLike, error: checkError } = await supabase
+      .from(POST_LIKES_TABLE)
+      .select('id')
+      .eq('post_id', postId)
+      .eq('user_id', userId)
+      .single();
+    
+    if (checkError && checkError.code !== 'PGRST116') {
+      throw checkError;
+    }
+    
+    if (existingLike) {
+      // Unlike the post
+      const { error } = await supabase
+        .from(POST_LIKES_TABLE)
+        .delete()
+        .eq('post_id', postId)
+        .eq('user_id', userId);
+      
+      return { data: { liked: false }, error };
+    } else {
+      // Like the post
+      const { error } = await supabase
+        .from(POST_LIKES_TABLE)
+        .insert({ post_id: postId, user_id: userId });
+      
+      return { data: { liked: true }, error };
+    }
+  } catch (error) {
+    console.error('Error toggling post like:', error);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Like/Unlike a comment
+ * @param {number|string} commentId - Comment ID
+ * @param {string} userId - User ID
+ * @returns {Promise} - Like result
+ */
+export async function toggleCommentLike(commentId, userId) {
+  try {
+    const { supabase } = await import('../../lib/supabase/client');
+    
+    // Check if user already liked the comment
+    const { data: existingLike, error: checkError } = await supabase
+      .from(COMMENT_LIKES_TABLE)
+      .select('id')
+      .eq('comment_id', commentId)
+      .eq('user_id', userId)
+      .single();
+    
+    if (checkError && checkError.code !== 'PGRST116') {
+      throw checkError;
+    }
+    
+    if (existingLike) {
+      // Unlike the comment
+      const { error } = await supabase
+        .from(COMMENT_LIKES_TABLE)
+        .delete()
+        .eq('comment_id', commentId)
+        .eq('user_id', userId);
+      
+      return { data: { liked: false }, error };
+    } else {
+      // Like the comment
+      const { error } = await supabase
+        .from(COMMENT_LIKES_TABLE)
+        .insert({ comment_id: commentId, user_id: userId });
+      
+      return { data: { liked: true }, error };
+    }
+  } catch (error) {
+    console.error('Error toggling comment like:', error);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Get upcoming community events
+ * @param {number} limit - Number of events to fetch
+ * @returns {Promise} - Events data
+ */
+export async function getUpcomingEvents(limit = 5) {
+  try {
+    const { supabase } = await import('../../lib/supabase/client');
+    
+    const { data, error } = await supabase
+      .from(EVENTS_TABLE)
+      .select(`
+        *,
+        organizer:profiles(id, first_name, last_name, avatar_url),
+        category:${CATEGORIES_TABLE}(id, name, color_hex),
+        participants_count:${EVENT_PARTICIPANTS_TABLE}(count)
+      `)
+      .eq('status', 'upcoming')
+      .gte('start_datetime', new Date().toISOString())
+      .order('start_datetime', { ascending: true })
+      .limit(limit);
+    
+    if (error) throw error;
+    
+    return { 
+      data: data?.map(event => ({
+        ...event,
+        participants_count: event.participants_count?.length || 0
+      })) || [], 
+      error: null 
+    };
+  } catch (error) {
+    console.error('Error fetching upcoming events:', error);
+    return { data: [], error };
+  }
+}
+
+/**
+ * Get user's community stats for dashboard
+ * @param {string} userId - User ID
+ * @returns {Promise} - User community stats
+ */
+export async function getUserCommunityStats(userId) {
+  try {
+    const { supabase } = await import('../../lib/supabase/client');
+    
+    // Get post count
+    const { count: postsCount } = await supabase
+      .from(POSTS_TABLE)
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('status', 'published');
+    
+    // Get question count
+    const { count: questionsCount } = await supabase
+      .from(QUESTIONS_TABLE)
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
+    
+    // Get answer count
+    const { count: answersCount } = await supabase
+      .from(ANSWERS_TABLE)
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
+    
+    // Get user reputation
+    const { data: reputation } = await supabase
+      .from(USER_REPUTATION_TABLE)
+      .select('total_points, expert_level, badges')
+      .eq('user_id', userId)
+      .single();
+    
+    // Get unread notifications count
+    const { count: notificationsCount } = await supabase
+      .from(NOTIFICATIONS_TABLE)
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('is_read', false);
+    
+    return {
+      data: {
+        posts_created: postsCount || 0,
+        questions_asked: questionsCount || 0,
+        answers_given: answersCount || 0,
+        reputation_points: reputation?.total_points || 0,
+        expert_level: reputation?.expert_level || 'beginner',
+        badges_count: reputation?.badges?.length || 0,
+        unread_notifications: notificationsCount || 0
+      },
+      error: null
+    };
+  } catch (error) {
+    console.error('Error fetching user community stats:', error);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Get recent community activity for dashboard
+ * @param {number} limit - Number of items to fetch
+ * @returns {Promise} - Recent activity data
+ */
+export async function getRecentCommunityActivity(limit = 10) {
+  try {
+    const { supabase } = await import('../../lib/supabase/client');
+    
+    // Get recent posts
+    const { data: recentPosts } = await supabase
+      .from(POSTS_TABLE)
+      .select(`
+        id, title, content, created_at, post_type, likes, views,
+        user:profiles(id, first_name, last_name, avatar_url),
+        category:${CATEGORIES_TABLE}(name, color_hex),
+        comments_count:${COMMENTS_TABLE}(count),
+        likes_count:${POST_LIKES_TABLE}(count)
+      `)
+      .eq('status', 'published')
+      .order('created_at', { ascending: false })
+      .limit(Math.ceil(limit / 2));
+    
+    // Get recent questions
+    const { data: recentQuestions } = await supabase
+      .from(QUESTIONS_TABLE)
+      .select(`
+        id, title, content, created_at, status, views,
+        user:profiles(id, first_name, last_name, avatar_url),
+        category:${CATEGORIES_TABLE}(name, color_hex),
+        answers_count:${ANSWERS_TABLE}(count)
+      `)
+      .order('created_at', { ascending: false })
+      .limit(Math.ceil(limit / 2));
+    
+    // Combine and sort by date
+    const allActivity = [
+      ...(recentPosts?.map(post => ({ 
+        ...post, 
+        type: 'post',
+        comments_count: post.comments_count?.length || 0,
+        likes: post.likes_count?.length || post.likes || 0
+      })) || []),
+      ...(recentQuestions?.map(question => ({ 
+        ...question, 
+        type: 'question',
+        comments_count: question.answers_count?.length || 0,
+        likes: 0 // Questions don't have likes in our schema
+      })) || [])
+    ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+     .slice(0, limit);
+    
+    return { data: allActivity, error: null };
+  } catch (error) {
+    console.error('Error fetching recent community activity:', error);
+    return { data: [], error };
+  }
+}
+
+/**
+ * Get trending topics (popular tags)
+ * @param {number} limit - Number of tags to fetch
+ * @returns {Promise} - Trending tags
+ */
+export async function getTrendingTopics(limit = 10) {
+  try {
+    const { supabase } = await import('../../lib/supabase/client');
+    
+    const { data, error } = await supabase
+      .from('v_trending_topics') // Using the view we created
+      .select('*')
+      .limit(limit);
+    
+    if (error) {
+      // Fallback to regular tags if view doesn't exist
+      const { data: fallbackData } = await supabase
+        .from(TAGS_TABLE)
+        .select('*')
+        .order('usage_count', { ascending: false })
+        .limit(limit);
+      
+      return { data: fallbackData || [], error: null };
+    }
+    
+    return { data: data || [], error: null };
+  } catch (error) {
+    console.error('Error fetching trending topics:', error);
+    return { data: [], error };
+  }
+}
+
+/**
+ * Bookmark/Unbookmark a post
+ * @param {number|string} postId - Post ID
+ * @param {string} userId - User ID
+ * @returns {Promise} - Bookmark result
+ */
+export async function togglePostBookmark(postId, userId) {
+  try {
+    const { supabase } = await import('../../lib/supabase/client');
+    
+    // Check if user already bookmarked the post
+    const { data: existingBookmark, error: checkError } = await supabase
+      .from(POST_BOOKMARKS_TABLE)
+      .select('id')
+      .eq('post_id', postId)
+      .eq('user_id', userId)
+      .single();
+    
+    if (checkError && checkError.code !== 'PGRST116') {
+      throw checkError;
+    }
+    
+    if (existingBookmark) {
+      // Remove bookmark
+      const { error } = await supabase
+        .from(POST_BOOKMARKS_TABLE)
+        .delete()
+        .eq('post_id', postId)
+        .eq('user_id', userId);
+      
+      return { data: { bookmarked: false }, error };
+    } else {
+      // Add bookmark
+      const { error } = await supabase
+        .from(POST_BOOKMARKS_TABLE)
+        .insert({ post_id: postId, user_id: userId });
+      
+      return { data: { bookmarked: true }, error };
+    }
+  } catch (error) {
+    console.error('Error toggling post bookmark:', error);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Get user's bookmarked posts
+ * @param {string} userId - User ID
+ * @param {number} limit - Number of bookmarks to fetch
+ * @returns {Promise} - Bookmarked posts
+ */
+export async function getUserBookmarks(userId, limit = 20) {
+  try {
+    const { supabase } = await import('../../lib/supabase/client');
+    
+    const { data, error } = await supabase
+      .from(POST_BOOKMARKS_TABLE)
+      .select(`
+        created_at,
+        post:${POSTS_TABLE}(
+          *,
+          user:profiles(id, first_name, last_name, avatar_url),
+          category:${CATEGORIES_TABLE}(id, name, color_hex)
+        )
+      `)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    
+    if (error) throw error;
+    
+    return { 
+      data: data?.map(bookmark => bookmark.post) || [], 
+      error: null 
+    };
+  } catch (error) {
+    console.error('Error fetching user bookmarks:', error);
+    return { data: [], error };
+  }
+}
+
+/**
+ * Get user notifications
+ * @param {string} userId - User ID
+ * @param {number} limit - Number of notifications to fetch
+ * @returns {Promise} - User notifications
+ */
+export async function getUserNotifications(userId, limit = 20) {
+  try {
+    const { supabase } = await import('../../lib/supabase/client');
+    
+    const { data, error } = await supabase
+      .from(NOTIFICATIONS_TABLE)
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    
+    if (error) throw error;
+    
+    return { data: data || [], error: null };
+  } catch (error) {
+    console.error('Error fetching user notifications:', error);
+    return { data: [], error };
+  }
+}
+
+/**
+ * Mark notification as read
+ * @param {number|string} notificationId - Notification ID
+ * @returns {Promise} - Update result
+ */
+export async function markNotificationAsRead(notificationId) {
+  return await updateRecord(NOTIFICATIONS_TABLE, { 
+    is_read: true 
+  }, { id: notificationId });
+}
+
+/**
+ * Mark all notifications as read for a user
+ * @param {string} userId - User ID
+ * @returns {Promise} - Update result
+ */
+export async function markAllNotificationsAsRead(userId) {
+  try {
+    const { supabase } = await import('../../lib/supabase/client');
+    
+    const { error } = await supabase
+      .from(NOTIFICATIONS_TABLE)
+      .update({ is_read: true })
+      .eq('user_id', userId)
+      .eq('is_read', false);
+    
+    return { data: true, error };
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Register for an event
+ * @param {number|string} eventId - Event ID
+ * @param {string} userId - User ID
+ * @returns {Promise} - Registration result
+ */
+export async function registerForEvent(eventId, userId) {
+  try {
+    const { supabase } = await import('../../lib/supabase/client');
+    
+    // Check if user is already registered
+    const { data: existingRegistration, error: checkError } = await supabase
+      .from(EVENT_PARTICIPANTS_TABLE)
+      .select('id')
+      .eq('event_id', eventId)
+      .eq('user_id', userId)
+      .single();
+    
+    if (checkError && checkError.code !== 'PGRST116') {
+      throw checkError;
+    }
+    
+    if (existingRegistration) {
+      return { data: null, error: 'Already registered for this event' };
+    }
+    
+    // Check event capacity and status
+    const { data: event, error: eventError } = await supabase
+      .from(EVENTS_TABLE)
+      .select('max_participants, status')
+      .eq('id', eventId)
+      .single();
+    
+    if (eventError) {
+      throw eventError;
+    }
+    
+    if (event.status === 'cancelled') {
+      return { data: null, error: 'Event has been cancelled' };
+    }
+    
+    // Check if event is full
+    if (event.max_participants) {
+      const { count } = await supabase
+        .from(EVENT_PARTICIPANTS_TABLE)
+        .select('*', { count: 'exact', head: true })
+        .eq('event_id', eventId);
+      
+      if (count >= event.max_participants) {
+        return { data: null, error: 'Event is full' };
+      }
+    }
+    
+    // Register for event
+    const { error } = await supabase
+      .from(EVENT_PARTICIPANTS_TABLE)
+      .insert({ 
+        event_id: eventId, 
+        user_id: userId,
+        registration_date: new Date().toISOString(),
+        status: 'registered'
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    return { data: { registered: true, message: 'Successfully registered' }, error: null };
+  } catch (error) {
+    console.error('Error registering for event:', error);
+    return { data: null, error: error.message || 'Failed to register for event' };
+  }
+}
+
+/**
+ * Unregister from an event
+ * @param {number|string} eventId - Event ID
+ * @param {string} userId - User ID
+ * @returns {Promise} - Unregistration result
+ */
+export async function unregisterFromEvent(eventId, userId) {
+  try {
+    const { supabase } = await import('../../lib/supabase/client');
+    
+    const { error } = await supabase
+      .from(EVENT_PARTICIPANTS_TABLE)
+      .delete()
+      .eq('event_id', eventId)
+      .eq('user_id', userId);
+    
+    return { data: { registered: false, message: 'Successfully unregistered' }, error };
+  } catch (error) {
+    console.error('Error unregistering from event:', error);
+    return { data: null, error: error.message || 'Failed to unregister from event' };
+  }
+}
+
+/**
+ * Check if user is registered for an event
+ * @param {number|string} eventId - Event ID
+ * @param {string} userId - User ID
+ * @returns {Promise} - Registration status
+ */
+export async function getUserEventRegistration(eventId, userId) {
+  try {
+    const { supabase } = await import('../../lib/supabase/client');
+    
+    const { data, error } = await supabase
+      .from(EVENT_PARTICIPANTS_TABLE)
+      .select('id, registration_date, status')
+      .eq('event_id', eventId)
+      .eq('user_id', userId)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+    
+    return { 
+      data: { 
+        isRegistered: !!data, 
+        registration: data 
+      }, 
+      error: null 
+    };
+  } catch (error) {
+    console.error('Error checking event registration:', error);
+    return { data: { isRegistered: false, registration: null }, error: error.message };
+  }
+}
+
+/**
+ * Add a reaction to a post
+ * @param {number|string} postId - Post ID
+ * @param {string} userId - User ID
+ * @param {string} reactionType - Type of reaction ('like', 'love', 'helpful', etc.)
+ * @returns {Promise} - Reaction result
+ */
+export async function addPostReaction(postId, userId, reactionType = 'like') {
+  try {
+    const { supabase } = await import('../../lib/supabase/client');
+    
+    // Remove any existing reaction from this user on this post
+    await supabase
+      .from(POST_REACTIONS_TABLE)
+      .delete()
+      .eq('post_id', postId)
+      .eq('user_id', userId);
+    
+    // Add the new reaction
+    const { error } = await supabase
+      .from(POST_REACTIONS_TABLE)
+      .insert({ 
+        post_id: postId, 
+        user_id: userId, 
+        reaction_type: reactionType 
+      });
+    
+    return { data: { reaction: reactionType }, error };
+  } catch (error) {
+    console.error('Error adding post reaction:', error);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Remove a reaction from a post
+ * @param {number|string} postId - Post ID
+ * @param {string} userId - User ID
+ * @returns {Promise} - Reaction removal result
+ */
+export async function removePostReaction(postId, userId) {
+  try {
+    const { supabase } = await import('../../lib/supabase/client');
+    
+    const { error } = await supabase
+      .from(POST_REACTIONS_TABLE)
+      .delete()
+      .eq('post_id', postId)
+      .eq('user_id', userId);
+    
+    return { data: { reaction: null }, error };
+  } catch (error) {
+    console.error('Error removing post reaction:', error);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Get community events for a user (organized or participating)
+ * @param {string} userId - User ID
+ * @param {number} limit - Number of events to fetch
+ * @returns {Promise} - User events
+ */
+export async function getUserEvents(userId, limit = 10) {
+  try {
+    const { supabase } = await import('../../lib/supabase/client');
+    
+    // Get events where user is organizer or participant
+    const { data: organizerEvents } = await supabase
+      .from(EVENTS_TABLE)
+      .select(`
+        *,
+        category:${CATEGORIES_TABLE}(id, name, color_hex),
+        participants_count:${EVENT_PARTICIPANTS_TABLE}(count)
+      `)
+      .eq('organizer_id', userId)
+      .order('start_datetime', { ascending: true })
+      .limit(Math.ceil(limit / 2));
+    
+    const { data: participantEvents } = await supabase
+      .from(EVENT_PARTICIPANTS_TABLE)
+      .select(`
+        event:${EVENTS_TABLE}(
+          *,
+          category:${CATEGORIES_TABLE}(id, name, color_hex),
+          participants_count:${EVENT_PARTICIPANTS_TABLE}(count)
+        )
+      `)
+      .eq('user_id', userId)
+      .eq('registration_status', 'registered')
+      .order('created_at', { ascending: false })
+      .limit(Math.ceil(limit / 2));
+    
+    // Combine and format results
+    const allEvents = [
+      ...(organizerEvents?.map(event => ({ ...event, role: 'organizer' })) || []),
+      ...(participantEvents?.map(item => ({ ...item.event, role: 'participant' })) || [])
+    ];
+    
+    // Remove duplicates and sort
+    const uniqueEvents = allEvents
+      .filter((event, index, self) => 
+        index === self.findIndex(e => e.id === event.id)
+      )
+      .sort((a, b) => new Date(a.start_datetime) - new Date(b.start_datetime))
+      .slice(0, limit);
+    
+    return { data: uniqueEvents, error: null };
+  } catch (error) {
+    console.error('Error fetching user events:', error);
+    return { data: [], error };
+  }
+}
+
+/**
+ * Create a new community event
+ * @param {Object} eventData - Event information
+ * @returns {Promise} - Created event data
+ */
+export async function createEvent(eventData) {
+  try {
+    const { supabase } = await import('../../lib/supabase/client');
+    
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User must be authenticated to create events');
+    }
+
+    // Prepare event data with organizer
+    const eventToCreate = {
+      ...eventData,
+      organizer_id: user.id,
+      status: 'upcoming',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    // Create the event
+    const { data, error } = await supabase
+      .from(EVENTS_TABLE)
+      .insert([eventToCreate])
+      .select(`
+        *,
+        organizer:profiles(id, first_name, last_name, avatar_url)
+      `)
+      .single();
+    
+    if (error) throw error;
+    
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error creating event:', error);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Get event participants count
+ * @param {number|string} eventId - Event ID
+ * @returns {Promise} - Participants count
+ */
+export async function getEventParticipantsCount(eventId) {
+  try {
+    const { supabase } = await import('../../lib/supabase/client');
+    
+    const { count, error } = await supabase
+      .from(EVENT_PARTICIPANTS_TABLE)
+      .select('*', { count: 'exact', head: true })
+      .eq('event_id', eventId);
+    
+    if (error) {
+      throw error;
+    }
+    
+    return { data: count || 0, error: null };
+  } catch (error) {
+    console.error('Error getting event participants count:', error);
+    return { data: 0, error: error.message };
+  }
+}

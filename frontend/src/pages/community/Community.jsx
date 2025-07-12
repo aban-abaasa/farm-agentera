@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { 
@@ -8,13 +8,16 @@ import {
   TextField, InputAdornment, IconButton, Paper, Tabs, Tab,
   Dialog, DialogTitle, DialogContent, DialogActions, FormControl,
   InputLabel, Select, MenuItem, FormHelperText, Chip,
-  Fade, Zoom
+  Fade, Zoom, CircularProgress
 } from '@mui/material';
 import CommunityDiscussions from './CommunityDiscussions';
 import CommunityEvents from './CommunityEvents';
 import CommunityQA from './CommunityQA';
-import { forumCategories } from '../../mocks/forum_categories';
-import { popularTags } from '../../mocks/popular_tags';
+import { 
+  getForumCategories, 
+  getPopularTags, 
+  createPost
+} from '../../services/api/communityService';
 
 
 const Community = () => {
@@ -28,8 +31,55 @@ const Community = () => {
   const [newPostCategory, setNewPostCategory] = useState('');
   const [newPostTags, setNewPostTags] = useState('');
   const [formErrors, setFormErrors] = useState({});
+  
+  // Real data states
+  const [forumCategories, setForumCategories] = useState([]);
+  const [popularTags, setPopularTags] = useState([]);
+  const [communityStats, setCommunityStats] = useState({
+    members: 0,
+    discussions: 0,
+    comments: 0,
+    activeNow: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [createPostLoading, setCreatePostLoading] = useState(false);
 
-  const handleCreatePost = (e) => {
+  // Fetch real data on component mount
+  useEffect(() => {
+    const fetchCommunityData = async () => {
+      try {
+        setLoading(true);
+        const [categoriesRes, tagsRes] = await Promise.all([
+          getForumCategories(),
+          getPopularTags(15)
+        ]);
+
+        if (categoriesRes.data) {
+          setForumCategories(categoriesRes.data);
+        }
+
+        if (tagsRes.data) {
+          setPopularTags(tagsRes.data);
+        }
+
+        // Mock stats for now - you can replace with real stats from database
+        setCommunityStats({
+          members: 1245,
+          discussions: 842,
+          comments: 3517,
+          activeNow: 42
+        });
+      } catch (error) {
+        console.error('Error fetching community data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCommunityData();
+  }, []);
+
+  const handleCreatePost = async (e) => {
     e.preventDefault();
     
     const errors = {};
@@ -42,14 +92,53 @@ const Community = () => {
       return;
     }
     
-    // In a real app, we would send this to an API
-    alert('Post created successfully!');
-    setPostTitle('');
-    setPostContent('');
-    setNewPostCategory('');
-    setNewPostTags('');
-    setFormErrors({});
-    setOpenPostModal(false);
+    if (!user?.id) {
+      alert('You must be logged in to create a post');
+      return;
+    }
+    
+    try {
+      setCreatePostLoading(true);
+      
+      // Parse tags
+      const tags = newPostTags.split(',').map(tag => tag.trim()).filter(tag => tag);
+      
+      // Create post data
+      const postData = {
+        title: postTitle.trim(),
+        content: postContent.trim(),
+        category_id: newPostCategory,
+        user_id: user.id,
+        post_type: 'discussion',
+        status: 'published'
+      };
+      
+      // Create the post
+      const { error } = await createPost(postData, tags);
+      
+      if (error) {
+        console.error('Error creating post:', error);
+        alert('Failed to create post. Please try again.');
+        return;
+      }
+      
+      alert('Post created successfully!');
+      setPostTitle('');
+      setPostContent('');
+      setNewPostCategory('');
+      setNewPostTags('');
+      setFormErrors({});
+      setOpenPostModal(false);
+      
+      // Optionally refresh the discussions list
+      // You might want to add a refresh function here
+      
+    } catch (error) {
+      console.error('Error creating post:', error);
+      alert('Failed to create post. Please try again.');
+    } finally {
+      setCreatePostLoading(false);
+    }
   };
 
   const handleOpenPostModal = () => {
@@ -481,92 +570,37 @@ const Community = () => {
                   </h2>
                 </div>
                 <div className="max-h-[calc(100vh-200px)] overflow-y-auto custom-scrollbar p-3">
-                  {/* All Categories Card */}
-                  <Card 
-                    sx={{ 
-                      mb: 2, 
-                      cursor: 'pointer',
-                      borderLeft: selectedCategory === 'all' ? '4px solid #4CAF50' : '4px solid transparent',
-                      backgroundColor: selectedCategory === 'all' ? '#E8F5E9' : 'white',
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                        transform: 'translateY(-2px)'
-                      }
-                    }}
-                    onClick={() => setSelectedCategory('all')}
-                  >
-                    <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="body1" fontWeight={selectedCategory === 'all' ? 'bold' : 'medium'} color={selectedCategory === 'all' ? 'primary.main' : 'text.primary'}>
-                          All Categories
-                        </Typography>
-                        <Badge 
-                          badgeContent={forumCategories.reduce((sum, cat) => sum + cat.count, 0)} 
-                          color={selectedCategory === 'all' ? 'primary' : 'default'}
-                          sx={{ 
-                            '& .MuiBadge-badge': { 
-                              fontSize: '0.7rem', 
-                              fontWeight: 'bold',
-                              minWidth: '24px',
-                              height: '20px'
-                            } 
-                          }}
-                        />
-                      </Box>
-                    </CardContent>
-                  </Card>
-
-                  {/* Category Cards */}
-                  {forumCategories.map((category, index) => {
-                    // Array of category colors (primary color objects)
-                    const categoryColors = [
-                      { main: '#E91E63', light: '#FCE4EC', dark: '#C2185B' }, // Pink
-                      { main: '#FF9800', light: '#FFF3E0', dark: '#F57C00' }, // Orange
-                      { main: '#4CAF50', light: '#E8F5E9', dark: '#388E3C' }, // Green
-                      { main: '#00BCD4', light: '#E0F7FA', dark: '#0097A7' }, // Cyan
-                      { main: '#673AB7', light: '#EDE7F6', dark: '#512DA8' }, // Deep Purple
-                      { main: '#9C27B0', light: '#F3E5F5', dark: '#7B1FA2' }, // Purple
-                      { main: '#2196F3', light: '#E3F2FD', dark: '#1976D2' }, // Blue
-                      { main: '#FF5722', light: '#FBE9E7', dark: '#E64A19' }  // Deep Orange
-                    ];
-                    
-                    const colorIndex = index % categoryColors.length;
-                    const color = categoryColors[colorIndex];
-                    const isSelected = selectedCategory === category.id;
-                    
-                    return (
+                  {loading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                      <CircularProgress size={30} />
+                    </Box>
+                  ) : (
+                    <>
+                      {/* All Categories Card */}
                       <Card 
-                        key={category.id}
                         sx={{ 
                           mb: 2, 
                           cursor: 'pointer',
-                          borderLeft: isSelected ? `4px solid ${color.main}` : '4px solid transparent',
-                          backgroundColor: isSelected ? color.light : 'white',
+                          borderLeft: selectedCategory === 'all' ? '4px solid #4CAF50' : '4px solid transparent',
+                          backgroundColor: selectedCategory === 'all' ? '#E8F5E9' : 'white',
                           transition: 'all 0.3s ease',
                           '&:hover': {
                             boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                            transform: 'translateY(-2px)',
-                            backgroundColor: isSelected ? color.light : '#f5f5f5'
+                            transform: 'translateY(-2px)'
                           }
                         }}
-                        onClick={() => setSelectedCategory(category.id)}
+                        onClick={() => setSelectedCategory('all')}
                       >
                         <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Typography 
-                              variant="body1" 
-                              fontWeight={isSelected ? 'bold' : 'medium'} 
-                              color={isSelected ? color.dark : 'text.primary'}
-                            >
-                              {category.name}
+                            <Typography variant="body1" fontWeight={selectedCategory === 'all' ? 'bold' : 'medium'} color={selectedCategory === 'all' ? 'primary.main' : 'text.primary'}>
+                              All Categories
                             </Typography>
                             <Badge 
-                              badgeContent={category.count} 
+                              badgeContent={forumCategories.reduce((sum, cat) => sum + (cat.post_count || 0), 0)} 
+                              color={selectedCategory === 'all' ? 'primary' : 'default'}
                               sx={{ 
                                 '& .MuiBadge-badge': { 
-                                  backgroundColor: isSelected ? color.main : '#9e9e9e',
-                                  color: 'white',
                                   fontSize: '0.7rem', 
                                   fontWeight: 'bold',
                                   minWidth: '24px',
@@ -575,20 +609,83 @@ const Community = () => {
                               }}
                             />
                           </Box>
-                          {isSelected && (
-                            <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', color: color.dark }}>
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd"/>
-                              </svg>
-                              <Typography variant="caption" fontWeight="medium" color="inherit">
-                                View posts in this category
-                              </Typography>
-                            </Box>
-                          )}
                         </CardContent>
                       </Card>
-                    );
-                  })}
+
+                      {/* Category Cards */}
+                      {forumCategories.map((category, index) => {
+                        // Array of category colors (primary color objects)
+                        const categoryColors = [
+                          { main: '#E91E63', light: '#FCE4EC', dark: '#C2185B' }, // Pink
+                          { main: '#FF9800', light: '#FFF3E0', dark: '#F57C00' }, // Orange
+                          { main: '#4CAF50', light: '#E8F5E9', dark: '#388E3C' }, // Green
+                          { main: '#00BCD4', light: '#E0F7FA', dark: '#0097A7' }, // Cyan
+                          { main: '#673AB7', light: '#EDE7F6', dark: '#512DA8' }, // Deep Purple
+                          { main: '#9C27B0', light: '#F3E5F5', dark: '#7B1FA2' }, // Purple
+                          { main: '#2196F3', light: '#E3F2FD', dark: '#1976D2' }, // Blue
+                          { main: '#FF5722', light: '#FBE9E7', dark: '#E64A19' }  // Deep Orange
+                        ];
+                        
+                        const colorIndex = index % categoryColors.length;
+                        const color = categoryColors[colorIndex];
+                        const isSelected = selectedCategory === category.id;
+                        
+                        return (
+                          <Card 
+                            key={category.id}
+                            sx={{ 
+                              mb: 2, 
+                              cursor: 'pointer',
+                              borderLeft: isSelected ? `4px solid ${color.main}` : '4px solid transparent',
+                              backgroundColor: isSelected ? color.light : 'white',
+                              transition: 'all 0.3s ease',
+                              '&:hover': {
+                                boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                                transform: 'translateY(-2px)',
+                                backgroundColor: isSelected ? color.light : '#f5f5f5'
+                              }
+                            }}
+                            onClick={() => setSelectedCategory(category.id)}
+                          >
+                            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Typography 
+                                  variant="body1" 
+                                  fontWeight={isSelected ? 'bold' : 'medium'} 
+                                  color={isSelected ? color.dark : 'text.primary'}
+                                >
+                                  {category.name}
+                                </Typography>
+                                <Badge 
+                                  badgeContent={category.post_count || 0} 
+                                  sx={{ 
+                                    '& .MuiBadge-badge': { 
+                                      backgroundColor: isSelected ? color.main : '#9e9e9e',
+                                      color: 'white',
+                                      fontSize: '0.7rem', 
+                                      fontWeight: 'bold',
+                                      minWidth: '24px',
+                                      height: '20px'
+                                    } 
+                                  }}
+                                />
+                              </Box>
+                              {isSelected && (
+                                <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', color: color.dark }}>
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd"/>
+                                  </svg>
+                                  <Typography variant="caption" fontWeight="medium" color="inherit">
+                                    View posts in this category
+                                  </Typography>
+                                </Box>
+                              )}
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -603,16 +700,27 @@ const Community = () => {
                   </h2>
                 </div>
                 <div className="p-5">
-                  <div className="flex flex-wrap gap-2">
-                    {popularTags.map((tag, index) => (
-                      <button 
-                        key={index} 
-                        className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-full text-sm font-medium transition-colors"
-                      >
-                        {tag.name} <span className="text-primary font-semibold">({tag.count})</span>
-                      </button>
-                    ))}
-                  </div>
+                  {loading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                      <CircularProgress size={24} />
+                    </Box>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {popularTags.map((tag, index) => (
+                        <button 
+                          key={tag.id || index} 
+                          className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-full text-sm font-medium transition-colors"
+                        >
+                          {tag.name} <span className="text-primary font-semibold">({tag.usage_count || tag.count || 0})</span>
+                        </button>
+                      ))}
+                      {popularTags.length === 0 && !loading && (
+                        <Typography variant="body2" color="text.secondary">
+                          No tags available yet
+                        </Typography>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -629,19 +737,19 @@ const Community = () => {
                 <div className="p-5">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-gray-50 rounded-lg p-3 text-center">
-                      <div className="text-xl font-bold text-primary">1,245</div>
+                      <div className="text-xl font-bold text-primary">{communityStats.members.toLocaleString()}</div>
                       <div className="text-gray-600 text-xs">Members</div>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-3 text-center">
-                      <div className="text-xl font-bold text-primary">842</div>
+                      <div className="text-xl font-bold text-primary">{communityStats.discussions}</div>
                       <div className="text-gray-600 text-xs">Discussions</div>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-3 text-center">
-                      <div className="text-xl font-bold text-primary">3,517</div>
+                      <div className="text-xl font-bold text-primary">{communityStats.comments.toLocaleString()}</div>
                       <div className="text-gray-600 text-xs">Comments</div>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-3 text-center">
-                      <div className="text-xl font-bold text-primary">42</div>
+                      <div className="text-xl font-bold text-primary">{communityStats.activeNow}</div>
                       <div className="text-gray-600 text-xs">Active Now</div>
                     </div>
                   </div>
@@ -787,7 +895,7 @@ const Community = () => {
               </Typography>
               {popularTags.slice(0, 8).map((tag, index) => (
                 <Chip
-                  key={index}
+                  key={tag.id || index}
                   label={tag.name}
                   size="small"
                   onClick={() => {
@@ -863,14 +971,19 @@ const Community = () => {
             onClick={handleCreatePost} 
             variant="contained"
             color="primary"
+            disabled={createPostLoading}
             sx={{ borderRadius: 1.5, px: 4, py: 1 }}
             startIcon={
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
+              createPostLoading ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              )
             }
           >
-            Publish Post
+            {createPostLoading ? 'Publishing...' : 'Publish Post'}
           </Button>
         </DialogActions>
       </Dialog>

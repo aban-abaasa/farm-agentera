@@ -24,9 +24,16 @@ const verbose = args.includes('--verbose');
 
 // Check for file parameter
 let specificFile = null;
+let specificDirectory = null;
+let sequentialExecution = false;
+
 args.forEach(arg => {
   if (arg.startsWith('--file=')) {
     specificFile = arg.substring(7); // Extract file path after --file=
+  } else if (arg.startsWith('--dir=')) {
+    specificDirectory = arg.substring(6); // Extract directory path after --dir=
+  } else if (arg === '--seq') {
+    sequentialExecution = true;
   }
 });
 
@@ -45,13 +52,15 @@ Options:
   --help              Show this help message
   --verbose           Show more detailed output during execution
   --file=path/to.sql  Execute a specific SQL file against the database
+  --dir=path/to/dir   Execute all SQL files in a directory sequentially
+  --seq               Use with --dir to ensure sequential execution (default behavior)
 
 Schemas:
   auth        Initialize authentication tables (01_auth_tables.sql)
   resources   Initialize resources tables (02_resources_tables.sql)
   events      Initialize events tables (03_events_tables.sql)
   marketplace Initialize marketplace tables (04_marketplace_tables.sql)
-  community   Initialize community tables (05_community_tables.sql)
+  community   Initialize community tables (from community/ directory with multiple SQL files)
   messages    Initialize messaging tables (06_messages_tables.sql)
 
 Examples:
@@ -59,6 +68,8 @@ Examples:
   node initialize_db.js auth marketplace                  # Initialize only auth and marketplace schemas
   node initialize_db.js --verbose community               # Initialize community schemas with verbose output
   node initialize_db.js --file=db/schemas/fix_images.sql  # Execute a specific SQL file
+  node initialize_db.js --dir=db/schemas/community        # Execute all SQL files in community directory
+  node initialize_db.js --dir=custom/sql/path --verbose   # Execute custom directory with verbose output
   `);
   process.exit(0);
 }
@@ -84,13 +95,13 @@ if (!dbUrl) {
   console.log(`Constructed database URL from individual parameters: ${dbUrl.replace(/:[^:]*@/, ':****@')}`);
 }
 
-// Map of schema names to file names
+// Map of schema names to file names or directories
 const SCHEMA_MAP = {
   'auth': "01_auth_tables.sql",
   'resources': "02_resources_tables.sql",
   'events': "03_events_tables.sql",
   'marketplace': "04_marketplace_tables.sql",
-  'community': "05_community_tables.sql",
+  'community': "community", // Directory containing multiple SQL files
   'messages': "06_messages_tables.sql"
 };
 
@@ -100,9 +111,55 @@ const SCHEMA_FILES_ORDER = [
   "02_resources_tables.sql",
   "03_events_tables.sql",
   "04_marketplace_tables.sql",
-  "05_community_tables.sql",
+  "community", // Directory containing multiple SQL files
   "06_messages_tables.sql"
 ];
+
+/**
+ * Execute SQL files from a directory in numerical order.
+ * @param {postgres.Sql} sql - Postgres SQL client
+ * @param {string} dirPath - Path to directory containing SQL files
+ * @returns {Promise<boolean>} - Success status
+ */
+async function executeSqlFilesFromDirectory(sql, dirPath) {
+  try {
+    if (!fs.existsSync(dirPath)) {
+      console.error(`Error: Directory not found at ${dirPath}`);
+      return false;
+    }
+
+    // Read all SQL files from the directory
+    const files = fs.readdirSync(dirPath)
+      .filter(file => file.endsWith('.sql'))
+      .sort(); // Sort alphabetically (which will handle numerical prefixes correctly)
+
+    if (files.length === 0) {
+      console.warn(`Warning: No SQL files found in directory ${dirPath}`);
+      return true;
+    }
+
+    console.log(`Found ${files.length} SQL files in ${dirPath}`);
+    if (verbose) {
+      console.log(`Files to execute: ${files.join(', ')}`);
+    }
+
+    let allSuccessful = true;
+    for (const file of files) {
+      const filePath = path.join(dirPath, file);
+      const success = await executeSqlFile(sql, filePath);
+      if (!success) {
+        allSuccessful = false;
+        console.error(`Failed to execute ${file}. Stopping directory execution.`);
+        break;
+      }
+    }
+
+    return allSuccessful;
+  } catch (error) {
+    console.error(`Error executing SQL files from directory ${dirPath}: ${error.message}`);
+    return false;
+  }
+}
 
 /**
  * Execute an SQL file against the database.
@@ -174,11 +231,11 @@ async function initializeDatabase(schemaNames = []) {
       schemaFilesToExecute = SCHEMA_FILES_ORDER;
       console.log("No specific schemas requested. Initializing all schemas in default order.");
     } else {
-      // Map requested schema names to file names
+      // Map requested schema names to file names or directory names
       for (const name of schemaNames) {
-        const fileName = SCHEMA_MAP[name.toLowerCase()];
-        if (fileName) {
-          schemaFilesToExecute.push(fileName);
+        const fileOrDir = SCHEMA_MAP[name.toLowerCase()];
+        if (fileOrDir) {
+          schemaFilesToExecute.push(fileOrDir);
         } else {
           console.warn(`Warning: Unknown schema name '${name}'. Skipping.`);
         }
@@ -192,17 +249,34 @@ async function initializeDatabase(schemaNames = []) {
       console.log(`Initializing the following schemas: ${schemaFilesToExecute.join(', ')}`);
     }
     
-    // Execute schema files in order
+    // Execute schema files or directories in order
     let allSuccessful = true;
-    for (const schemaFile of schemaFilesToExecute) {
-      const filePath = path.join(schemasDir, schemaFile);
-      if (fs.existsSync(filePath)) {
-        const success = await executeSqlFile(sql, filePath);
-        if (!success) {
-          allSuccessful = false;
+    for (const schemaItem of schemaFilesToExecute) {
+      const itemPath = path.join(schemasDir, schemaItem);
+      
+      // Check if it's a directory or a file
+      if (fs.existsSync(itemPath)) {
+        const stat = fs.statSync(itemPath);
+        
+        if (stat.isDirectory()) {
+          console.log(`Processing directory: ${schemaItem}`);
+          const success = await executeSqlFilesFromDirectory(sql, itemPath);
+          if (!success) {
+            allSuccessful = false;
+            console.error(`Failed to process directory: ${schemaItem}`);
+          }
+        } else if (stat.isFile() && schemaItem.endsWith('.sql')) {
+          console.log(`Processing file: ${schemaItem}`);
+          const success = await executeSqlFile(sql, itemPath);
+          if (!success) {
+            allSuccessful = false;
+            console.error(`Failed to process file: ${schemaItem}`);
+          }
+        } else {
+          console.warn(`Warning: ${schemaItem} is neither a directory nor an SQL file. Skipping.`);
         }
       } else {
-        console.warn(`Warning: Schema file ${schemaFile} not found at ${filePath}`);
+        console.warn(`Warning: Schema item ${schemaItem} not found at ${itemPath}`);
         allSuccessful = false;
       }
     }
@@ -237,6 +311,59 @@ async function initializeDatabase(schemaNames = []) {
     return allSuccessful;
   } catch (error) {
     console.error(`Error initializing database: ${error.message}`);
+    // Ensure connection is closed even on error
+    await sql.end().catch(() => {});
+    return false;
+  }
+}
+
+/**
+ * Execute all SQL files in a specified directory.
+ * @param {string} dirPath - Path to the directory containing SQL files
+ * @returns {Promise<boolean>} - Success status
+ */
+async function executeDirectorySequentially(dirPath) {
+  // Create postgres SQL client
+  const sql = postgres(dbUrl, {
+    max: 1, // Use only one connection
+    idle_timeout: 30, // Close idle connections after 30 seconds
+    connect_timeout: 30, // Connection timeout after 30 seconds
+  });
+  
+  try {
+    console.log("Connecting to database...");
+    await sql`SELECT 1`; // Test connection
+    console.log("Connected successfully!");
+    
+    // Check if directory exists
+    if (!fs.existsSync(dirPath)) {
+      console.error(`Error: Directory not found at ${dirPath}`);
+      return false;
+    }
+    
+    const stat = fs.statSync(dirPath);
+    if (!stat.isDirectory()) {
+      console.error(`Error: ${dirPath} is not a directory`);
+      return false;
+    }
+    
+    console.log(`Executing SQL files from directory: ${dirPath}`);
+    
+    // Execute all SQL files in the directory
+    const success = await executeSqlFilesFromDirectory(sql, dirPath);
+    
+    // Close the database connection
+    await sql.end();
+    
+    if (success) {
+      console.log(`Successfully executed all SQL files from directory: ${dirPath}`);
+    } else {
+      console.error(`Failed to execute some SQL files from directory: ${dirPath}`);
+    }
+    
+    return success;
+  } catch (error) {
+    console.error(`Error executing directory: ${error.message}`);
     // Ensure connection is closed even on error
     await sql.end().catch(() => {});
     return false;
@@ -300,6 +427,16 @@ if (require.main === module) {
         console.error(`Unhandled error: ${error.message}`);
         process.exit(1);
       });
+  } else if (specificDirectory) {
+    // If a specific directory was specified, execute all SQL files in it sequentially
+    executeDirectorySequentially(specificDirectory)
+      .then(success => {
+        process.exit(success ? 0 : 1);
+      })
+      .catch(error => {
+        console.error(`Unhandled error: ${error.message}`);
+        process.exit(1);
+      });
   } else {
     // Otherwise run normal initialization with requested schemas
     initializeDatabase(requestedSchemas)
@@ -313,4 +450,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { initializeDatabase, executeSingleFile }; 
+module.exports = { initializeDatabase, executeSingleFile, executeSqlFilesFromDirectory, executeDirectorySequentially }; 

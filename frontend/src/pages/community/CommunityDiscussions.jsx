@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Box, Typography, TextField, Button, InputAdornment, 
-  IconButton, Paper, Card, CardContent, Chip, Avatar
+  IconButton, Paper, Card, CardContent, Chip, Avatar,
+  CircularProgress
 } from '@mui/material';
 
-import { mockPosts } from '../../mocks/posts';
+import { getPosts } from '../../services/api/communityService';
 
 const CommunityDiscussions = ({ 
   searchTerm, 
@@ -15,12 +16,62 @@ const CommunityDiscussions = ({
   setSearchTerm,
   handleOpenPostModal
 }) => {
-  // Filter posts based on selectedCategory if not 'all'
-  const filteredPosts = selectedCategory === 'all' 
-    ? mockPosts 
-    : mockPosts.filter(post => post.tags && post.tags.some(tag => 
-        tag.toLowerCase().includes(selectedCategory.toLowerCase())
-      ));
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch posts from the database
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        setLoading(true);
+        const options = {
+          limit: 20
+        };
+        
+        // Add category filter if not 'all'
+        if (selectedCategory && selectedCategory !== 'all') {
+          options.category_id = selectedCategory;
+        }
+        
+        const { data, error } = await getPosts(options);
+        
+        if (error) {
+          console.error('Error fetching posts:', error);
+          setPosts([]);
+        } else {
+          // Transform the data to match component expectations
+          const transformedPosts = (data || []).map(post => ({
+            ...post,
+            author: {
+              id: post.user?.id,
+              name: `${post.user?.first_name || ''} ${post.user?.last_name || ''}`.trim() || 'Unknown User',
+              avatar: post.user?.avatar_url
+            },
+            date: post.created_at,
+            comments: post.comments_count || 0,
+            likes: post.likes_count || post.likes || 0
+          }));
+          setPosts(transformedPosts);
+        }
+      } catch (error) {
+        console.error('Error fetching posts:', error);
+        setPosts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPosts();
+  }, [selectedCategory]);
+
+  // Filter posts based on search term
+  const filteredPosts = searchTerm 
+    ? posts.filter(post => 
+        post.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.content?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.tags?.some(tag => tag.name?.toLowerCase().includes(searchTerm.toLowerCase()))
+      )
+    : posts;
     
   return (
     <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-8">
@@ -280,7 +331,12 @@ const CommunityDiscussions = ({
 
         {/* Discussion posts */}
         <div className="grid grid-cols-1 gap-6">
-          {filteredPosts.map(post => (
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+              <CircularProgress size={40} />
+            </Box>
+          ) : filteredPosts.length > 0 ? (
+            filteredPosts.map(post => (
             <Card 
               key={post.id} 
               elevation={2}
@@ -463,7 +519,45 @@ const CommunityDiscussions = ({
                 </Button>
               </Box>
             </Card>
-          ))}
+          ))
+          ) : (
+            <Box sx={{ 
+              textAlign: 'center', 
+              py: 8,
+              px: 4,
+              bgcolor: 'background.paper',
+              borderRadius: 2,
+              border: '1px solid',
+              borderColor: 'divider'
+            }}>
+              <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
+                No discussions found
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {searchTerm 
+                  ? `No discussions match "${searchTerm}". Try different keywords.`
+                  : selectedCategory !== 'all' 
+                    ? 'No discussions in this category yet. Be the first to start one!'
+                    : 'No discussions yet. Start the conversation!'
+                }
+              </Typography>
+              {user && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleOpenPostModal}
+                  sx={{ mt: 3, borderRadius: 2 }}
+                  startIcon={
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                    </svg>
+                  }
+                >
+                  Start a Discussion
+                </Button>
+              )}
+            </Box>
+          )}
         </div>
         
         {/* Pagination */}

@@ -38,13 +38,22 @@ import {
   Air as WindIcon,
   ThumbUp as ThumbUpIcon,
   TrendingUp as TrendingUpIcon,
-  WavingHand as WavingHandIcon
+  WavingHand as WavingHandIcon,
+  Forum as ForumIcon,
+  HelpOutline as QuestionIcon,
+  Psychology as AnswerIcon,
+  Star as StarIcon
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { getUserListings, getListings } from '../services/api/marketplaceService';
 import { getUserProfile } from '../services/api/authService';
 import { getConversations, getUnreadMessageCount } from '../services/api/messageService';
-import { mockCommunityActivity } from '../mocks/dashboard';
+import { 
+  getRecentCommunityActivity, 
+  getUserCommunityStats, 
+  getUpcomingEvents,
+  getTrendingTopics 
+} from '../services/api/communityService';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -60,8 +69,19 @@ const Dashboard = () => {
     activeListings: 0,
     purchases: 5, // Mock data for now
     connections: 10, // Mock data for now
-    newMessages: 0 
+    newMessages: 0,
+    // Community stats
+    postsCreated: 0,
+    questionsAsked: 0,
+    answersGiven: 0,
+    reputationPoints: 0
   });
+
+  // Community data state
+  const [communityActivity, setCommunityActivity] = useState([]);
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [trendingTopics, setTrendingTopics] = useState([]);
+  const [communityLoading, setCommunityLoading] = useState(true);
 
   // Handle horizontal scroll position for mobile indicator
   const handleStatsScroll = (e) => {
@@ -89,6 +109,7 @@ const Dashboard = () => {
       
       setIsLoading(true);
       setMessagesLoading(true);
+      setCommunityLoading(true);
       try {
         // Get user profile
         const { data: profile, error: profileError } = await getUserProfile(user.id);
@@ -154,19 +175,43 @@ const Dashboard = () => {
         });
         
         setMessages(formattedMessages);
+
+        // Fetch community data
+        const [
+          { data: communityStats },
+          { data: recentActivity },
+          { data: events },
+          { data: trending }
+        ] = await Promise.all([
+          getUserCommunityStats(user.id),
+          getRecentCommunityActivity(5),
+          getUpcomingEvents(3),
+          getTrendingTopics(5)
+        ]);
+
+        // Set community data
+        setCommunityActivity(recentActivity || []);
+        setUpcomingEvents(events || []);
+        setTrendingTopics(trending || []);
         
         // Update stats based on real data
         setStats({
           activeListings: userListings?.length || 0,
           purchases: 5, // Mock data for now
           connections: 10, // Mock data for now
-          newMessages: unreadCount || 0
+          newMessages: unreadCount || 0,
+          // Community stats
+          postsCreated: communityStats?.posts_created || 0,
+          questionsAsked: communityStats?.questions_asked || 0,
+          answersGiven: communityStats?.answers_given || 0,
+          reputationPoints: communityStats?.reputation_points || 0
         });
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
         setIsLoading(false);
         setMessagesLoading(false);
+        setCommunityLoading(false);
       }
     };
     
@@ -202,6 +247,34 @@ const Dashboard = () => {
       label: 'New Messages',
       color: '#ff9800',
       bgColor: alpha('#ff9800', 0.12)
+    }
+  ];
+
+  // Community stats array for display
+  const communityStatsArray = [
+    {
+      icon: <ForumIcon sx={{ fontSize: 32 }} style={{ color: '#2196f3' }} />,
+      value: stats.postsCreated.toString(),
+      label: 'Posts Created',
+      color: '#2196f3'
+    },
+    {
+      icon: <QuestionIcon sx={{ fontSize: 32 }} style={{ color: '#ff9800' }} />,
+      value: stats.questionsAsked.toString(),
+      label: 'Questions Asked',
+      color: '#ff9800'
+    },
+    {
+      icon: <AnswerIcon sx={{ fontSize: 32 }} style={{ color: '#4caf50' }} />,
+      value: stats.answersGiven.toString(),
+      label: 'Answers Given',
+      color: '#4caf50'
+    },
+    {
+      icon: <StarIcon sx={{ fontSize: 32 }} style={{ color: '#ffc107' }} />,
+      value: stats.reputationPoints.toString(),
+      label: 'Reputation Points',
+      color: '#ffc107'
     }
   ];
 
@@ -931,79 +1004,95 @@ const Dashboard = () => {
               </Box>
               
               <List sx={{ width: '100%', p: 0 }}>
-                {mockCommunityActivity.map((activity, index) => (
-                  <ListItem 
-                    key={activity.id}
-                    alignItems="flex-start" 
-                    sx={{ 
-                      px: 3, 
-                      py: 2.5,
-                      borderBottom: index < mockCommunityActivity.length - 1 ? '1px solid' : 'none',
-                      borderColor: 'divider',
-                      transition: 'background-color 0.2s',
-                      '&:hover': {
-                        bgcolor: 'rgba(0,0,0,0.02)'
-                      }
-                    }}
-                  >
-                    <ListItemAvatar>
-                      <Avatar sx={{ bgcolor: ['#4caf50', '#ff9800', '#2196f3'][index % 3] }}>
-                        {activity.avatar || activity.user.charAt(0)}
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={
-                        <Box sx={{ mb: 1 }}>
-                          <Typography component="span" fontWeight="bold">
-                            {activity.user}
-                          </Typography>
-                          {` ${activity.action} `}
-                          <Typography 
-                            component="span" 
-                            color="primary" 
-                            sx={{ 
-                              fontWeight: 'medium',
-                              cursor: 'pointer', 
-                              '&:hover': { 
-                                textDecoration: 'underline' 
-                              } 
-                            }}
-                          >
-                            {activity.target}
-                          </Typography>
-                        </Box>
-                      }
-                      secondary={
-                        <>
-                          <Typography variant="body2" color="text.primary" sx={{ mb: 1.5 }}>
-                            {activity.content}
-                          </Typography>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Typography 
-                              variant="caption" 
-                              color="text.secondary" 
-                              sx={{ mr: 2 }}
-                            >
-                              {activity.date}
+                {communityLoading ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                    <CircularProgress size={24} />
+                  </Box>
+                ) : communityActivity.length > 0 ? (
+                  communityActivity.map((activity, index) => (
+                    <ListItem 
+                      key={activity.id}
+                      alignItems="flex-start" 
+                      sx={{ 
+                        px: 3, 
+                        py: 2.5,
+                        borderBottom: index < communityActivity.length - 1 ? '1px solid' : 'none',
+                        borderColor: 'divider',
+                        transition: 'background-color 0.2s',
+                        '&:hover': {
+                          bgcolor: 'rgba(0,0,0,0.02)'
+                        }
+                      }}
+                    >
+                      <ListItemAvatar>
+                        <Avatar 
+                          src={activity.user?.avatar_url}
+                          sx={{ bgcolor: ['#4caf50', '#ff9800', '#2196f3'][index % 3] }}
+                        >
+                          {activity.user?.first_name?.charAt(0) || 'U'}
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={
+                          <Box sx={{ mb: 1 }}>
+                            <Typography component="span" fontWeight="bold">
+                              {`${activity.user?.first_name || ''} ${activity.user?.last_name || ''}`.trim() || 'Unknown User'}
                             </Typography>
-                            <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
-                              <ThumbUpIcon sx={{ fontSize: 14, color: 'text.secondary', mr: 0.5 }} />
-                              <Typography variant="caption" color="text.secondary">
-                                {activity.likes}
-                              </Typography>
-                            </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <MessageIcon sx={{ fontSize: 14, color: 'text.secondary', mr: 0.5 }} />
-                              <Typography variant="caption" color="text.secondary">
-                                {activity.replies}
-                              </Typography>
-                            </Box>
+                            {` ${activity.type === 'post' ? 'shared a post' : 'asked a question'} `}
+                            <Typography 
+                              component="span" 
+                              color="primary" 
+                              sx={{ 
+                                fontWeight: 'medium',
+                                cursor: 'pointer', 
+                                '&:hover': { 
+                                  textDecoration: 'underline' 
+                                } 
+                              }}
+                            >
+                              {activity.title}
+                            </Typography>
                           </Box>
-                        </>
-                      }
-                    />
-                  </ListItem>
-                ))}
+                        }
+                        secondary={
+                          <>
+                            <Typography variant="body2" color="text.primary" sx={{ mb: 1.5 }}>
+                              {activity.content?.substring(0, 100)}
+                              {activity.content?.length > 100 ? '...' : ''}
+                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Typography 
+                                variant="caption" 
+                                color="text.secondary" 
+                                sx={{ mr: 2 }}
+                              >
+                                {new Date(activity.created_at).toLocaleDateString()}
+                              </Typography>
+                              <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
+                                <ThumbUpIcon sx={{ fontSize: 14, color: 'text.secondary', mr: 0.5 }} />
+                                <Typography variant="caption" color="text.secondary">
+                                  {activity.likes || 0}
+                                </Typography>
+                              </Box>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <MessageIcon sx={{ fontSize: 14, color: 'text.secondary', mr: 0.5 }} />
+                                <Typography variant="caption" color="text.secondary">
+                                  {activity.comments_count || 0}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </>
+                        }
+                      />
+                    </ListItem>
+                  ))
+                ) : (
+                  <Box sx={{ p: 4, textAlign: 'center' }}>
+                    <Typography color="text.secondary">
+                      No recent community activity
+                    </Typography>
+                  </Box>
+                )}
               </List>
             </Paper>
           </Grid>
@@ -1152,6 +1241,158 @@ const Dashboard = () => {
                 >
                   View All Messages
                 </Button>
+              </Box>
+            </Paper>
+
+            {/* Community Insights */}
+            <Paper 
+              sx={{ 
+                mb: 4,
+                borderRadius: 3,
+                overflow: 'hidden',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.05)'
+              }}
+            >
+              <Box 
+                sx={{ 
+                  bgcolor: 'background.default',
+                  px: 3,
+                  py: 2,
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}
+              >
+                <Typography variant="h6" fontWeight="bold">Community Insights</Typography>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  endIcon={<ArrowForwardIcon />}
+                  component={RouterLink}
+                  to="/community"
+                  sx={{ borderRadius: 2 }}
+                >
+                  Visit Community
+                </Button>
+              </Box>
+              
+              <Box sx={{ p: 3 }}>
+                <Grid container spacing={2}>
+                  {communityStatsArray.map((stat, index) => (
+                    <Grid item xs={6} key={index}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          p: 2,
+                          borderRadius: 2,
+                          bgcolor: alpha(stat.color, 0.08),
+                          border: `1px solid ${alpha(stat.color, 0.2)}`,
+                          transition: 'transform 0.2s',
+                          '&:hover': {
+                            transform: 'scale(1.02)'
+                          }
+                        }}
+                      >
+                        <Box sx={{ mb: 1 }}>
+                          {stat.icon}
+                        </Box>
+                        <Typography
+                          variant="h5"
+                          fontWeight="bold"
+                          sx={{ color: stat.color, mb: 0.5 }}
+                        >
+                          {stat.value}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          textAlign="center"
+                          sx={{ lineHeight: 1.2 }}
+                        >
+                          {stat.label}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  ))}
+                </Grid>
+
+                {/* Trending Topics */}
+                {trendingTopics.length > 0 && (
+                  <Box sx={{ mt: 3 }}>
+                    <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 2 }}>
+                      Trending Topics
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {trendingTopics.slice(0, 4).map((topic, index) => (
+                        <Chip
+                          key={topic.id || index}
+                          label={topic.name || topic.tag_name}
+                          size="small"
+                          sx={{
+                            bgcolor: 'primary.light',
+                            color: 'primary.contrastText',
+                            fontWeight: 'medium'
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+
+                {/* Upcoming Events Preview */}
+                {upcomingEvents.length > 0 && (
+                  <Box sx={{ mt: 3 }}>
+                    <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 2 }}>
+                      Upcoming Events
+                    </Typography>
+                    {upcomingEvents.slice(0, 2).map((event, index) => (
+                      <Box
+                        key={event.id}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          mb: index < upcomingEvents.slice(0, 2).length - 1 ? 2 : 0,
+                          p: 2,
+                          borderRadius: 2,
+                          bgcolor: 'background.paper',
+                          border: '1px solid',
+                          borderColor: 'divider'
+                        }}
+                      >
+                        <Avatar
+                          sx={{
+                            bgcolor: event.category?.color_hex || 'primary.main',
+                            mr: 2,
+                            width: 32,
+                            height: 32
+                          }}
+                        >
+                          <GroupIcon fontSize="small" />
+                        </Avatar>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography
+                            variant="subtitle2"
+                            fontWeight="medium"
+                            sx={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            {event.title}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {new Date(event.start_datetime).toLocaleDateString()}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
               </Box>
             </Paper>
 

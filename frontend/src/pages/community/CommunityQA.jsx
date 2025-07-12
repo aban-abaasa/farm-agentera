@@ -1,21 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Box, Typography, Card, CardContent, Button, TextField, 
   InputAdornment, IconButton, Paper, Divider, Avatar, Chip, 
-  Grid, List, ListItem, ListItemText, ListItemAvatar
+  Grid, List, ListItem, ListItemText, ListItemAvatar,
+  CircularProgress
 } from '@mui/material';
 
-import {mockQuestions} from '../../mocks/questions';
-
-// Popular categories for Q&A
-const qaCategories = [
-  { id: "all", name: "All Questions", count: mockQuestions.length },
-  { id: "unanswered", name: "Unanswered", count: mockQuestions.filter(q => q.status === "unanswered").length },
-  { id: "crops", name: "Crop Farming", count: 24 },
-  { id: "livestock", name: "Livestock", count: 18 },
-  { id: "tech", name: "Farming Technology", count: 12 },
-  { id: "market", name: "Market & Prices", count: 15 }
-];
+import { getQuestions, getForumCategories } from '../../services/api/communityService';
+import AskQuestion from './AskQuestion';
 
 // Expert users for Q&A section
 const experts = [
@@ -28,9 +20,139 @@ const CommunityQA = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
+  const [questions, setQuestions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [askQuestionOpen, setAskQuestionOpen] = useState(false);
+  // const [categories, setCategories] = useState([]); // TODO: Use for advanced filtering
+  
+  // Popular categories for Q&A - will be calculated from real data
+  const [qaCategories, setQaCategories] = useState([
+    { id: "all", name: "All Questions", count: 0 },
+    { id: "unanswered", name: "Unanswered", count: 0 },
+    { id: "open", name: "Open", count: 0 },
+    { id: "answered", name: "Answered", count: 0 },
+    { id: "closed", name: "Closed", count: 0 }
+  ]);
+
+  // Fetch questions and categories from database
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch questions
+        const { data: questionsData, error: questionsError } = await getQuestions({ limit: 50 });
+        
+        if (questionsError) {
+          console.error('Error fetching questions:', questionsError);
+          setQuestions([]);
+        } else {
+          // Transform database questions to match component expectations
+          const transformedQuestions = (questionsData || []).map(question => ({
+            id: question.id,
+            title: question.title,
+            content: question.content,
+            author: question.user ? 
+              `${question.user.first_name || ''} ${question.user.last_name || ''}`.trim() || 'Anonymous' :
+              'Anonymous',
+            authorAvatar: question.user?.avatar_url || '',
+            date: question.created_at,
+            status: question.status || 'open', // 'open', 'answered', 'closed'
+            priority: question.priority || 'medium',
+            views: question.views || 0,
+            votes: 0, // TODO: Calculate from answer_votes table
+            answers: 0, // TODO: Get actual count from question_answers table
+            tags: question.tags?.map(tag => tag.name) || [],
+            category: question.category?.name || 'General',
+            question_type: question.question_type || 'general',
+            bounty_amount: question.bounty_amount || 0,
+            expert_requested: question.expert_requested || false,
+            crop_type: question.crop_type,
+            livestock_type: question.livestock_type,
+            location: question.location
+          }));
+
+          setQuestions(transformedQuestions);
+
+          // Update categories with counts
+          const categoryCounts = {
+            all: transformedQuestions.length,
+            unanswered: transformedQuestions.filter(q => q.status === 'open' && q.answers === 0).length,
+            open: transformedQuestions.filter(q => q.status === 'open').length,
+            answered: transformedQuestions.filter(q => q.status === 'answered').length,
+            closed: transformedQuestions.filter(q => q.status === 'closed').length
+          };
+
+          setQaCategories([
+            { id: "all", name: "All Questions", count: categoryCounts.all },
+            { id: "unanswered", name: "Unanswered", count: categoryCounts.unanswered },
+            { id: "open", name: "Open", count: categoryCounts.open },
+            { id: "answered", name: "Answered", count: categoryCounts.answered },
+            { id: "closed", name: "Closed", count: categoryCounts.closed }
+          ]);
+        }
+
+        // Fetch forum categories (TODO: Use for advanced filtering)
+        const { error: categoriesError } = await getForumCategories();
+        
+        if (categoriesError) {
+          console.error('Error fetching categories:', categoriesError);
+        }
+        
+      } catch (error) {
+        console.error('Error fetching Q&A data:', error);
+        setQuestions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Handle new question creation
+  const handleQuestionCreated = (newQuestion) => {
+    // Transform the new question to match our format
+    const transformedQuestion = {
+      id: newQuestion.id,
+      title: newQuestion.title,
+      content: newQuestion.content,
+      author: 'You', // Current user
+      authorAvatar: '',
+      date: newQuestion.created_at,
+      status: newQuestion.status || 'open',
+      priority: newQuestion.priority || 'medium',
+      views: 0,
+      votes: 0,
+      answers: 0,
+      tags: [], // Tags will be loaded separately
+      category: 'General',
+      question_type: newQuestion.question_type || 'general',
+      bounty_amount: newQuestion.bounty_amount || 0,
+      expert_requested: newQuestion.expert_requested || false,
+      crop_type: newQuestion.crop_type,
+      livestock_type: newQuestion.livestock_type,
+      location: newQuestion.location
+    };
+
+    // Add to the beginning of the questions list
+    setQuestions(prev => [transformedQuestion, ...prev]);
+    
+    // Update category counts
+    setQaCategories(prev => prev.map(cat => {
+      if (cat.id === 'all') {
+        return { ...cat, count: cat.count + 1 };
+      } else if (cat.id === 'open') {
+        return { ...cat, count: cat.count + 1 };
+      } else if (cat.id === 'unanswered') {
+        return { ...cat, count: cat.count + 1 };
+      }
+      return cat;
+    }));
+  };
 
   // Filter and sort questions
-  const filteredQuestions = mockQuestions
+  const filteredQuestions = questions
     .filter(question => {
       const matchesSearch = 
         searchTerm === '' || 
@@ -40,7 +162,10 @@ const CommunityQA = () => {
       
       const matchesCategory = 
         selectedCategory === 'all' || 
-        (selectedCategory === 'unanswered' && question.status === 'unanswered') ||
+        (selectedCategory === 'unanswered' && question.status === 'open' && question.answers === 0) ||
+        (selectedCategory === 'open' && question.status === 'open') ||
+        (selectedCategory === 'answered' && question.status === 'answered') ||
+        (selectedCategory === 'closed' && question.status === 'closed') ||
         question.tags.some(tag => tag.toLowerCase().includes(selectedCategory.toLowerCase()));
       
       return matchesSearch && matchesCategory;
@@ -95,6 +220,7 @@ const CommunityQA = () => {
                 </svg>
               }
               sx={{ borderRadius: 2, textTransform: 'none' }}
+              onClick={() => setAskQuestionOpen(true)}
             >
               Ask a Question
             </Button>
@@ -222,19 +348,25 @@ const CommunityQA = () => {
           </Box>
 
           {/* Questions list */}
-          {filteredQuestions.map((question, index) => (
-            <Card 
-              key={question.id} 
-              sx={{ 
-                mb: 2, 
-                borderRadius: 2,
-                transition: 'transform 0.2s, box-shadow 0.2s',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: '0 6px 12px rgba(0,0,0,0.1)'
-                }
-              }}
-            >
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+              <CircularProgress size={40} />
+            </Box>
+          ) : filteredQuestions.length > 0 ? (
+            <>
+              {filteredQuestions.map((question) => (
+                <Card 
+                  key={question.id} 
+                  sx={{ 
+                    mb: 2, 
+                    borderRadius: 2,
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: '0 6px 12px rgba(0,0,0,0.1)'
+                    }
+                  }}
+                >
               <CardContent>
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={9}>
@@ -242,11 +374,11 @@ const CommunityQA = () => {
                       <Avatar 
                         sx={{ width: 40, height: 40, bgcolor: 'primary.main', mr: 1.5 }}
                       >
-                        {question.author.avatar || question.author.name.charAt(0)}
+                        {question.authorAvatar || question.author.charAt(0)}
                       </Avatar>
                       <Box>
                         <Typography variant="body2" color="text.secondary">
-                          Asked by <span style={{ fontWeight: 'bold' }}>{question.author.name}</span> · {formatDate(question.date)}
+                          Asked by <span style={{ fontWeight: 'bold' }}>{question.author}</span> · {formatDate(question.date)}
                         </Typography>
                         <Typography variant="h6" component="h3" sx={{ fontWeight: 'bold', mt: 0.5 }}>
                           {question.title}
@@ -309,10 +441,36 @@ const CommunityQA = () => {
                             </Typography>
                           </Box>
                         </Box>
-                        {question.status === 'unanswered' && (
+                        {(question.status === 'open' && question.answers === 0) && (
                           <Chip 
                             label="Unanswered" 
                             color="warning" 
+                            size="small"
+                            sx={{ 
+                              display: 'block', 
+                              mx: 'auto',
+                              mb: 1,
+                              fontWeight: 'bold'
+                            }}
+                          />
+                        )}
+                        {question.status === 'answered' && (
+                          <Chip 
+                            label="Answered" 
+                            color="success" 
+                            size="small"
+                            sx={{ 
+                              display: 'block', 
+                              mx: 'auto',
+                              mb: 1,
+                              fontWeight: 'bold'
+                            }}
+                          />
+                        )}
+                        {question.status === 'closed' && (
+                          <Chip 
+                            label="Closed" 
+                            color="default" 
                             size="small"
                             sx={{ 
                               display: 'block', 
@@ -332,6 +490,7 @@ const CommunityQA = () => {
                           borderRadius: 1,
                           textTransform: 'none'
                         }}
+                        // TODO: Implement navigation to question detail view with getQuestionById API
                       >
                         View Question
                       </Button>
@@ -340,7 +499,26 @@ const CommunityQA = () => {
                 </Grid>
               </CardContent>
             </Card>
-          ))}
+              ))}
+            </>
+          ) : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 8 }}>
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                No questions found
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Try adjusting your search criteria or category filter
+              </Typography>
+              <Button
+                variant="contained"
+                color="primary"
+                sx={{ textTransform: 'none' }}
+                onClick={() => setAskQuestionOpen(true)}
+              >
+                Ask the First Question
+              </Button>
+            </Box>
+          )}
 
           {/* Pagination */}
           {filteredQuestions.length > 0 && (
@@ -406,6 +584,7 @@ const CommunityQA = () => {
                     </svg>
                   }
                   sx={{ borderRadius: 2, textTransform: 'none' }}
+                  onClick={() => setAskQuestionOpen(true)}
                 >
                   Ask Your Question
                 </Button>
@@ -465,7 +644,7 @@ const CommunityQA = () => {
                 </Typography>
               </CardContent>
               <List sx={{ pt: 0 }}>
-                {mockQuestions.slice(0, 3).map((question, index) => (
+                {questions.slice(0, 3).map((question, index) => (
                   <ListItem 
                     key={question.id}
                     divider={index < 2}
@@ -482,16 +661,18 @@ const CommunityQA = () => {
                           <Typography variant="caption" color="text.secondary">
                             {question.answers} answers • {question.views} views
                           </Typography>
-                          <Chip 
-                            size="small" 
-                            label={question.tags[0]} 
-                            sx={{ 
-                              height: 20, 
-                              fontSize: '0.6rem',
-                              bgcolor: 'rgba(76, 175, 80, 0.1)', 
-                              color: 'primary.main',
-                            }} 
-                          />
+                          {question.tags && question.tags.length > 0 && (
+                            <Chip 
+                              size="small" 
+                              label={question.tags[0]} 
+                              sx={{ 
+                                height: 20, 
+                                fontSize: '0.6rem',
+                                bgcolor: 'rgba(76, 175, 80, 0.1)', 
+                                color: 'primary.main',
+                              }} 
+                            />
+                          )}
                         </Box>
                       }
                     />
@@ -520,6 +701,13 @@ const CommunityQA = () => {
           </Box>
         </Grid>
       </Grid>
+
+      {/* Ask Question Dialog */}
+      <AskQuestion
+        open={askQuestionOpen}
+        onClose={() => setAskQuestionOpen(false)}
+        onQuestionCreated={handleQuestionCreated}
+      />
     </div>
   );
 };

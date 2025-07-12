@@ -2,11 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
   Box, Typography, Button, Divider, Avatar, 
-  Card, CardContent, TextField, Chip, Paper
+  Card, CardContent, TextField, Chip, Paper,
+  IconButton, Alert, CircularProgress, Grid,
+  Tooltip
 } from '@mui/material';
+import {
+  ThumbUp as LikeIcon,
+  ThumbUpOutlined as LikeOutlineIcon,
+  Bookmark as BookmarkIcon,
+  BookmarkBorder as BookmarkOutlineIcon,
+  Share as ShareIcon,
+  Reply as ReplyIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon
+} from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
-import { mockPosts } from '../../mocks/posts';
-import { mockCommentsData } from '../../mocks/comments';
+import { 
+  getPostById, 
+  addComment, 
+  togglePostLike,
+  toggleCommentLike,
+  togglePostBookmark 
+} from '../../services/api/communityService';
 
 const PostDetails = () => {
   const { id } = useParams();
@@ -15,17 +32,45 @@ const PostDetails = () => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [commentLoading, setCommentLoading] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
 
+  // Fetch post data from database
   useEffect(() => {
-    // Simulate API fetch delay
-    const timer = setTimeout(() => {
-      const foundPost = mockPosts.find(p => p.id === parseInt(id));
-      setPost(foundPost || null);
-      setComments(mockCommentsData[id] || []);
-      setLoading(false);
-    }, 500);
+    const fetchPost = async () => {
+      try {
+        setLoading(true);
+        const { data: postData, error } = await getPostById(id);
+        
+        if (error) {
+          setError('Failed to load post. Please try again.');
+          console.error('Error fetching post:', error);
+        } else if (postData) {
+          setPost(postData);
+          setComments(postData.comments || []);
+          setLikesCount(postData.likes_count || 0);
+          
+          // Check if current user has liked or bookmarked this post
+          // This would typically come from the API response
+          setIsLiked(false); // TODO: Implement user like status check
+          setIsBookmarked(false); // TODO: Implement user bookmark status check
+        } else {
+          setError('Post not found.');
+        }
+      } catch (err) {
+        setError('An unexpected error occurred.');
+        console.error('Error fetching post:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    return () => clearTimeout(timer);
+    if (id) {
+      fetchPost();
+    }
   }, [id]);
 
   const formatDate = (dateString) => {
@@ -39,43 +84,156 @@ const PostDetails = () => {
     }).format(date);
   };
 
-  const handleCommentSubmit = (e) => {
+  const handleCommentSubmit = async (e) => {
     e.preventDefault();
     
     if (!newComment.trim()) return;
+    if (!user) {
+      setError('You must be logged in to comment');
+      return;
+    }
     
-    // Create a new comment object
-    const newCommentObj = {
-      id: Date.now(), // Simple unique ID for demo
-      postId: parseInt(id),
-      author: {
-        id: user.id || 'current-user',
-        name: user.name || 'Current User',
-        avatar: user.avatar || null
-      },
-      content: newComment,
-      date: new Date().toISOString(),
-      likes: 0
-    };
-    
-    // Add the new comment to the list
-    setComments(prevComments => [...prevComments, newCommentObj]);
-    setNewComment('');
+    try {
+      setCommentLoading(true);
+      
+      const commentData = {
+        post_id: parseInt(id),
+        user_id: user.id,
+        content: newComment.trim()
+      };
+      
+      const { data: newCommentData, error } = await addComment(commentData);
+      
+      if (error) {
+        setError('Failed to add comment. Please try again.');
+        console.error('Error adding comment:', error);
+      } else {
+        // Add the new comment to the list with user info
+        const commentWithUser = {
+          ...newCommentData,
+          user: {
+            id: user.id,
+            first_name: user.first_name || 'Unknown',
+            last_name: user.last_name || 'User',
+            avatar_url: user.avatar_url || null
+          }
+        };
+        
+        setComments(prevComments => [...prevComments, commentWithUser]);
+        setNewComment('');
+        
+        // Update post comment count
+        if (post) {
+          setPost(prevPost => ({
+            ...prevPost,
+            comments_count: (prevPost.comments_count || 0) + 1
+          }));
+        }
+      }
+    } catch (err) {
+      setError('An unexpected error occurred while adding comment.');
+      console.error('Error submitting comment:', err);
+    } finally {
+      setCommentLoading(false);
+    }
+  };
+
+  // Handle post like/unlike
+  const handleLikePost = async () => {
+    if (!user) {
+      setError('You must be logged in to like posts');
+      return;
+    }
+
+    try {
+      const { error } = await togglePostLike(id, user.id);
+      
+      if (error) {
+        console.error('Error toggling like:', error);
+      } else {
+        setIsLiked(!isLiked);
+        setLikesCount(prev => isLiked ? prev - 1 : prev + 1);
+      }
+    } catch (err) {
+      console.error('Error handling like:', err);
+    }
+  };
+
+  // Handle post bookmark/unbookmark
+  const handleBookmarkPost = async () => {
+    if (!user) {
+      setError('You must be logged in to bookmark posts');
+      return;
+    }
+
+    try {
+      const { error } = await togglePostBookmark(id, user.id);
+      
+      if (error) {
+        console.error('Error toggling bookmark:', error);
+      } else {
+        setIsBookmarked(!isBookmarked);
+      }
+    } catch (err) {
+      console.error('Error handling bookmark:', err);
+    }
+  };
+
+  // Handle comment like/unlike
+  const handleLikeComment = async (commentId, currentLikes = 0) => {
+    if (!user) {
+      setError('You must be logged in to like comments');
+      return;
+    }
+
+    try {
+      const { error } = await toggleCommentLike(commentId, user.id);
+      
+      if (error) {
+        console.error('Error toggling comment like:', error);
+      } else {
+        // Update the comment likes in the state
+        setComments(prevComments => 
+          prevComments.map(comment => 
+            comment.id === commentId 
+              ? { ...comment, likes: currentLikes + 1 }
+              : comment
+          )
+        );
+      }
+    } catch (err) {
+      console.error('Error handling comment like:', err);
+    }
   };
 
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
-        <Typography variant="h5">Loading post...</Typography>
+        <CircularProgress size={40} />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+        <Button component={Link} to="/community" variant="outlined">
+          Back to Community
+        </Button>
       </Box>
     );
   }
 
   if (!post) {
     return (
-      <Box sx={{ textAlign: 'center', py: 10 }}>
-        <Typography variant="h5" gutterBottom>Post not found</Typography>
-        <Button component={Link} to="/community" variant="contained" color="primary" sx={{ mt: 2 }}>
+      <Box sx={{ p: 3 }}>
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          Post not found
+        </Alert>
+        <Button component={Link} to="/community" variant="outlined">
           Back to Community
         </Button>
       </Box>
@@ -104,43 +262,30 @@ const PostDetails = () => {
         }}
       >
         {/* Post header with author info */}
-        <Box sx={{ p: 3, borderBottom: '1px solid rgba(0,0,0,0.08)', bgcolor: 'primary.50' }}>
+        <Box sx={{ p: 3, borderBottom: '1px solid rgba(0,0,0,0.08)', bgcolor: 'grey.50' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-            <Box 
+            <Avatar 
               sx={{ 
                 height: 60, 
                 width: 60, 
-                borderRadius: '50%', 
-                bgcolor: 'grey.100',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'text.secondary',
-                fontSize: '1.5rem',
-                fontWeight: 600,
                 mr: 2,
                 border: '3px solid white',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
               }}
+              src={post.user?.avatar_url}
             >
-              {post.author.avatar ? (
-                <img src={post.author.avatar} alt={post.author.name} style={{ height: '100%', width: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-              ) : (
-                post.author.name.charAt(0)
-              )}
-            </Box>
+              {post.user ? 
+                `${post.user.first_name?.charAt(0) || ''}${post.user.last_name?.charAt(0) || ''}` :
+                'U'
+              }
+            </Avatar>
             <Box>
-              <Link 
-                to={`/profile/${post.author.id}`} 
-                style={{ 
-                  fontWeight: 600, 
-                  color: '#1a1a1a', 
-                  fontSize: '1.25rem',
-                  textDecoration: 'none'
-                }}
-              >
-                {post.author.name}
-              </Link>
+              <Typography variant="h6" fontWeight="600">
+                {post.user ? 
+                  `${post.user.first_name || ''} ${post.user.last_name || ''}`.trim() || 'Unknown User' :
+                  'Unknown User'
+                }
+              </Typography>
               <Box sx={{ 
                 color: 'text.secondary', 
                 fontSize: '0.875rem', 
@@ -151,8 +296,21 @@ const PostDetails = () => {
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                {formatDate(post.date)}
+                {formatDate(post.created_at)}
               </Box>
+            </Box>
+            <Box sx={{ ml: 'auto' }}>
+              {post.category && (
+                <Chip 
+                  label={post.category.name}
+                  size="small"
+                  sx={{ 
+                    bgcolor: post.category.color_hex || 'primary.main',
+                    color: 'white',
+                    fontWeight: 500
+                  }}
+                />
+              )}
             </Box>
           </Box>
           
@@ -164,73 +322,139 @@ const PostDetails = () => {
         {/* Post content */}
         <Box sx={{ p: 3, bgcolor: 'white' }}>
           <Typography variant="body1" paragraph sx={{ lineHeight: 1.8, fontSize: '1.1rem' }}>
-            {post.content.length > 100 
-              ? post.content + " Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur quis tincidunt ex, at placerat libero. Nulla facilisi. Morbi tincidunt, neque vel tincidunt vehicula, sapien libero fermentum purus, at rhoncus nibh eros id dolor. Donec malesuada lectus eget nisl iaculis commodo. Quisque tristique malesuada placerat. Praesent fringilla ante id ex iaculis, vel luctus erat bibendum. Ut vel vehicula velit, a tincidunt sapien. Aenean vulputate dui non libero ullamcorper, vel iaculis dui maximus. Vestibulum quis lacus maximus, aliquam nisl in, rutrum justo. Nullam posuere quam sit amet tortor efficitur, non lacinia ex facilisis. Donec pellentesque vehicula risus eget gravida. Ut ultricies, nunc ut iaculis vehicula, purus metus ultrices ex, id imperdiet eros ex id justo."
-              : post.content
-            }
+            {post.content}
           </Typography>
           
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, my: 3 }}>
-            {post.tags.map((tag, index) => (
-              <Chip 
-                key={index} 
-                label={tag}
-                size="medium"
-                sx={{ 
-                  bgcolor: 'primary.light', 
-                  color: 'primary.dark',
-                  fontWeight: 500,
-                  '&:hover': { bgcolor: 'primary.main', color: 'white' }
-                }}
-              />
-            ))}
-          </Box>
+          {/* Post tags */}
+          {post.tags && post.tags.length > 0 && (
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, my: 3 }}>
+              {post.tags.map((tag, index) => (
+                <Chip 
+                  key={tag.id || index} 
+                  label={tag.name || tag}
+                  size="medium"
+                  sx={{ 
+                    bgcolor: tag.color_hex || 'primary.light', 
+                    color: 'white',
+                    fontWeight: 500,
+                    '&:hover': { 
+                      bgcolor: tag.color_hex ? `${tag.color_hex}CC` : 'primary.main', 
+                      transform: 'translateY(-1px)',
+                      boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
+                    },
+                    transition: 'all 0.2s ease'
+                  }}
+                />
+              ))}
+            </Box>
+          )}
+
+          {/* Post images */}
+          {post.images && post.images.length > 0 && (
+            <Grid container spacing={2} sx={{ mt: 2 }}>
+              {post.images.map((image, index) => (
+                <Grid item xs={12} sm={6} md={4} key={index}>
+                  <Box
+                    component="img"
+                    src={image}
+                    alt={`Post image ${index + 1}`}
+                    sx={{
+                      width: '100%',
+                      height: 200,
+                      objectFit: 'cover',
+                      borderRadius: 2,
+                      cursor: 'pointer',
+                      transition: 'transform 0.2s ease',
+                      '&:hover': {
+                        transform: 'scale(1.02)'
+                      }
+                    }}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          )}
         </Box>
         
         {/* Post actions */}
         <Box sx={{ px: 3, py: 2, borderTop: '1px solid rgba(0,0,0,0.08)', bgcolor: 'grey.50' }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', color: 'text.secondary' }}>
-            <Button 
-              startIcon={
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <IconButton
+                onClick={handleLikePost}
+                sx={{ 
+                  color: isLiked ? 'primary.main' : 'text.secondary',
+                  '&:hover': { 
+                    bgcolor: isLiked ? 'primary.light' : 'grey.100',
+                    transform: 'scale(1.1)'
+                  },
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                {isLiked ? <LikeIcon /> : <LikeOutlineIcon />}
+              </IconButton>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  alignSelf: 'center', 
+                  color: isLiked ? 'primary.main' : 'text.secondary',
+                  fontWeight: isLiked ? 600 : 400
+                }}
+              >
+                {likesCount}
+              </Typography>
+
+              <IconButton
+                onClick={handleBookmarkPost}
+                sx={{ 
+                  color: isBookmarked ? 'warning.main' : 'text.secondary',
+                  ml: 2,
+                  '&:hover': { 
+                    bgcolor: isBookmarked ? 'warning.light' : 'grey.100',
+                    transform: 'scale(1.1)'
+                  },
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                {isBookmarked ? <BookmarkIcon /> : <BookmarkOutlineIcon />}
+              </IconButton>
+
+              <Tooltip title="Share this post">
+                <IconButton
+                  sx={{ 
+                    color: 'text.secondary',
+                    ml: 1,
+                    '&:hover': { 
+                      bgcolor: 'grey.100',
+                      transform: 'scale(1.1)'
+                    },
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <ShareIcon />
+                </IconButton>
+              </Tooltip>
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, color: 'text.secondary' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
-              }
-              sx={{ 
-                color: 'text.secondary', 
-                '&:hover': { color: 'primary.main' } 
-              }}
-            >
-              Like ({post.likes})
-            </Button>
-            
-            <Button 
-              startIcon={
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
+                <Typography variant="caption">
+                  {post.views || 0} views
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
-              }
-              sx={{ 
-                color: 'text.secondary', 
-                '&:hover': { color: 'primary.main' } 
-              }}
-            >
-              Share
-            </Button>
-            
-            <Button 
-              startIcon={
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M3 6a3 3 0 013-3h10a1 1 0 01.8 1.6L14.25 8l2.55 3.4A1 1 0 0116 13H6a1 1 0 00-1 1v3a1 1 0 11-2 0V6z" clipRule="evenodd" />
-                </svg>
-              }
-              sx={{ 
-                color: 'text.secondary', 
-                '&:hover': { color: 'primary.main' } 
-              }}
-            >
-              Report
-            </Button>
+                <Typography variant="caption">
+                  {post.comments_count || comments.length} comments
+                </Typography>
+              </Box>
+            </Box>
           </Box>
         </Box>
       </Paper>
@@ -250,6 +474,7 @@ const PostDetails = () => {
             placeholder="Share your thoughts on this post..."
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
+            disabled={commentLoading}
             sx={{ 
               mb: 2,
               '& .MuiOutlinedInput-root': {
@@ -262,13 +487,14 @@ const PostDetails = () => {
               type="submit" 
               variant="contained" 
               color="primary"
-              disabled={!newComment.trim()}
+              disabled={!newComment.trim() || commentLoading}
+              startIcon={commentLoading && <CircularProgress size={20} />}
               sx={{ 
                 borderRadius: 2,
                 px: 4
               }}
             >
-              Post Comment
+              {commentLoading ? 'Posting...' : 'Post Comment'}
             </Button>
           </Box>
         </Box>
@@ -287,51 +513,61 @@ const PostDetails = () => {
               }}
             >
               <Box sx={{ p: 2, borderBottom: '1px solid rgba(0,0,0,0.05)', bgcolor: 'grey.50' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Box 
-                    sx={{ 
-                      height: 40, 
-                      width: 40, 
-                      borderRadius: '50%', 
-                      bgcolor: 'grey.200',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'text.secondary',
-                      fontSize: '1rem',
-                      fontWeight: 600,
-                      mr: 2,
-                      border: '2px solid white',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                    }}
-                  >
-                    {comment.author.avatar ? (
-                      <img src={comment.author.avatar} alt={comment.author.name} style={{ height: '100%', width: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-                    ) : (
-                      comment.author.name.charAt(0)
-                    )}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Avatar 
+                      sx={{ 
+                        height: 40, 
+                        width: 40, 
+                        mr: 2,
+                        border: '2px solid white',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                      }}
+                      src={comment.user?.avatar_url}
+                    >
+                      {comment.user ? 
+                        `${comment.user.first_name?.charAt(0) || ''}${comment.user.last_name?.charAt(0) || ''}` :
+                        'U'
+                      }
+                    </Avatar>
+                    <Box>
+                      <Typography variant="body2" fontWeight="600">
+                        {comment.user ? 
+                          `${comment.user.first_name || ''} ${comment.user.last_name || ''}`.trim() || 'Unknown User' :
+                          'Unknown User'
+                        }
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {formatDate(comment.created_at)}
+                      </Typography>
+                    </Box>
                   </Box>
-                  <Box>
-                    <Link 
-                      to={`/profile/${comment.author.id}`} 
-                      style={{ 
-                        fontWeight: 600, 
-                        color: '#1a1a1a', 
-                        fontSize: '0.95rem',
-                        textDecoration: 'none'
+                  
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleLikeComment(comment.id, comment.likes || 0)}
+                      sx={{ 
+                        color: 'text.secondary',
+                        '&:hover': { color: 'primary.main' }
                       }}
                     >
-                      {comment.author.name}
-                    </Link>
-                    <Box sx={{ 
-                      color: 'text.secondary', 
-                      fontSize: '0.75rem', 
-                      display: 'flex', 
-                      alignItems: 'center',
-                      mt: 0.25
-                    }}>
-                      {formatDate(comment.date)}
-                    </Box>
+                      <LikeOutlineIcon fontSize="small" />
+                    </IconButton>
+                    <Typography variant="caption" color="text.secondary">
+                      {comment.likes || 0}
+                    </Typography>
+                    
+                    {user && user.id === comment.user_id && (
+                      <>
+                        <IconButton size="small" sx={{ color: 'text.secondary' }}>
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton size="small" sx={{ color: 'text.secondary' }}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </>
+                    )}
                   </Box>
                 </Box>
               </Box>
@@ -340,39 +576,29 @@ const PostDetails = () => {
                 <Typography variant="body1" sx={{ lineHeight: 1.6 }}>
                   {comment.content}
                 </Typography>
-              </CardContent>
-              
-              <Box sx={{ px: 2, py: 1, borderTop: '1px solid rgba(0,0,0,0.05)', bgcolor: 'grey.50' }}>
-                <Button 
-                  size="small"
-                  startIcon={
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
-                    </svg>
-                  }
-                  sx={{ 
-                    color: 'text.secondary',
-                    '&:hover': { color: 'primary.main' }
-                  }}
-                >
-                  Like ({comment.likes})
-                </Button>
                 
-                <Button 
-                  size="small"
-                  startIcon={
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clipRule="evenodd" />
-                    </svg>
-                  }
-                  sx={{ 
-                    color: 'text.secondary',
-                    '&:hover': { color: 'primary.main' }
-                  }}
-                >
-                  Reply
-                </Button>
-              </Box>
+                {/* Display comment images if any */}
+                {comment.images && comment.images.length > 0 && (
+                  <Grid container spacing={1} sx={{ mt: 2 }}>
+                    {comment.images.map((image, index) => (
+                      <Grid item xs={6} sm={4} key={index}>
+                        <Box
+                          component="img"
+                          src={image}
+                          alt={`Comment image ${index + 1}`}
+                          sx={{
+                            width: '100%',
+                            height: 120,
+                            objectFit: 'cover',
+                            borderRadius: 1,
+                            cursor: 'pointer'
+                          }}
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                )}
+              </CardContent>
             </Card>
           ))}
         </Box>
