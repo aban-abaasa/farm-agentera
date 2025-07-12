@@ -3,7 +3,7 @@ import {
   Box, Typography, Card, CardContent, Button, Grid, 
   Chip, TextField, InputAdornment, Paper, Divider, 
   IconButton, CardMedia, CardActions, Avatar, CardHeader,
-  CircularProgress
+  CircularProgress, useMediaQuery, useTheme
 } from '@mui/material';
 
 import { getUpcomingEvents } from '../../services/api/communityService';
@@ -11,12 +11,22 @@ import AddEvent from './AddEvent';
 import EventRegistrationButton from '../../components/EventRegistrationButton';
 
 const CommunityEvents = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState(() => isMobile ? 'list' : 'grid'); // Default to list on mobile
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [addEventOpen, setAddEventOpen] = useState(false);
+
+  // Update view mode when screen size changes
+  useEffect(() => {
+    if (isMobile && viewMode === 'grid') {
+      setViewMode('list');
+    }
+  }, [isMobile, viewMode]);
 
   // Event categories - will be calculated from real events data
   const [eventCategories, setEventCategories] = useState([
@@ -62,7 +72,7 @@ const CommunityEvents = () => {
             imageUrl: event.image_url || 'https://images.unsplash.com/photo-1599270606289-c6af89bf034d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
             attendees: event.participants_count || 0,
             category: event.event_type || 'Workshop',
-            tags: [], // We can add tags support later
+            tags: event.tags || [], // Ensure tags is always an array
             price: event.price || 0,
             currency: event.currency || 'UGX',
             max_participants: event.max_participants,
@@ -112,7 +122,7 @@ const CommunityEvents = () => {
       event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       event.organizer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (event.tags && event.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())));
+      (event.tags && event.tags.length > 0 && event.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())));
     
     const matchesCategory = 
       selectedCategory === 'all' || 
@@ -128,8 +138,39 @@ const CommunityEvents = () => {
 
   // Handle new event creation
   const handleEventCreated = (newEvent) => {
+    // Transform the new event to match component expectations
+    const transformedNewEvent = {
+      id: newEvent.id,
+      title: newEvent.title,
+      description: newEvent.description,
+      date: newEvent.start_datetime,
+      time: `${new Date(newEvent.start_datetime).toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true 
+      })} - ${new Date(newEvent.end_datetime).toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true 
+      })}`,
+      location: newEvent.location || 'Online',
+      organizer: newEvent.organizer ? 
+        `${newEvent.organizer.first_name || ''} ${newEvent.organizer.last_name || ''}`.trim() || 'Unknown Organizer' :
+        'Unknown Organizer',
+      imageUrl: newEvent.image_url || 'https://images.unsplash.com/photo-1599270606289-c6af89bf034d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+      attendees: newEvent.participants_count || 0,
+      category: newEvent.event_type || 'Workshop',
+      tags: newEvent.tags || [], // Ensure tags is always an array
+      price: newEvent.price || 0,
+      currency: newEvent.currency || 'UGX',
+      max_participants: newEvent.max_participants,
+      contact_info: newEvent.contact_info,
+      virtual_link: newEvent.virtual_link,
+      requirements: newEvent.requirements
+    };
+
     // Add the new event to the events list
-    setEvents(prevEvents => [newEvent, ...prevEvents]);
+    setEvents(prevEvents => [transformedNewEvent, ...prevEvents]);
     
     // Update category counts
     const newCategoryCounts = eventCategories.map(category => {
@@ -151,16 +192,17 @@ const CommunityEvents = () => {
     <div className="container">
       {/* Header and filters section */}
       <Box sx={{ mb: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
           <Typography variant="h5" component="h2" fontWeight="bold">
             Upcoming Farming Events
           </Typography>
-          <Box>
+          <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
             <Button 
               variant={viewMode === 'grid' ? 'contained' : 'outlined'}
               size="small"
               onClick={() => setViewMode('grid')}
               sx={{ mr: 1 }}
+              disabled={isMobile}
             >
               Grid View
             </Button>
@@ -255,12 +297,19 @@ const CommunityEvents = () => {
       </Box>
 
       {/* Results info */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="body2" color="text.secondary">
-          Showing {filteredEvents.length} of {events.length} events
-          {selectedCategory !== 'all' && ` in ${eventCategories.find(c => c.id === selectedCategory)?.name}`}
-          {searchTerm && ` matching "${searchTerm}"`}
-        </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+        <Box>
+          <Typography variant="body2" color="text.secondary">
+            Showing {filteredEvents.length} of {events.length} events
+            {selectedCategory !== 'all' && ` in ${eventCategories.find(c => c.id === selectedCategory)?.name}`}
+            {searchTerm && ` matching "${searchTerm}"`}
+          </Typography>
+          {isMobile && (
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+              📱 Mobile optimized view - showing as list for better readability
+            </Typography>
+          )}
+        </Box>
         
         <Button 
           variant="outlined" 
@@ -290,7 +339,7 @@ const CommunityEvents = () => {
       )}
 
       {/* Event Grid View */}
-      {viewMode === 'grid' && (
+      {viewMode === 'grid' && !isMobile && (
         <>
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -299,7 +348,7 @@ const CommunityEvents = () => {
           ) : filteredEvents.length > 0 ? (
             <Grid container spacing={3}>
               {filteredEvents.map(event => (
-                <Grid item xs={12} sm={6} md={4} key={event.id}>
+                <Grid item xs={12} sm={6} lg={4} key={event.id}>
                   <Card sx={{ 
                     height: '100%', 
                     display: 'flex', 
@@ -356,7 +405,7 @@ const CommunityEvents = () => {
                         {event.description.length > 120 ? '...' : ''}
                       </Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {event.tags.map((tag, index) => (
+                        {event.tags && event.tags.length > 0 && event.tags.map((tag, index) => (
                           <Chip
                             key={index}
                             label={tag}
@@ -422,7 +471,7 @@ const CommunityEvents = () => {
       )}
 
       {/* Event List View */}
-      {viewMode === 'list' && (
+      {(viewMode === 'list' || isMobile) && (
         <>
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -500,7 +549,7 @@ const CommunityEvents = () => {
                         <strong>Organizer:</strong> {event.organizer}
                       </Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {event.tags.map((tag, index) => (
+                        {event.tags && event.tags.length > 0 && event.tags.map((tag, index) => (
                           <Chip
                             key={index}
                             label={tag}

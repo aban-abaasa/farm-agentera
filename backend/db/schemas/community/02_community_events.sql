@@ -84,12 +84,17 @@ CREATE POLICY "Users can update their registration"
     FOR UPDATE
     USING (auth.uid() = user_id);
 
+CREATE POLICY "Users can view their own event registrations"
+    ON public.event_participants
+    FOR SELECT
+    USING (auth.uid() = user_id);
+
 -- Insert sample community events
-INSERT INTO public.community_events (title, description, event_type, location, start_datetime, end_datetime, max_participants, organizer_id) VALUES
-('Sustainable Farming Workshop', 'Learn about organic farming practices and sustainable agriculture techniques that can improve your yield while protecting the environment.', 'workshop', 'Kampala Agricultural Center', NOW() + INTERVAL '7 days', NOW() + INTERVAL '7 days' + INTERVAL '4 hours', 50, NULL),
-('Digital Marketing for Farmers', 'Discover how to use social media and digital platforms to market your agricultural products effectively and reach more customers.', 'webinar', 'online', NOW() + INTERVAL '14 days', NOW() + INTERVAL '14 days' + INTERVAL '2 hours', 100, NULL),
-('Coffee Processing Field Visit', 'Visit a successful coffee processing facility and learn about post-harvest handling, quality control, and value addition.', 'field_visit', 'Mukono Coffee Estate', NOW() + INTERVAL '21 days', NOW() + INTERVAL '21 days' + INTERVAL '6 hours', 30, NULL)
-ON CONFLICT DO NOTHING;
+-- INSERT INTO public.community_events (title, description, event_type, location, start_datetime, end_datetime, max_participants, organizer_id) VALUES
+-- ('Sustainable Farming Workshop', 'Learn about organic farming practices and sustainable agriculture techniques that can improve your yield while protecting the environment.', 'workshop', 'Kampala Agricultural Center', NOW() + INTERVAL '7 days', NOW() + INTERVAL '7 days' + INTERVAL '4 hours', 50, NULL),
+-- ('Digital Marketing for Farmers', 'Discover how to use social media and digital platforms to market your agricultural products effectively and reach more customers.', 'webinar', 'online', NOW() + INTERVAL '14 days', NOW() + INTERVAL '14 days' + INTERVAL '2 hours', 100, NULL),
+-- ('Coffee Processing Field Visit', 'Visit a successful coffee processing facility and learn about post-harvest handling, quality control, and value addition.', 'field_visit', 'Mukono Coffee Estate', NOW() + INTERVAL '21 days', NOW() + INTERVAL '21 days' + INTERVAL '6 hours', 30, NULL)
+-- ON CONFLICT DO NOTHING;
 
 -- Success message
 DO $$

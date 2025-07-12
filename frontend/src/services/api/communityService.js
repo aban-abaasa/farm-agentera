@@ -938,7 +938,7 @@ export async function registerForEvent(eventId, userId) {
         event_id: eventId, 
         user_id: userId,
         registration_date: new Date().toISOString(),
-        status: 'registered'
+        attendance_status: 'registered'
       });
 
     if (error) {
@@ -987,7 +987,7 @@ export async function getUserEventRegistration(eventId, userId) {
     
     const { data, error } = await supabase
       .from(EVENT_PARTICIPANTS_TABLE)
-      .select('id, registration_date, status')
+      .select('id, registration_date, attendance_status')
       .eq('event_id', eventId)
       .eq('user_id', userId)
       .single();
