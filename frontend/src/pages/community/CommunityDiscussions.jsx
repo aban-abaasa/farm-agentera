@@ -3,10 +3,11 @@ import { Link } from 'react-router-dom';
 import { 
   Box, Typography, TextField, Button, InputAdornment, 
   IconButton, Paper, Card, CardContent, Chip, Avatar,
-  CircularProgress
+  CircularProgress, FormControl, InputLabel, Select, MenuItem,
+  Collapse, Fade
 } from '@mui/material';
 
-import { getPosts } from '../../services/api/communityService';
+import { getPosts, getForumCategories, getPopularTags } from '../../services/api/communityService';
 
 const CommunityDiscussions = ({ 
   searchTerm, 
@@ -14,10 +15,63 @@ const CommunityDiscussions = ({
   formatDate,
   user,
   setSearchTerm,
-  handleOpenPostModal
+  handleOpenPostModal,
+  forumCategories: propForumCategories,
+  popularTags: propPopularTags
 }) => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [forumCategories, setForumCategories] = useState(propForumCategories || []);
+  const [popularTags, setPopularTags] = useState(propPopularTags || []);
+  const [showFilters, setShowFilters] = useState(false);
+  const [localSelectedCategory, setLocalSelectedCategory] = useState(selectedCategory || 'all');
+  const [selectedTag, setSelectedTag] = useState('');
+
+  // Update state when props change
+  useEffect(() => {
+    if (propForumCategories) {
+      setForumCategories(propForumCategories);
+    }
+    if (propPopularTags) {
+      setPopularTags(propPopularTags);
+    }
+  }, [propForumCategories, propPopularTags]);
+
+  // Fetch categories and tags only if not provided via props
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!propForumCategories || !propPopularTags) {
+        try {
+          const promises = [];
+          
+          if (!propForumCategories) {
+            promises.push(getForumCategories());
+          }
+          
+          if (!propPopularTags) {
+            promises.push(getPopularTags(15));
+          }
+          
+          const results = await Promise.all(promises);
+          
+          let categoriesIndex = 0;
+          let tagsIndex = !propForumCategories ? 1 : 0;
+          
+          if (!propForumCategories && results[categoriesIndex]?.data) {
+            setForumCategories(results[categoriesIndex].data);
+          }
+
+          if (!propPopularTags && results[tagsIndex]?.data) {
+            setPopularTags(results[tagsIndex].data);
+          }
+        } catch (error) {
+          console.error('Error fetching filter data:', error);
+        }
+      }
+    };
+
+    fetchData();
+  }, [propForumCategories, propPopularTags]);
 
   // Fetch posts from the database
   useEffect(() => {
@@ -29,8 +83,8 @@ const CommunityDiscussions = ({
         };
         
         // Add category filter if not 'all'
-        if (selectedCategory && selectedCategory !== 'all') {
-          options.category_id = selectedCategory;
+        if (localSelectedCategory && localSelectedCategory !== 'all') {
+          options.category_id = localSelectedCategory;
         }
         
         const { data, error } = await getPosts(options);
@@ -62,20 +116,33 @@ const CommunityDiscussions = ({
     };
 
     fetchPosts();
-  }, [selectedCategory]);
+  }, [localSelectedCategory]);
 
-  // Filter posts based on search term
-  const filteredPosts = searchTerm 
-    ? posts.filter(post => 
-        post.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.content?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.tags?.some(tag => tag.name?.toLowerCase().includes(searchTerm.toLowerCase()))
-      )
-    : posts;
+  // Filter posts based on search term and selected tag
+  const filteredPosts = posts.filter(post => {
+    const matchesSearch = !searchTerm || 
+      post.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      post.content?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      post.tags?.some(tag => tag.name?.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    const matchesTag = !selectedTag || 
+      post.tags?.some(tag => tag.name?.toLowerCase() === selectedTag.toLowerCase());
+
+    return matchesSearch && matchesTag;
+  });
+
+  const handleCategoryChange = (categoryId) => {
+    setLocalSelectedCategory(categoryId);
+  };
+
+  const handleTagSelect = (tagName) => {
+    setSelectedTag(selectedTag === tagName ? '' : tagName);
+  };
     
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-8">
-      <div className="xl:col-span-3">
+    <div className="w-full">
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-8">
+        <div className="xl:col-span-3">
         {/* Search bar */}
         <Paper
           elevation={2}
@@ -173,6 +240,194 @@ const CommunityDiscussions = ({
           >
             Search
           </Button>
+        </Paper>
+
+        {/* Filters Section */}
+        <Paper
+          elevation={1}
+          sx={{
+            mb: 3,
+            borderRadius: 2,
+            overflow: 'hidden',
+            border: '1px solid rgba(0,0,0,0.08)'
+          }}
+        >
+          {/* Filter Header */}
+          <Box
+            sx={{
+              p: 2,
+              bgcolor: 'rgba(76,175,80,0.05)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              cursor: 'pointer',
+              borderBottom: showFilters ? '1px solid rgba(0,0,0,0.08)' : 'none'
+            }}
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clipRule="evenodd" />
+              </svg>
+              <Typography variant="h6" fontWeight="bold" color="primary.main">
+                Filter & Browse
+              </Typography>
+              <Box sx={{ 
+                bgcolor: 'primary.main', 
+                color: 'white', 
+                px: 1.5, 
+                py: 0.5, 
+                borderRadius: '12px', 
+                fontSize: '0.75rem',
+                fontWeight: 'bold'
+              }}>
+                {filteredPosts.length} posts
+              </Box>
+            </Box>
+            <IconButton
+              sx={{
+                transform: showFilters ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.3s ease'
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </IconButton>
+          </Box>
+
+          {/* Filter Content */}
+          <Collapse in={showFilters}>
+            <Box sx={{ p: 3 }}>
+              {/* Categories Filter */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                  </svg>
+                  Categories
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {/* All Categories */}
+                  <Chip
+                    label={`All (${forumCategories.reduce((sum, cat) => sum + (cat.post_count || 0), 0)})`}
+                    onClick={() => handleCategoryChange('all')}
+                    color={localSelectedCategory === 'all' ? 'primary' : 'default'}
+                    variant={localSelectedCategory === 'all' ? 'filled' : 'outlined'}
+                    sx={{ 
+                      fontWeight: localSelectedCategory === 'all' ? 'bold' : 'normal',
+                      borderRadius: 2,
+                      '&:hover': { transform: 'translateY(-2px)' },
+                      transition: 'all 0.2s ease'
+                    }}
+                  />
+                  {forumCategories.map((category) => (
+                    <Chip
+                      key={category.id}
+                      label={`${category.name} (${category.post_count || 0})`}
+                      onClick={() => handleCategoryChange(category.id)}
+                      color={localSelectedCategory === category.id ? 'primary' : 'default'}
+                      variant={localSelectedCategory === category.id ? 'filled' : 'outlined'}
+                      sx={{ 
+                        fontWeight: localSelectedCategory === category.id ? 'bold' : 'normal',
+                        borderRadius: 2,
+                        '&:hover': { transform: 'translateY(-2px)' },
+                        transition: 'all 0.2s ease'
+                      }}
+                    />
+                  ))}
+                </Box>
+              </Box>
+
+              {/* Popular Tags Filter */}
+              <Box>
+                <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                  Popular Tags
+                  {selectedTag && (
+                    <Button
+                      size="small"
+                      onClick={() => setSelectedTag('')}
+                      sx={{ 
+                        ml: 1, 
+                        minWidth: 'auto',
+                        fontSize: '0.75rem',
+                        textTransform: 'none'
+                      }}
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {popularTags.slice(0, 12).map((tag, index) => (
+                    <Chip
+                      key={tag.id || index}
+                      label={`${tag.name} (${tag.usage_count || tag.count || 0})`}
+                      onClick={() => handleTagSelect(tag.name)}
+                      color={selectedTag === tag.name ? 'secondary' : 'default'}
+                      variant={selectedTag === tag.name ? 'filled' : 'outlined'}
+                      size="small"
+                      sx={{ 
+                        fontWeight: selectedTag === tag.name ? 'bold' : 'normal',
+                        borderRadius: 2,
+                        '&:hover': { transform: 'translateY(-2px)' },
+                        transition: 'all 0.2s ease'
+                      }}
+                    />
+                  ))}
+                </Box>
+              </Box>
+
+              {/* Active Filters Summary */}
+              {(localSelectedCategory !== 'all' || selectedTag) && (
+                <Box sx={{ 
+                  mt: 3, 
+                  pt: 2, 
+                  borderTop: '1px solid rgba(0,0,0,0.08)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: 2
+                }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Active filters:
+                    </Typography>
+                    {localSelectedCategory !== 'all' && (
+                      <Chip
+                        label={forumCategories.find(cat => cat.id === localSelectedCategory)?.name || 'Category'}
+                        onDelete={() => handleCategoryChange('all')}
+                        size="small"
+                        color="primary"
+                      />
+                    )}
+                    {selectedTag && (
+                      <Chip
+                        label={selectedTag}
+                        onDelete={() => setSelectedTag('')}
+                        size="small"
+                        color="secondary"
+                      />
+                    )}
+                  </Box>
+                  <Button
+                    size="small"
+                    onClick={() => {
+                      setLocalSelectedCategory('all');
+                      setSelectedTag('');
+                    }}
+                    sx={{ textTransform: 'none' }}
+                  >
+                    Clear All
+                  </Button>
+                </Box>
+              )}
+            </Box>
+          </Collapse>
         </Paper>
 
         {/* Create post button - only show for logged in users */}
@@ -822,6 +1077,7 @@ const CommunityDiscussions = ({
             </Box>
           </Card>
         </Box>
+      </div>
       </div>
     </div>
   );

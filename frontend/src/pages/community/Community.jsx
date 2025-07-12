@@ -24,7 +24,7 @@ const Community = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('discussions');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategory] = useState('all'); // Categories now handled in CommunityDiscussions
   const [postContent, setPostContent] = useState('');
   const [postTitle, setPostTitle] = useState('');
   const [openPostModal, setOpenPostModal] = useState(false);
@@ -41,14 +41,12 @@ const Community = () => {
     comments: 0,
     activeNow: 0
   });
-  const [loading, setLoading] = useState(true);
   const [createPostLoading, setCreatePostLoading] = useState(false);
 
   // Fetch real data on component mount
   useEffect(() => {
     const fetchCommunityData = async () => {
       try {
-        setLoading(true);
         const [categoriesRes, tagsRes] = await Promise.all([
           getForumCategories(),
           getPopularTags(15)
@@ -71,8 +69,6 @@ const Community = () => {
         });
       } catch (error) {
         console.error('Error fetching community data:', error);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -177,6 +173,8 @@ const Community = () => {
             user={user}
             setSearchTerm={setSearchTerm}
             handleOpenPostModal={handleOpenPostModal}
+            forumCategories={forumCategories}
+            popularTags={popularTags}
           />
         );
       case 'events':
@@ -546,223 +544,139 @@ const Community = () => {
         </Paper>
       </div>
 
-      {/* Main layout with sidebar */}
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Left Sidebar - Categories */}
-        <div className="lg:w-1/4 xl:w-1/5">
-          <Box 
-            sx={{ 
-              position: { lg: 'sticky' },
-              top: { lg: '20px' },
-              maxHeight: { lg: 'calc(100vh - 40px)' },
-              overflowY: 'auto'
-            }}
-          >
-            <div className="flex flex-col gap-4">
-              {/* Categories Card */}
-              <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-                <div className="bg-primary px-5 py-4">
-                  <h2 className="text-xl font-semibold text-white flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0L10 9.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                    Categories
-                  </h2>
-                </div>
-                <div className="max-h-[calc(100vh-200px)] overflow-y-auto custom-scrollbar p-3">
-                  {loading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                      <CircularProgress size={30} />
-                    </Box>
-                  ) : (
-                    <>
-                      {/* All Categories Card */}
-                      <Card 
-                        sx={{ 
-                          mb: 2, 
-                          cursor: 'pointer',
-                          borderLeft: selectedCategory === 'all' ? '4px solid #4CAF50' : '4px solid transparent',
-                          backgroundColor: selectedCategory === 'all' ? '#E8F5E9' : 'white',
-                          transition: 'all 0.3s ease',
-                          '&:hover': {
-                            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                            transform: 'translateY(-2px)'
-                          }
-                        }}
-                        onClick={() => setSelectedCategory('all')}
-                      >
-                        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Typography variant="body1" fontWeight={selectedCategory === 'all' ? 'bold' : 'medium'} color={selectedCategory === 'all' ? 'primary.main' : 'text.primary'}>
-                              All Categories
-                            </Typography>
-                            <Badge 
-                              badgeContent={forumCategories.reduce((sum, cat) => sum + (cat.post_count || 0), 0)} 
-                              color={selectedCategory === 'all' ? 'primary' : 'default'}
-                              sx={{ 
-                                '& .MuiBadge-badge': { 
-                                  fontSize: '0.7rem', 
-                                  fontWeight: 'bold',
-                                  minWidth: '24px',
-                                  height: '20px'
-                                } 
-                              }}
-                            />
-                          </Box>
-                        </CardContent>
-                      </Card>
+      {/* Community Stats Cards - Horizontal Layout */}
+      <Box sx={{ mb: 4 }}>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <Card sx={{ borderRadius: 3, boxShadow: 2, border: '1px solid rgba(76,175,80,0.1)' }}>
+            <CardContent sx={{ p: 3, textAlign: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
+                <Box sx={{ 
+                  width: 48, 
+                  height: 48, 
+                  borderRadius: '50%', 
+                  bgcolor: 'rgba(76,175,80,0.1)', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  mb: 1
+                }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </Box>
+              </Box>
+              <Typography variant="h5" fontWeight="bold" color="primary.main">
+                {communityStats.members.toLocaleString()}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Members
+              </Typography>
+            </CardContent>
+          </Card>
 
-                      {/* Category Cards */}
-                      {forumCategories.map((category, index) => {
-                        // Array of category colors (primary color objects)
-                        const categoryColors = [
-                          { main: '#E91E63', light: '#FCE4EC', dark: '#C2185B' }, // Pink
-                          { main: '#FF9800', light: '#FFF3E0', dark: '#F57C00' }, // Orange
-                          { main: '#4CAF50', light: '#E8F5E9', dark: '#388E3C' }, // Green
-                          { main: '#00BCD4', light: '#E0F7FA', dark: '#0097A7' }, // Cyan
-                          { main: '#673AB7', light: '#EDE7F6', dark: '#512DA8' }, // Deep Purple
-                          { main: '#9C27B0', light: '#F3E5F5', dark: '#7B1FA2' }, // Purple
-                          { main: '#2196F3', light: '#E3F2FD', dark: '#1976D2' }, // Blue
-                          { main: '#FF5722', light: '#FBE9E7', dark: '#E64A19' }  // Deep Orange
-                        ];
-                        
-                        const colorIndex = index % categoryColors.length;
-                        const color = categoryColors[colorIndex];
-                        const isSelected = selectedCategory === category.id;
-                        
-                        return (
-                          <Card 
-                            key={category.id}
-                            sx={{ 
-                              mb: 2, 
-                              cursor: 'pointer',
-                              borderLeft: isSelected ? `4px solid ${color.main}` : '4px solid transparent',
-                              backgroundColor: isSelected ? color.light : 'white',
-                              transition: 'all 0.3s ease',
-                              '&:hover': {
-                                boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                                transform: 'translateY(-2px)',
-                                backgroundColor: isSelected ? color.light : '#f5f5f5'
-                              }
-                            }}
-                            onClick={() => setSelectedCategory(category.id)}
-                          >
-                            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Typography 
-                                  variant="body1" 
-                                  fontWeight={isSelected ? 'bold' : 'medium'} 
-                                  color={isSelected ? color.dark : 'text.primary'}
-                                >
-                                  {category.name}
-                                </Typography>
-                                <Badge 
-                                  badgeContent={category.post_count || 0} 
-                                  sx={{ 
-                                    '& .MuiBadge-badge': { 
-                                      backgroundColor: isSelected ? color.main : '#9e9e9e',
-                                      color: 'white',
-                                      fontSize: '0.7rem', 
-                                      fontWeight: 'bold',
-                                      minWidth: '24px',
-                                      height: '20px'
-                                    } 
-                                  }}
-                                />
-                              </Box>
-                              {isSelected && (
-                                <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', color: color.dark }}>
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd"/>
-                                  </svg>
-                                  <Typography variant="caption" fontWeight="medium" color="inherit">
-                                    View posts in this category
-                                  </Typography>
-                                </Box>
-                              )}
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </>
-                  )}
-                </div>
-              </div>
+          <Card sx={{ borderRadius: 3, boxShadow: 2, border: '1px solid rgba(255,152,0,0.1)' }}>
+            <CardContent sx={{ p: 3, textAlign: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
+                <Box sx={{ 
+                  width: 48, 
+                  height: 48, 
+                  borderRadius: '50%', 
+                  bgcolor: 'rgba(255,152,0,0.1)', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  mb: 1
+                }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-orange-600" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clipRule="evenodd" />
+                  </svg>
+                </Box>
+              </Box>
+              <Typography variant="h5" fontWeight="bold" sx={{ color: '#ff9800' }}>
+                {communityStats.discussions}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Discussions
+              </Typography>
+            </CardContent>
+          </Card>
 
-              {/* Popular tags */}
-              <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-                <div className="bg-green-600 px-5 py-4">
-                  <h2 className="text-xl font-semibold text-white flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                    </svg>
-                    Popular Tags
-                  </h2>
-                </div>
-                <div className="p-5">
-                  {loading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                      <CircularProgress size={24} />
-                    </Box>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {popularTags.map((tag, index) => (
-                        <button 
-                          key={tag.id || index} 
-                          className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-full text-sm font-medium transition-colors"
-                        >
-                          {tag.name} <span className="text-primary font-semibold">({tag.usage_count || tag.count || 0})</span>
-                        </button>
-                      ))}
-                      {popularTags.length === 0 && !loading && (
-                        <Typography variant="body2" color="text.secondary">
-                          No tags available yet
-                        </Typography>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
+          <Card sx={{ borderRadius: 3, boxShadow: 2, border: '1px solid rgba(33,150,243,0.1)' }}>
+            <CardContent sx={{ p: 3, textAlign: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
+                <Box sx={{ 
+                  width: 48, 
+                  height: 48, 
+                  borderRadius: '50%', 
+                  bgcolor: 'rgba(33,150,243,0.1)', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  mb: 1
+                }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 13V5a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2zM5 7a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm1 3a1 1 0 100 2h3a1 1 0 100-2H6z" clipRule="evenodd" />
+                  </svg>
+                </Box>
+              </Box>
+              <Typography variant="h5" fontWeight="bold" sx={{ color: '#2196f3' }}>
+                {communityStats.comments.toLocaleString()}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Comments
+              </Typography>
+            </CardContent>
+          </Card>
 
-              {/* Community stats - condensed */}
-              <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                <div className="bg-blue-600 px-5 py-4">
-                  <h2 className="text-xl font-semibold text-white flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+          <Card sx={{ borderRadius: 3, boxShadow: 2, border: '1px solid rgba(156,39,176,0.1)' }}>
+            <CardContent sx={{ p: 3, textAlign: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
+                <Box sx={{ 
+                  width: 48, 
+                  height: 48, 
+                  borderRadius: '50%', 
+                  bgcolor: 'rgba(156,39,176,0.1)', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  mb: 1
+                }}>
+                  <Box sx={{ position: 'relative' }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-600" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    Community Stats
-                  </h2>
-                </div>
-                <div className="p-5">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-gray-50 rounded-lg p-3 text-center">
-                      <div className="text-xl font-bold text-primary">{communityStats.members.toLocaleString()}</div>
-                      <div className="text-gray-600 text-xs">Members</div>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-3 text-center">
-                      <div className="text-xl font-bold text-primary">{communityStats.discussions}</div>
-                      <div className="text-gray-600 text-xs">Discussions</div>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-3 text-center">
-                      <div className="text-xl font-bold text-primary">{communityStats.comments.toLocaleString()}</div>
-                      <div className="text-gray-600 text-xs">Comments</div>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-3 text-center">
-                      <div className="text-xl font-bold text-primary">{communityStats.activeNow}</div>
-                      <div className="text-gray-600 text-xs">Active Now</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Box>
+                    <Box sx={{ 
+                      position: 'absolute', 
+                      top: '-2px', 
+                      right: '-2px', 
+                      width: 8, 
+                      height: 8, 
+                      borderRadius: '50%', 
+                      bgcolor: '#4caf50',
+                      '@keyframes pulse': {
+                        '0%': { opacity: 1 },
+                        '50%': { opacity: 0.5 },
+                        '100%': { opacity: 1 }
+                      },
+                      animation: 'pulse 2s infinite'
+                    }} />
+                  </Box>
+                </Box>
+              </Box>
+              <Typography variant="h5" fontWeight="bold" sx={{ color: '#9c27b0' }}>
+                {communityStats.activeNow}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Active Now
+              </Typography>
+            </CardContent>
+          </Card>
         </div>
+      </Box>
 
-        {/* Main Content */}
-        <div className="lg:w-3/4 xl:w-4/5">
-          {renderContent()}
-        </div>
+      {/* Main Content - Full Width */}
+      <div className="w-full">
+        {renderContent()}
       </div>
 
       {/* New Post Modal */}
