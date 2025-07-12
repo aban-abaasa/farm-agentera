@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { serviceListingsMockData } from '../../mocks/serviceListings';
+import { getListings } from '../../services/api/marketplaceService';
 import {
   Typography, Box, Paper, TextField, InputAdornment,
   FormControl, Select, MenuItem, Button, Chip,
   Card, CardMedia, CardContent, CardActionArea, Grid,
-  InputLabel, Divider, Rating, Avatar, Modal, Fade, Backdrop, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, IconButton
+  InputLabel, Divider, Rating, Avatar, Modal, Fade, Backdrop, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, CircularProgress, Alert
 } from '@mui/material';
 import { Star as StarIcon, Phone as PhoneIcon, Email as EmailIcon, Edit as EditIcon } from '@mui/icons-material';
 
@@ -115,8 +115,42 @@ const ServiceListings = () => {
   const [expandedId, setExpandedId] = useState(null);
   const [bookingService, setBookingService] = useState(null);
   const [editModal, setEditModal] = useState({ open: false, listing: null });
-  const [listings, setListings] = useState(serviceListingsMockData);
+  const [listings, setListings] = useState([]);
   const [callDialog, setCallDialog] = useState({ open: false, phone: '' });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [categories, setCategories] = useState([]);
+
+  // Fetch service listings from API
+  useEffect(() => {
+    const fetchServiceListings = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const { data, error: listingsError } = await getListings({
+          type: 'service',
+          status: 'active',
+          limit: 100
+        });
+        
+        if (listingsError) throw listingsError;
+        
+        setListings(data || []);
+        
+        // Extract unique categories from listings
+        const uniqueCategories = [...new Set((data || []).map(item => item.category).filter(Boolean))];
+        setCategories(uniqueCategories);
+      } catch (err) {
+        console.error('Error fetching service listings:', err);
+        setError(err.message || 'Failed to load service listings');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchServiceListings();
+  }, []);
 
   // Filter and sort listings
   const filteredListings = listings
@@ -129,37 +163,60 @@ const ServiceListings = () => {
     )
     .sort((a, b) => {
       if (sortBy === 'newest') {
-        return new Date(b.postedDate) - new Date(a.postedDate);
+        return new Date(b.created_at) - new Date(a.created_at);
       } else if (sortBy === 'oldest') {
-        return new Date(a.postedDate) - new Date(b.postedDate);
-      } else if (sortBy === 'rating') {
-        return b.provider.rating - a.provider.rating;
-      } else if (sortBy === 'experience') {
-        return b.provider.completedJobs - a.provider.completedJobs;
+        return new Date(a.created_at) - new Date(b.created_at);
+      } else if (sortBy === 'priceHigh') {
+        const priceA = a.price || 0;
+        const priceB = b.price || 0;
+        return priceB - priceA;
+      } else if (sortBy === 'priceLow') {
+        const priceA = a.price || 0;
+        const priceB = b.price || 0;
+        return priceA - priceB;
       }
       return 0;
     });
 
-  // Get unique categories for filter
-  const categories = [...new Set(serviceListingsMockData.map(item => item.category))];
-
-  // Helper for availability
-  const getAvailability = (provider) => provider.available ? { label: 'Available', color: 'success' } : { label: 'Unavailable', color: 'error' };
+  // Helper for availability - simplified since we don't have complex provider objects
+  const getAvailability = (listing) => 
+    listing.status === 'active' ? 
+      { label: 'Available', color: 'success' } : 
+      { label: 'Unavailable', color: 'error' };
 
   return (
     <div className="w-full max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-      {/* Header section */}
-      <Box sx={{ mb: 6 }}>
-        <Typography variant="h3" component="h1" fontWeight="bold" color="text.primary" sx={{ mb: 2 }}>
-          Agricultural Services
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '800px' }}>
-          Find specialized agricultural services from equipment rental and labor to consulting and technical expertise.
-          Connect with service providers to improve your farming operations.
-        </Typography>
-      </Box>
+      {/* Loading State */}
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
+          <CircularProgress size={60} />
+        </Box>
+      )}
+      
+      {/* Error State */}
+      {error && (
+        <Box sx={{ p: 3 }}>
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        </Box>
+      )}
+      
+      {/* Main Content - Only show when not loading */}
+      {!loading && (
+        <>
+          {/* Header section */}
+          <Box sx={{ mb: 6 }}>
+            <Typography variant="h3" component="h1" fontWeight="bold" color="text.primary" sx={{ mb: 2 }}>
+              Agricultural Services
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '800px' }}>
+              Find specialized agricultural services from equipment rental and labor to consulting and technical expertise.
+              Connect with service providers to improve your farming operations.
+            </Typography>
+          </Box>
 
-      {/* Search and filter section */}
+          {/* Search and filter section */}
       <Paper
         elevation={3}
         sx={{
@@ -510,6 +567,8 @@ const ServiceListings = () => {
           </Button>
         </DialogActions>
       </Dialog>
+        </>
+      )}
     </div>
   );
 };

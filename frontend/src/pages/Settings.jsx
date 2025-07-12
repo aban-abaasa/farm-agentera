@@ -6,7 +6,7 @@ import {
   Alert, Snackbar, FormControlLabel, 
   ToggleButton, ToggleButtonGroup, Tooltip, 
   List, ListItem, ListItemIcon, ListItemText, ListItemSecondaryAction,
-  Avatar, FormHelperText
+  Avatar, FormHelperText, useTheme, alpha
 } from '@mui/material';
 import { 
   Settings as SettingsIcon,
@@ -35,6 +35,8 @@ import {
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import useDateTimeFormat from '../hooks/useDateTimeFormat';
+import { useAppTheme } from '../context/ThemeContext';
+import { getUserSettings, updateSettingsCategory, resetUserSettings, initializeUserSettings } from '../services/api/settingsService';
 
 // Language options
 const languages = [
@@ -47,43 +49,100 @@ const languages = [
 const Settings = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [loading, setLoading] = useState(true);
   const { t, i18n } = useTranslation();
   const { formatDate, formatTime, dateFormat, timeFormat } = useDateTimeFormat();
+  const theme = useTheme();
+  
+  // Theme context
+  const { 
+    themeMode, 
+    colorScheme, 
+    fontSize, 
+    reducedMotion,
+    updateThemeMode, 
+    updateColorScheme, 
+    updateFontSize, 
+    updateReducedMotion 
+  } = useAppTheme();
+  
+  const isDark = themeMode === 'dark';
   
   // Get current values
   const language = i18n.language;
   
-  // App settings
+  // App settings (non-theme related)
   const [settings, setSettings] = useState({
-    // Appearance settings
-    theme: localStorage.getItem('theme') || 'light',
-    colorScheme: localStorage.getItem('colorScheme') || 'green',
-    fontSize: parseInt(localStorage.getItem('fontSize')) || 100,
-    reducedMotion: localStorage.getItem('reducedMotion') === 'true' || false,
-    
     // Notification settings
-    emailNotifications: localStorage.getItem('emailNotifications') === 'true' || true,
-    pushNotifications: localStorage.getItem('pushNotifications') === 'true' || false,
-    marketplaceAlerts: localStorage.getItem('marketplaceAlerts') === 'true' || true,
-    communityAlerts: localStorage.getItem('communityAlerts') === 'true' || true,
-    weatherAlerts: localStorage.getItem('weatherAlerts') === 'true' || true,
+    emailNotifications: true,
+    pushNotifications: false,
+    marketplaceAlerts: true,
+    communityAlerts: true,
+    weatherAlerts: true,
     
     // Privacy settings
-    profileVisibility: localStorage.getItem('profileVisibility') || 'public',
-    contactInfoVisibility: localStorage.getItem('contactInfoVisibility') || 'connections',
-    activityTracking: localStorage.getItem('activityTracking') === 'true' || true,
+    profileVisibility: 'public',
+    contactInfoVisibility: 'connections',
+    activityTracking: true,
     
     // Data usage
-    autoPlay: localStorage.getItem('autoPlay') === 'true' || false,
-    highQualityImages: localStorage.getItem('highQualityImages') === 'true' || true,
-    dataUsageOptimization: localStorage.getItem('dataUsageOptimization') === 'true' || false,
+    autoPlay: false,
+    highQualityImages: true,
+    dataUsageOptimization: false,
   });
 
-  // Effect to apply theme change immediately for demo purposes
+  // Load settings from database on mount
   useEffect(() => {
-    document.body.className = settings.theme;
-    // In a real implementation, you would use MUI ThemeProvider properly
-  }, [settings.theme]);
+    const loadSettings = async () => {
+      try {
+        setLoading(true);
+        
+        // First ensure user settings are initialized
+        await initializeUserSettings();
+        
+        const { data, error } = await getUserSettings();
+        
+        if (error) {
+          console.warn('Failed to load settings:', error);
+          // Use localStorage as fallback
+          setSettings({
+            emailNotifications: localStorage.getItem('emailNotifications') === 'true' || true,
+            pushNotifications: localStorage.getItem('pushNotifications') === 'true' || false,
+            marketplaceAlerts: localStorage.getItem('marketplaceAlerts') === 'true' || true,
+            communityAlerts: localStorage.getItem('communityAlerts') === 'true' || true,
+            weatherAlerts: localStorage.getItem('weatherAlerts') === 'true' || true,
+            profileVisibility: localStorage.getItem('profileVisibility') || 'public',
+            contactInfoVisibility: localStorage.getItem('contactInfoVisibility') || 'connections',
+            activityTracking: localStorage.getItem('activityTracking') === 'true' || true,
+            autoPlay: localStorage.getItem('autoPlay') === 'true' || false,
+            highQualityImages: localStorage.getItem('highQualityImages') === 'true' || true,
+            dataUsageOptimization: localStorage.getItem('dataUsageOptimization') === 'true' || false,
+          });
+        } else if (data) {
+          // Convert snake_case to camelCase and update state
+          setSettings({
+            emailNotifications: data.email_notifications ?? true,
+            pushNotifications: data.push_notifications ?? false,
+            marketplaceAlerts: data.marketplace_alerts ?? true,
+            communityAlerts: data.community_alerts ?? true,
+            weatherAlerts: data.weather_alerts ?? true,
+            profileVisibility: data.profile_visibility || 'public',
+            contactInfoVisibility: data.contact_info_visibility || 'connections',
+            activityTracking: data.activity_tracking ?? true,
+            autoPlay: data.auto_play ?? false,
+            highQualityImages: data.high_quality_images ?? true,
+            dataUsageOptimization: data.data_usage_optimization ?? false,
+          });
+        }
+      } catch (err) {
+        console.error('Error loading settings:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSettings();
+  }, []);
 
   // Save settings to localStorage and show confirmation
   const saveSettings = () => {
@@ -105,10 +164,6 @@ const Settings = () => {
   // Reset all settings to defaults
   const resetSettings = () => {
     const defaultSettings = {
-      theme: 'light',
-      colorScheme: 'green',
-      fontSize: 100,
-      reducedMotion: false,
       emailNotifications: true,
       pushNotifications: false,
       marketplaceAlerts: true,
@@ -124,6 +179,12 @@ const Settings = () => {
     
     // Reset settings state
     setSettings(defaultSettings);
+    
+    // Reset theme settings
+    updateThemeMode('light');
+    updateColorScheme('green');
+    updateFontSize(100);
+    updateReducedMotion(false);
     
     // Reset language settings
     i18n.changeLanguage('en');
@@ -151,10 +212,22 @@ const Settings = () => {
   };
 
   const handleSettingChange = (setting, value) => {
-    setSettings({
-      ...settings,
-      [setting]: value
-    });
+    // Handle theme-related settings separately
+    if (setting === 'theme') {
+      updateThemeMode(value);
+    } else if (setting === 'colorScheme') {
+      updateColorScheme(value);
+    } else if (setting === 'fontSize') {
+      updateFontSize(value);
+    } else if (setting === 'reducedMotion') {
+      updateReducedMotion(value);
+    } else {
+      // Handle regular settings
+      setSettings({
+        ...settings,
+        [setting]: value
+      });
+    }
   };
 
   // Handle language change
@@ -196,8 +269,10 @@ const Settings = () => {
         sx={{
           position: 'relative',
           overflow: 'hidden',
-          background: 'linear-gradient(135deg, #4caf50 0%, #81c784 100%)',
-          color: 'white',
+          background: isDark
+            ? `linear-gradient(135deg, ${theme.palette.grey[800]} 0%, ${theme.palette.primary.dark} 100%)`
+            : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 100%)`,
+          color: theme.palette.common.white,
           borderRadius: 4,
           mb: 5,
           px: { xs: 3, md: 6 },
@@ -210,7 +285,7 @@ const Settings = () => {
             width: '300px',
             height: '300px',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)',
+            background: `radial-gradient(circle, ${alpha(theme.palette.background.paper, 0.1)} 0%, transparent 70%)`,
             top: '-100px',
             right: '-50px',
             zIndex: 0,
@@ -219,14 +294,14 @@ const Settings = () => {
 
         <Box sx={{ position: 'relative', zIndex: 1 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-            <SettingsIcon sx={{ mr: 1, color: 'rgba(255, 255, 255, 0.8)' }} />
+            <SettingsIcon sx={{ mr: 1, color: alpha(theme.palette.common.white, 0.8) }} />
             <Typography
               variant="subtitle1"
               sx={{
                 textTransform: 'uppercase',
                 fontWeight: 600,
                 letterSpacing: 1,
-                color: 'rgba(255, 255, 255, 0.9)'
+                color: alpha(theme.palette.common.white, 0.9)
               }}
             >
               {t('settings.subtitle')}
@@ -246,8 +321,7 @@ const Settings = () => {
                 bottom: '-12px',
                 left: 0,
                 width: '60px',
-                height: '4px',
-                background: '#ffeb3b',
+                height: '4px',                  background: theme.palette.warning.main,
                 borderRadius: '2px',
               }
             }}
@@ -260,7 +334,7 @@ const Settings = () => {
             sx={{
               mt: 3,
               maxWidth: '800px',
-              color: 'rgba(255, 255, 255, 0.9)',
+              color: alpha(theme.palette.common.white, 0.9),
               fontSize: '1.1rem',
               lineHeight: 1.6
             }}
@@ -366,7 +440,7 @@ const Settings = () => {
                   </Typography>
                   <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
                     <ToggleButtonGroup
-                      value={settings.theme}
+                      value={themeMode}
                       exclusive
                       onChange={(e, value) => value && handleSettingChange('theme', value)}
                       fullWidth
@@ -403,7 +477,7 @@ const Settings = () => {
                               borderRadius: '50%',
                               bgcolor: scheme.color,
                               cursor: 'pointer',
-                              border: settings.colorScheme === scheme.name ? 
+                              border: colorScheme === scheme.name ? 
                                 '3px solid rgba(0,0,0,0.3)' : '3px solid transparent',
                               transition: 'transform 0.2s',
                               '&:hover': {
@@ -414,7 +488,7 @@ const Settings = () => {
                               justifyContent: 'center'
                             }}
                           >
-                            {settings.colorScheme === scheme.name && (
+                            {colorScheme === scheme.name && (
                               <CheckIcon sx={{ color: '#fff' }} fontSize="small" />
                             )}
                           </Box>
@@ -436,7 +510,7 @@ const Settings = () => {
                       </Grid>
                       <Grid item xs>
                         <Slider
-                          value={settings.fontSize}
+                          value={fontSize}
                           onChange={(e, newValue) => handleSettingChange('fontSize', newValue)}
                           valueLabelDisplay="auto"
                           step={10}
@@ -453,9 +527,9 @@ const Settings = () => {
                     <Typography 
                       variant="body2" 
                       color="text.secondary"
-                      sx={{ mt: 2, fontSize: `${settings.fontSize * 0.01}rem` }}
+                      sx={{ mt: 2, fontSize: `${fontSize * 0.01}rem` }}
                     >
-                      {t('settings.appearance.fontSizePreview', { size: settings.fontSize })}
+                      {t('settings.appearance.fontSizePreview', { size: fontSize })}
                     </Typography>
                   </Paper>
                 </Grid>
@@ -903,7 +977,7 @@ const Settings = () => {
                     <FormControlLabel
                       control={
                         <Switch
-                          checked={settings.reducedMotion}
+                          checked={reducedMotion}
                           onChange={(e) => handleSettingChange('reducedMotion', e.target.checked)}
                           color="primary"
                         />

@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const AuthCallback = () => {
   const [error, setError] = useState(null);
-  const { user, profileStatus, loading } = useAuth();
+  const { user, profileStatus, loading, googleMetadata } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,8 +45,13 @@ const AuthCallback = () => {
           <>
             <CircularProgress size={60} />
             <Typography variant="h6" sx={{ mt: 3 }}>
-              Completing sign-in...
+              {googleMetadata ? 'Completing Google sign-in...' : 'Completing sign-in...'}
             </Typography>
+            {googleMetadata && (
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                Preparing your profile information
+              </Typography>
+            )}
           </>
         )}
       </Box>

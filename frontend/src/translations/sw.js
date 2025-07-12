@@ -27,6 +27,13 @@ const sw = {
     logout: 'Toka',
     profile: 'Wasifu',
     settings: 'Mipangilio',
+    farmManagement: 'Usimamizi wa Shamba',
+    myFarm: 'Shamba Langu',
+    analytics: 'Uchambuzi',
+    finance: 'Fedha',
+    soilCrop: 'Mpango wa Udongo na Mazao',
+    livestock: 'Usimamizi wa Mifugo',
+    investments: 'Uwekezaji',
   },
   
   settings: {

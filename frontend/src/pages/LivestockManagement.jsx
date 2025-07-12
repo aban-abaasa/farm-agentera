@@ -1,5 +1,6 @@
 import React, { useState, useReducer, useEffect } from 'react';
-import { Box, Typography, Card, CardContent, Grid, Button, Divider, Modal, TextField, MenuItem, InputAdornment, Paper, Checkbox, List, ListItem, ListItemText, ListItemSecondaryAction, IconButton, Snackbar } from '@mui/material';
+import { Box, Typography, Card, CardContent, Grid, Button, Divider, Modal, TextField, MenuItem, InputAdornment, Paper, Checkbox, List, ListItem, ListItemText, ListItemSecondaryAction, IconButton, Snackbar, useTheme } from '@mui/material';
+import { useAppTheme } from '../context/ThemeContext';
 import PetsIcon from '@mui/icons-material/Pets';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
@@ -99,6 +100,10 @@ const DEMO_ANIMALS = [
 ];
 
 const LivestockManagement = () => {
+  const theme = useTheme();
+  const { themeMode } = useAppTheme();
+  const isDark = themeMode === 'dark';
+  
   const [openModal, setOpenModal] = useState(false);
   const [newAnimal, setNewAnimal] = useState({ type: '', breed: '', price: '', location: '' });
   const [tasks] = useState(dailyTasks);
@@ -316,11 +321,19 @@ const LivestockManagement = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 6 }, background: 'linear-gradient(120deg, #e1f5fe 0%, #fffde7 100%)', minHeight: '100vh' }}>
+    <Box sx={{ 
+      p: { xs: 2, md: 6 }, 
+      background: isDark 
+        ? `linear-gradient(120deg, ${theme.palette.grey[900]} 0%, ${theme.palette.grey[800]} 100%)` 
+        : `linear-gradient(120deg, ${theme.palette.primary.light}20 0%, ${theme.palette.secondary.light}20 100%)`,
+      minHeight: '100vh' 
+    }}>
       <Box sx={{
         width: '100%',
         minHeight: 220,
-        background: 'linear-gradient(120deg, #e1f5fe 0%, #a5d6a7 100%)',
+        background: isDark
+          ? `linear-gradient(120deg, ${theme.palette.grey[800]} 0%, ${theme.palette.primary.dark}40 100%)`
+          : `linear-gradient(120deg, ${theme.palette.primary.light}30 0%, ${theme.palette.primary.main}20 100%)`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -335,7 +348,7 @@ const LivestockManagement = () => {
       }}>
         <Box sx={{ flex: 1, minWidth: 200, textAlign: { xs: 'center', md: 'left' } }}>
           <Typography variant="h3" fontWeight="bold" color="primary.main" sx={{ mb: 2, letterSpacing: 1 }}>
-            <PetsIcon sx={{ fontSize: 48, mr: 1, verticalAlign: 'middle', color: '#43a047' }} />
+            <PetsIcon sx={{ fontSize: 48, mr: 1, verticalAlign: 'middle', color: theme.palette.primary.main }} />
             Livestock Management
           </Typography>
           <Typography variant="h6" color="text.secondary" sx={{ mb: 2, maxWidth: 500 }}>
@@ -343,7 +356,14 @@ const LivestockManagement = () => {
           </Typography>
         </Box>
         <Box sx={{ flex: 1, minWidth: 220, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80" alt="Livestock" style={{ width: '100%', maxWidth: 320, borderRadius: 16, boxShadow: '0 8px 32px rgba(67,160,71,0.15)' }} />
+          <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80" alt="Livestock" style={{ 
+            width: '100%', 
+            maxWidth: 320, 
+            borderRadius: 16, 
+            boxShadow: isDark 
+              ? `0 8px 32px ${theme.palette.primary.dark}30` 
+              : `0 8px 32px ${theme.palette.primary.main}15` 
+          }} />
         </Box>
       </Box>
       <Typography variant="h3" fontWeight="bold" color="primary.main" gutterBottom>
@@ -392,7 +412,14 @@ const LivestockManagement = () => {
       </Grid>
       <Divider sx={{ my: 6 }} />
       {/* Livestock Marketplace Section */}
-      <Paper elevation={4} sx={{ p: 3, mb: 6, borderRadius: 4, background: 'linear-gradient(120deg, #fce4ec 0%, #e3f2fd 100%)' }}>
+      <Paper elevation={4} sx={{ 
+        p: 3, 
+        mb: 6, 
+        borderRadius: 4, 
+        background: isDark
+          ? `linear-gradient(120deg, ${theme.palette.grey[800]} 0%, ${theme.palette.secondary.dark}20 100%)`
+          : `linear-gradient(120deg, ${theme.palette.secondary.light}20 0%, ${theme.palette.primary.light}20 100%)`
+      }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <StorefrontIcon color="primary" sx={{ fontSize: 32, mr: 1 }} />
           <Typography variant="h5" fontWeight="bold" flexGrow={1}>Livestock Marketplace</Typography>
@@ -445,7 +472,14 @@ const LivestockManagement = () => {
         </Box>
       </Modal>
       {/* Health Marketplace Section */}
-      <Paper elevation={4} sx={{ p: 3, mb: 6, borderRadius: 4, background: 'linear-gradient(120deg, #e8f5e9 0%, #e3f2fd 100%)' }}>
+      <Paper elevation={4} sx={{ 
+        p: 3, 
+        mb: 6, 
+        borderRadius: 4, 
+        background: isDark
+          ? `linear-gradient(120deg, ${theme.palette.grey[800]} 0%, ${theme.palette.success.dark}20 100%)`
+          : `linear-gradient(120deg, ${theme.palette.success.light}20 0%, ${theme.palette.primary.light}20 100%)`
+      }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <LocalHospitalIcon color="error" sx={{ fontSize: 32, mr: 1 }} />
           <Typography variant="h5" fontWeight="bold" flexGrow={1}>Health Marketplace</Typography>
@@ -522,7 +556,15 @@ const LivestockManagement = () => {
         </List>
       </Paper>
       {/* Health Records & Reminders */}
-      <Paper elevation={6} sx={{ p: 4, mb: 6, borderRadius: 5, background: 'linear-gradient(120deg, #ede7f6 0%, #b3e5fc 100%)', boxShadow: 10 }}>
+      <Paper elevation={6} sx={{ 
+        p: 4, 
+        mb: 6, 
+        borderRadius: 5, 
+        background: isDark
+          ? `linear-gradient(120deg, ${theme.palette.grey[800]} 0%, ${theme.palette.primary.dark}30 100%)`
+          : `linear-gradient(120deg, ${theme.palette.secondary.light}20 0%, ${theme.palette.info.light}20 100%)`,
+        boxShadow: 10 
+      }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <ListAltIcon color="primary" sx={{ fontSize: 40, mr: 2 }} />
           <Typography variant="h4" fontWeight="bold" flexGrow={1}>Animal Register</Typography>
@@ -548,18 +590,18 @@ const LivestockManagement = () => {
             <tbody>
               {cmms.animals.map(animal => (
                 <tr key={animal.id}>
-                  <td style={{ padding: 8, border: '1px solid #eee' }}>
+                  <td style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {animal.image && <img src={animal.image} alt={animal.type} style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />}
                       {animal.type} #{animal.id}
                     </Box>
                   </td>
-                  <td style={{ padding: 8, border: '1px solid #eee' }}>{animal.type}</td>
-                  <td style={{ padding: 8, border: '1px solid #eee' }}>{animal.breed}</td>
-                  <td style={{ padding: 8, border: '1px solid #eee' }}>{animal.lastTreatment || '-'}</td>
-                  <td style={{ padding: 8, border: '1px solid #eee' }}>{animal.nextDue || '-'}</td>
-                  <td style={{ padding: 8, border: '1px solid #eee' }}>{cmms.tasks.some(t => !t.done) ? <span style={{ color: '#ffa726', fontWeight: 600 }}>Due</span> : <span style={{ color: '#43a047', fontWeight: 600 }}>OK</span>}</td>
-                  <td style={{ padding: 8, border: '1px solid #eee' }}>
+                  <td style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>{animal.type}</td>
+                  <td style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>{animal.breed}</td>
+                  <td style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>{animal.lastTreatment || '-'}</td>
+                  <td style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>{animal.nextDue || '-'}</td>
+                  <td style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>{cmms.tasks.some(t => !t.done) ? <span style={{ color: theme.palette.warning.main, fontWeight: 600 }}>Due</span> : <span style={{ color: theme.palette.success.main, fontWeight: 600 }}>OK</span>}</td>
+                  <td style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>
                     <IconButton color="primary" onClick={() => openEditAnimalModal(animal)}><EditIcon /></IconButton>
                     <IconButton color="error" onClick={() => handleDeleteAnimal(animal.id)}><DeleteIcon /></IconButton>
                   </td>
@@ -602,7 +644,14 @@ const LivestockManagement = () => {
         </Modal>
       </Paper>
       {/* Health Marketplace Section */}
-      <Paper elevation={4} sx={{ p: 3, mb: 6, borderRadius: 4, background: 'linear-gradient(120deg, #e3f2fd 0%, #b2ebf2 100%)' }}>
+      <Paper elevation={4} sx={{ 
+        p: 3, 
+        mb: 6, 
+        borderRadius: 4, 
+        background: isDark
+          ? `linear-gradient(120deg, ${theme.palette.grey[800]} 0%, ${theme.palette.success.dark}20 100%)`
+          : `linear-gradient(120deg, ${theme.palette.success.light}20 0%, ${theme.palette.primary.light}20 100%)`
+      }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <LocalHospitalIcon color="error" sx={{ fontSize: 32, mr: 1 }} />
           <Typography variant="h5" fontWeight="bold" flexGrow={1}>Health Marketplace</Typography>
@@ -679,7 +728,15 @@ const LivestockManagement = () => {
         </List>
       </Paper>
       {/* Health Records & Reminders */}
-      <Paper elevation={4} sx={{ p: 3, mb: 6, borderRadius: 4, background: 'linear-gradient(120deg, #e3f2fd 0%, #b2ebf2 100%)', position: 'relative' }}>
+      <Paper elevation={4} sx={{ 
+        p: 3, 
+        mb: 6, 
+        borderRadius: 4, 
+        background: isDark
+          ? `linear-gradient(120deg, ${theme.palette.grey[800]} 0%, ${theme.palette.primary.dark}20 100%)`
+          : `linear-gradient(120deg, ${theme.palette.primary.light}20 0%, ${theme.palette.info.light}20 100%)`,
+        position: 'relative' 
+      }}>
         <Box sx={{ mb: 0 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <ListAltIcon color="primary" sx={{ fontSize: 32, mr: 1 }} />
@@ -693,14 +750,14 @@ const LivestockManagement = () => {
           <Box sx={{ overflowX: 'auto', mb: 2 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ background: '#f5f5f5' }}>
-                  <th style={{ padding: 8, border: '1px solid #eee' }}>Animal</th>
-                  <th style={{ padding: 8, border: '1px solid #eee' }}>Type</th>
-                  <th style={{ padding: 8, border: '1px solid #eee' }}>Breed</th>
-                  <th style={{ padding: 8, border: '1px solid #eee' }}>Last Treatment</th>
-                  <th style={{ padding: 8, border: '1px solid #eee' }}>Next Due</th>
-                  <th style={{ padding: 8, border: '1px solid #eee' }}>Status</th>
-                  <th style={{ padding: 8, border: '1px solid #eee' }}>Actions</th>
+                <tr style={{ background: isDark ? theme.palette.grey[800] : theme.palette.grey[100] }}>
+                  <th style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>Animal</th>
+                  <th style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>Type</th>
+                  <th style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>Breed</th>
+                  <th style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>Last Treatment</th>
+                  <th style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>Next Due</th>
+                  <th style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>Status</th>
+                  <th style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -772,53 +829,53 @@ const LivestockManagement = () => {
           <Box sx={{ overflowX: 'auto', mb: 2 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ background: '#f5f5f5' }}>
-                  <th style={{ padding: 8, border: '1px solid #eee' }}>Task</th>
-                  <th style={{ padding: 8, border: '1px solid #eee' }}>Type</th>
-                  <th style={{ padding: 8, border: '1px solid #eee' }}>Animals</th>
-                  <th style={{ padding: 8, border: '1px solid #eee' }}>Due</th>
-                  <th style={{ padding: 8, border: '1px solid #eee' }}>Priority</th>
-                  <th style={{ padding: 8, border: '1px solid #eee' }}>Notes</th>
-                  <th style={{ padding: 8, border: '1px solid #eee' }}>Attachment</th>
-                  <th style={{ padding: 8, border: '1px solid #eee' }}>Status</th>
-                  <th style={{ padding: 8, border: '1px solid #eee' }}>Actions</th>
+                <tr style={{ background: isDark ? theme.palette.grey[800] : theme.palette.grey[100] }}>
+                  <th style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>Task</th>
+                  <th style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>Type</th>
+                  <th style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>Animals</th>
+                  <th style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>Due</th>
+                  <th style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>Priority</th>
+                  <th style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>Notes</th>
+                  <th style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>Attachment</th>
+                  <th style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>Status</th>
+                  <th style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {cmms.tasks.map(task => (
                   <tr key={task.id}>
-                    <td style={{ padding: 8, border: '1px solid #eee' }}>{task.task}</td>
-                    <td style={{ padding: 8, border: '1px solid #eee' }}>
+                    <td style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>{task.task}</td>
+                    <td style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>
                       {task.type && <Chip label={task.type} color="info" size="small" />}
                     </td>
-                    <td style={{ padding: 8, border: '1px solid #eee' }}>
+                    <td style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>
                       {task.animalIds && task.animalIds.length > 0
                         ? task.animalIds.map(id => {
                             const a = cmms.animals.find(an => String(an.id) === String(id));
                             return a ? <Chip key={id} label={`${a.type}${a.breed ? ' (' + a.breed + ')' : ''} #${a.id}`} size="small" sx={{ mr: 0.5 }} /> : null;
                           })
-                        : <span style={{ color: '#aaa' }}>No animals assigned</span>}
+                        : <span style={{ color: theme.palette.text.disabled }}>No animals assigned</span>}
                     </td>
-                    <td style={{ padding: 8, border: '1px solid #eee' }}>{task.due || '-'}</td>
-                    <td style={{ padding: 8, border: '1px solid #eee' }}>
+                    <td style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>{task.due || '-'}</td>
+                    <td style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>
                       {task.priority && <Chip label={task.priority} color={task.priority === 'High' ? 'error' : task.priority === 'Medium' ? 'warning' : 'success'} size="small" />}
                     </td>
-                    <td style={{ padding: 8, border: '1px solid #eee' }}>
+                    <td style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>
                       {task.notes ? (
                         <Tooltip title={task.notes}><span>📝</span></Tooltip>
                       ) : '-'}
                     </td>
-                    <td style={{ padding: 8, border: '1px solid #eee' }}>
+                    <td style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>
                       {task.attachment ? (
                         <Tooltip title={task.attachmentName || 'Attachment'}>
                           <a href={task.attachment} target="_blank" rel="noopener noreferrer"><AttachFileIcon /></a>
                         </Tooltip>
                       ) : '-'}
                     </td>
-                    <td style={{ padding: 8, border: '1px solid #eee' }}>
-                      {task.done ? <span style={{ color: '#43a047', fontWeight: 600 }}>Completed <CheckCircleIcon sx={{ fontSize: 18, verticalAlign: 'middle' }} /></span> : <span style={{ color: '#ffa726', fontWeight: 600 }}>Due</span>}
+                    <td style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>
+                      {task.done ? <span style={{ color: theme.palette.success.main, fontWeight: 600 }}>Completed <CheckCircleIcon sx={{ fontSize: 18, verticalAlign: 'middle' }} /></span> : <span style={{ color: theme.palette.warning.main, fontWeight: 600 }}>Due</span>}
                     </td>
-                    <td style={{ padding: 8, border: '1px solid #eee' }}>
+                    <td style={{ padding: 8, border: `1px solid ${isDark ? theme.palette.grey[700] : theme.palette.grey[300]}` }}>
                       <IconButton color="primary" onClick={() => openEditTaskModal(task)}><EditIcon /></IconButton>
                       <IconButton color="error" onClick={() => handleDeleteTask(task.id)}><DeleteIcon /></IconButton>
                       <IconButton color="success" onClick={() => handleToggleTaskDone(task)}><CheckCircleIcon /></IconButton>

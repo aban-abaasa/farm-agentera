@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Box, Typography, Card, CardContent, Grid, Divider, Chip, Avatar, Button, Paper, List, ListItem, ListItemAvatar, ListItemText, Tooltip } from '@mui/material';
+import { Box, Typography, Card, CardContent, Grid, Divider, Chip, Avatar, Button, Paper, List, ListItem, ListItemAvatar, ListItemText, Tooltip, useTheme, alpha } from '@mui/material';
+import { useAppTheme } from '../context/ThemeContext';
 import WbSunnyIcon from '@mui/icons-material/WbSunny';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates';
@@ -84,6 +85,9 @@ const Weather = () => {
   const [selectedLocation, setSelectedLocation] = useState('Kampala');
   const [regionWeather, setRegionWeather] = useState(getMockWeatherForRegion('Central'));
   const [tipIndex, setTipIndex] = useState(0);
+  const theme = useTheme();
+  const { themeMode } = useAppTheme();
+  const isDark = themeMode === 'dark';
   const tips = [
     'Water crops early in the morning to reduce evaporation.',
     'Monitor weather alerts to protect your livestock and crops.',
@@ -101,7 +105,7 @@ const Weather = () => {
     return () => clearInterval(interval);
   }, [tips.length]);
 
-  const RainfallTrendsChart = ({ rainfallData }) => {
+  const RainfallTrendsChart = ({ rainfallData, theme }) => {
     const { labels, datasets } = rainfallData;
     const chartData = labels.map((month, i) => ({
       month,
@@ -117,13 +121,20 @@ const Weather = () => {
       <Box>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" />
-            <YAxis />
-            <RechartsTooltip />
+            <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+            <XAxis dataKey="month" tick={{ fill: theme.palette.text.secondary }} />
+            <YAxis tick={{ fill: theme.palette.text.secondary }} />
+            <RechartsTooltip 
+              contentStyle={{
+                backgroundColor: theme.palette.background.paper,
+                border: `1px solid ${theme.palette.divider}`,
+                borderRadius: '8px',
+                color: theme.palette.text.primary
+              }}
+            />
             <Legend />
-            <Bar dataKey="thisYear" fill="#1976d2" name="This Year" radius={[6, 6, 0, 0]} />
-            <Bar dataKey="average" fill="#43a047" name="Average" radius={[6, 6, 0, 0]} />
+            <Bar dataKey="thisYear" fill={theme.palette.primary.main} name="This Year" radius={[6, 6, 0, 0]} />
+            <Bar dataKey="average" fill={theme.palette.success.main} name="Average" radius={[6, 6, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
         <Divider sx={{ my: 1 }} />
@@ -145,7 +156,13 @@ const Weather = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 6 }, background: 'linear-gradient(120deg, #e3f2fd 0%, #fffde7 100%)', minHeight: '100vh' }}>
+    <Box sx={{ 
+      p: { xs: 2, md: 6 }, 
+      background: isDark
+        ? `linear-gradient(120deg, ${theme.palette.grey[800]} 0%, ${theme.palette.primary.dark}40 100%)`
+        : `linear-gradient(120deg, ${theme.palette.primary.light}20 0%, ${theme.palette.warning.light}20 100%)`,
+      minHeight: '100vh' 
+    }}>
       <Typography variant="h3" fontWeight="bold" color="primary.main" gutterBottom>
         <WbSunnyIcon sx={{ fontSize: 40, mr: 1, verticalAlign: 'middle' }} /> Weather & Forecast
       </Typography>
@@ -177,7 +194,13 @@ const Weather = () => {
             </CardContent>
           </Card>
           {/* Popular Locations */}
-          <Paper elevation={0} sx={{ p: 2, borderRadius: 2, background: '#fffde7' }}>
+          <Paper elevation={0} sx={{ 
+            p: 2, 
+            borderRadius: 2, 
+            background: isDark
+              ? alpha(theme.palette.warning.dark, 0.2)
+              : alpha(theme.palette.warning.light, 0.3)
+          }}>
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
               <PlaceIcon sx={{ fontSize: 18, mr: 0.5, verticalAlign: 'middle' }} /> Popular Locations
             </Typography>
@@ -205,7 +228,14 @@ const Weather = () => {
               <Grid container spacing={1}>
                 {regionWeather.forecast.map((day, idx) => (
                   <Grid item xs={6} sm={4} key={idx}>
-                    <Paper elevation={1} sx={{ p: 1, borderRadius: 2, textAlign: 'center', background: '#f5faff' }}>
+                    <Paper elevation={1} sx={{ 
+                      p: 1, 
+                      borderRadius: 2, 
+                      textAlign: 'center', 
+                      background: isDark
+                        ? alpha(theme.palette.primary.dark, 0.2)
+                        : alpha(theme.palette.primary.light, 0.3)
+                    }}>
                       <Tooltip title={day.condition}>
                         <Avatar src={day.icon} alt={day.condition} sx={{ mx: 'auto', mb: 0.5, width: 36, height: 36 }} />
                       </Tooltip>
@@ -219,11 +249,18 @@ const Weather = () => {
               </Grid>
             </CardContent>
           </Card>
-          <Paper elevation={0} sx={{ p: 2, borderRadius: 2, background: '#e3f2fd', mb: 2 }}>
+          <Paper elevation={0} sx={{ 
+            p: 2, 
+            borderRadius: 2, 
+            background: isDark
+              ? alpha(theme.palette.primary.dark, 0.2)
+              : alpha(theme.palette.primary.light, 0.3),
+            mb: 2 
+          }}>
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
               <OpacityIcon sx={{ fontSize: 18, mr: 0.5, verticalAlign: 'middle' }} /> Rainfall Trends
             </Typography>
-            <RainfallTrendsChart rainfallData={regionWeather.rainfallData} />
+            <RainfallTrendsChart rainfallData={regionWeather.rainfallData} theme={theme} />
           </Paper>
         </Grid>
         {/* Alerts & Tips */}
@@ -254,7 +291,13 @@ const Weather = () => {
               </List>
             </CardContent>
           </Card>
-          <Paper elevation={0} sx={{ p: 2, borderRadius: 2, background: '#e8f5e9' }}>
+          <Paper elevation={0} sx={{ 
+            p: 2, 
+            borderRadius: 2, 
+            background: isDark
+              ? alpha(theme.palette.success.dark, 0.2)
+              : alpha(theme.palette.success.light, 0.3)
+          }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
               <TipsAndUpdatesIcon color="secondary" sx={{ fontSize: 22, mr: 1 }} />
               <Typography variant="subtitle2" fontWeight="bold">Agri-Weather Tip</Typography>

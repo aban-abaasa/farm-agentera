@@ -27,6 +27,13 @@ const fr = {
     logout: 'Déconnexion',
     profile: 'Profil',
     settings: 'Paramètres',
+    farmManagement: 'Gestion de la Ferme',
+    myFarm: 'Ma Ferme',
+    analytics: 'Analyses',
+    finance: 'Finance',
+    soilCrop: 'Planificateur Sol et Culture',
+    livestock: 'Gestion du Bétail',
+    investments: 'Investissements',
   },
   
   settings: {

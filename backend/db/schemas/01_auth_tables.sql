@@ -39,6 +39,16 @@ CREATE POLICY "Users can view their own profile"
     FOR SELECT 
     USING (auth.uid() = id);
 
+CREATE POLICY "Users can view other users' public profile info"
+    ON public.profiles
+    FOR SELECT
+    USING (auth.uid() IS NOT NULL AND auth.uid() != id);
+
+CREATE POLICY "Anonymous users can view basic profile info"
+    ON public.profiles
+    FOR SELECT
+    USING (auth.uid() IS NULL);
+
 CREATE POLICY "Users can update their own profile" 
     ON public.profiles 
     FOR UPDATE 

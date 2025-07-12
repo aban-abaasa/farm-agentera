@@ -20,7 +20,9 @@ import {
   StepLabel,
   Stepper,
   TextField,
-  Typography
+  Typography,
+  Avatar,
+  Chip
 } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 
@@ -50,7 +52,7 @@ const CompleteProfile = () => {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  const { user, updateProfile, loading, profileStatus } = useAuth();
+  const { user, updateProfile, loading, profileStatus, googleMetadata } = useAuth();
   const navigate = useNavigate();
   
   // Redirect if user is not logged in or if profile is already complete
@@ -97,8 +99,8 @@ const CompleteProfile = () => {
 
   const formik = useFormik({
     initialValues: {
-      firstName: user?.first_name || '',
-      lastName: user?.last_name || '',
+      firstName: user?.first_name || googleMetadata?.first_name || '',
+      lastName: user?.last_name || googleMetadata?.last_name || '',
       phone: user?.phone_number || '',
       location: user?.location || '',
       role: user?.role || 'farmer',
@@ -106,6 +108,7 @@ const CompleteProfile = () => {
       farmSize: user?.farm_size || '',
       bio: user?.bio || ''
     },
+    enableReinitialize: true, // This allows the form to reinitialize when initial values change
     validationSchema: validationSchemas[activeStep],
     onSubmit: async (values) => {
       if (activeStep < steps.length - 1) {
@@ -127,6 +130,11 @@ const CompleteProfile = () => {
             updated_at: new Date().toISOString()
           };
           
+          // If user has Google avatar and no existing avatar, use Google avatar
+          if (googleMetadata?.avatar_url && !user?.avatar_url) {
+            profileData.avatar_url = googleMetadata.avatar_url;
+          }
+          
           await updateProfile(profileData);
           setSuccess(true);
           
@@ -143,9 +151,51 @@ const CompleteProfile = () => {
     }
   });
 
+  // Update form values when Google metadata becomes available
+  useEffect(() => {
+    if (googleMetadata) {
+      // Force update the fields if they're empty and we have Google data
+      if (!formik.values.firstName && googleMetadata.first_name) {
+        formik.setFieldValue('firstName', googleMetadata.first_name);
+        console.log('Setting firstName to:', googleMetadata.first_name);
+      }
+      if (!formik.values.lastName && googleMetadata.last_name) {
+        formik.setFieldValue('lastName', googleMetadata.last_name);
+        console.log('Setting lastName to:', googleMetadata.last_name);
+      }
+      
+      // Also try to reset form values entirely if both fields are empty
+      if (!formik.values.firstName && !formik.values.lastName && (googleMetadata.first_name || googleMetadata.last_name)) {
+        formik.resetForm({
+          values: {
+            ...formik.values,
+            firstName: googleMetadata.first_name || '',
+            lastName: googleMetadata.last_name || ''
+          }
+        });
+        console.log('Reset form with Google data');
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [googleMetadata]);
+
   const handleBack = () => {
     setActiveStep(activeStep - 1);
   };
+
+  // Debug: Log when Google metadata is available
+  useEffect(() => {
+    console.log('CompleteProfile - Google metadata:', googleMetadata);
+    console.log('CompleteProfile - User data:', user);
+    console.log('CompleteProfile - Current form values:', formik.values);
+    
+    // Show what we expect vs what we got
+    if (googleMetadata) {
+      console.log('Expected first_name:', googleMetadata.first_name);
+      console.log('Expected last_name:', googleMetadata.last_name);
+      console.log('Expected avatar_url:', googleMetadata.avatar_url);
+    }
+  }, [googleMetadata, user, formik.values]);
 
   // Show loading indicator while checking authentication
   if (loading || profileStatus.isChecking) {
@@ -165,11 +215,37 @@ const CompleteProfile = () => {
     <Container component="main" maxWidth="sm">
       <Paper elevation={3} sx={{ p: 4, my: 8, borderRadius: 2 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          {googleMetadata?.avatar_url && (
+            <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <Avatar 
+                src={googleMetadata.avatar_url} 
+                alt="Google Profile Picture"
+                sx={{ width: 80, height: 80, mb: 1 }}
+              />
+              <Chip 
+                label="From Google Account" 
+                size="small" 
+                color="success" 
+                variant="outlined"
+              />
+            </Box>
+          )}
+          
           <Typography component="h1" variant="h5" fontWeight="bold" gutterBottom>
             Complete Your Profile
           </Typography>
           <Typography variant="body2" color="text.secondary" mb={4} textAlign="center">
             Please provide some additional information to complete your profile
+            {googleMetadata && (
+              <Box sx={{ mt: 2, p: 2, bgcolor: 'success.light', borderRadius: 1, color: 'success.dark' }}>
+                <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                  ✓ Welcome! We've pre-filled your name from your Google account.
+                </Typography>
+                <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
+                  You can edit any information as needed.
+                </Typography>
+              </Box>
+            )}
           </Typography>
 
           <Stepper activeStep={activeStep} alternativeLabel sx={{ width: '100%', mb: 4 }}>
@@ -206,7 +282,15 @@ const CompleteProfile = () => {
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
                     error={formik.touched.firstName && Boolean(formik.errors.firstName)}
-                    helperText={formik.touched.firstName && formik.errors.firstName}
+                    helperText={
+                      (formik.touched.firstName && formik.errors.firstName) ||
+                      (googleMetadata?.first_name && formik.values.firstName === googleMetadata.first_name ? 
+                        '✓ Pre-filled from Google account' : '')
+                    }
+                    InputProps={{
+                      sx: googleMetadata?.first_name && formik.values.firstName === googleMetadata.first_name ? 
+                        { '& .MuiOutlinedInput-notchedOutline': { borderColor: 'success.main' } } : {}
+                    }}
                   />
                   <TextField
                     margin="normal"
@@ -219,7 +303,15 @@ const CompleteProfile = () => {
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
                     error={formik.touched.lastName && Boolean(formik.errors.lastName)}
-                    helperText={formik.touched.lastName && formik.errors.lastName}
+                    helperText={
+                      (formik.touched.lastName && formik.errors.lastName) ||
+                      (googleMetadata?.last_name && formik.values.lastName === googleMetadata.last_name ? 
+                        '✓ Pre-filled from Google account' : '')
+                    }
+                    InputProps={{
+                      sx: googleMetadata?.last_name && formik.values.lastName === googleMetadata.last_name ? 
+                        { '& .MuiOutlinedInput-notchedOutline': { borderColor: 'success.main' } } : {}
+                    }}
                   />
                   <TextField
                     margin="normal"
@@ -356,4 +448,4 @@ const CompleteProfile = () => {
   );
 };
 
-export default CompleteProfile; 
+export default CompleteProfile;

@@ -4,8 +4,10 @@ import {
   Avatar, Chip, Button, TextField, InputAdornment, 
   Paper, Divider, Fade, Grow, Dialog, DialogTitle, 
   DialogContent, DialogActions, IconButton, FormControl,
-  InputLabel, Select, MenuItem, Alert, Snackbar, CircularProgress
+  InputLabel, Select, MenuItem, Alert, Snackbar, CircularProgress,
+  useTheme, alpha
 } from '@mui/material';
+import { useAppTheme } from '../context/ThemeContext';
 import { 
   Search as SearchIcon, 
   Email as EmailIcon, 
@@ -21,6 +23,9 @@ const SupportTeam = () => {
   const [selectedSpecialty, setSelectedSpecialty] = useState('all');
   const [contactModalOpen, setContactModalOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
+  const theme = useTheme();
+  const { themeMode } = useAppTheme();
+  const isDark = themeMode === 'dark';
   const [contactFormData, setContactFormData] = useState({
     name: '',
     email: '',
@@ -150,10 +155,14 @@ const SupportTeam = () => {
         sx={{
           position: 'relative',
           overflow: 'hidden',
-          background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
-          color: 'white',
+          background: isDark
+            ? `linear-gradient(135deg, ${theme.palette.grey[800]} 0%, ${theme.palette.primary.dark} 100%)`
+            : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 100%)`,
+          color: theme.palette.common.white,
           borderRadius: 4,
-          boxShadow: '0 10px 30px rgba(25, 118, 210, 0.1)',
+          boxShadow: isDark 
+            ? `0 10px 30px ${alpha(theme.palette.common.black, 0.3)}` 
+            : `0 10px 30px ${alpha(theme.palette.primary.main, 0.1)}`,
           mb: 12,
         }}
       >
@@ -164,7 +173,7 @@ const SupportTeam = () => {
             width: '300px',
             height: '300px',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)',
+            background: `radial-gradient(circle, ${alpha(theme.palette.background.paper, 0.1)} 0%, transparent 70%)`,
             top: '-100px',
             right: '-50px',
             zIndex: 0,
@@ -177,7 +186,7 @@ const SupportTeam = () => {
             width: '200px',
             height: '200px',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(66,165,245,0.2) 0%, rgba(66,165,245,0) 70%)',
+            background: `radial-gradient(circle, ${alpha(theme.palette.primary.light, 0.2)} 0%, transparent 70%)`,
             bottom: '-80px',
             left: '10%',
             zIndex: 0,
@@ -212,14 +221,14 @@ const SupportTeam = () => {
         }}>
           <Box sx={{ maxWidth: { md: '60%' } }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <EmailIcon sx={{ mr: 1, color: 'rgba(255, 255, 255, 0.8)' }} />
+              <EmailIcon sx={{ mr: 1, color: alpha(theme.palette.common.white, 0.8) }} />
               <Typography 
                 variant="subtitle1" 
                 sx={{ 
                   textTransform: 'uppercase', 
                   fontWeight: 600, 
                   letterSpacing: 1, 
-                  color: 'rgba(255, 255, 255, 0.9)'
+                  color: alpha(theme.palette.common.white, 0.9)
                 }}
               >
                 Expert Support Network
@@ -233,7 +242,7 @@ const SupportTeam = () => {
               sx={{ 
                 mb: 3,
                 fontSize: { xs: '2.5rem', md: '3.75rem' },
-                textShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                textShadow: `0 2px 10px ${alpha(theme.palette.common.black, 0.1)}`,
                 position: 'relative',
                 '&::after': {
                   content: '""',
@@ -242,7 +251,7 @@ const SupportTeam = () => {
                   left: 0,
                   width: '80px',
                   height: '4px',
-                  background: '#ffeb3b',
+                  background: theme.palette.warning.main,
                   borderRadius: '2px',
                 }
               }}
@@ -256,7 +265,7 @@ const SupportTeam = () => {
                 mb: 4, 
                 mt: 4,
                 maxWidth: '600px',
-                color: 'rgba(255, 255, 255, 0.9)',
+                color: alpha(theme.palette.common.white, 0.9),
                 lineHeight: 1.6
               }}
             >
@@ -424,7 +433,7 @@ const SupportTeam = () => {
                     transition: 'all 0.3s ease',
                     '&:hover': {
                       transform: 'translateY(-8px)',
-                      boxShadow: '0 16px 30px rgba(0,0,0,0.15)',
+                      boxShadow: `0 16px 30px ${alpha(theme.palette.common.black, 0.15)}`,
                       '& .member-image': {
                         transform: 'scale(1.05)'
                       }
@@ -436,7 +445,7 @@ const SupportTeam = () => {
                     position: 'relative',
                     bgcolor: 'background.paper',
                     backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)'
+                    border: `1px solid ${alpha(theme.palette.common.white, 0.1)}`
                   }}
                 >
                   <Box sx={{ 
@@ -454,7 +463,9 @@ const SupportTeam = () => {
                       left: 0,
                       right: 0,
                       bottom: 0,
-                      background: `linear-gradient(145deg, rgba(25,118,210,0.7) 0%, rgba(66,165,245,0.9) 100%)`,
+                      background: isDark
+                        ? `linear-gradient(145deg, ${alpha(theme.palette.primary.dark, 0.8)} 0%, ${alpha(theme.palette.primary.main, 0.9)} 100%)`
+                        : `linear-gradient(145deg, ${alpha(theme.palette.primary.main, 0.7)} 0%, ${alpha(theme.palette.primary.light, 0.9)} 100%)`,
                       zIndex: 1
                     }
                   }}>
@@ -478,8 +489,8 @@ const SupportTeam = () => {
                       sx={{ 
                         width: 120, 
                         height: 120, 
-                        border: '4px solid white',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                        border: `4px solid ${theme.palette.common.white}`,
+                        boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.2)}`,
                         zIndex: 2,
                         transition: 'transform 0.3s ease'
                       }}
@@ -545,7 +556,7 @@ const SupportTeam = () => {
                       gap: 1
                     }}>
                       <Avatar sx={{ bgcolor: 'primary.light', width: 28, height: 28 }}>
-                        <EmailIcon fontSize="small" sx={{ color: 'white', fontSize: '0.9rem' }} />
+                        <EmailIcon fontSize="small" sx={{ color: theme.palette.common.white, fontSize: '0.9rem' }} />
                       </Avatar>
                       <Typography variant="body2" color="text.secondary" noWrap sx={{ flex: 1 }}>
                         {member.contact.email}
@@ -558,7 +569,7 @@ const SupportTeam = () => {
                       gap: 1
                     }}>
                       <Avatar sx={{ bgcolor: 'primary.light', width: 28, height: 28 }}>
-                        <PhoneIcon fontSize="small" sx={{ color: 'white', fontSize: '0.9rem' }} />
+                        <PhoneIcon fontSize="small" sx={{ color: theme.palette.common.white, fontSize: '0.9rem' }} />
                       </Avatar>
                       <Typography variant="body2" color="text.secondary">
                         {member.contact.phone}
@@ -571,7 +582,7 @@ const SupportTeam = () => {
                       gap: 1
                     }}>
                       <Avatar sx={{ bgcolor: 'primary.light', width: 28, height: 28 }}>
-                        <LocationIcon fontSize="small" sx={{ color: 'white', fontSize: '0.9rem' }} />
+                        <LocationIcon fontSize="small" sx={{ color: theme.palette.common.white, fontSize: '0.9rem' }} />
                       </Avatar>
                       <Typography variant="body2" color="text.secondary">
                         {member.location}, Uganda
@@ -605,7 +616,7 @@ const SupportTeam = () => {
                     alignItems: 'center', 
                     justifyContent: 'center',
                     p: 1.5,
-                    bgcolor: 'grey.50' 
+                    bgcolor: isDark ? alpha(theme.palette.common.white, 0.05) : alpha(theme.palette.grey[50], 1) 
                   }}>
                     <CalendarIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary', fontSize: '0.9rem' }} />
                     <Typography variant="caption" color="text.secondary">
@@ -629,7 +640,9 @@ const SupportTeam = () => {
           p: { xs: 3, md: 5 }, 
           borderRadius: 3, 
           mb: 8,
-          background: 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)',
+          background: isDark 
+            ? `linear-gradient(135deg, ${theme.palette.grey[800]} 0%, ${theme.palette.grey[900]} 100%)`
+            : `linear-gradient(135deg, ${theme.palette.grey[50]} 0%, ${theme.palette.grey[100]} 100%)`,
           position: 'relative',
           overflow: 'hidden'
         }}
@@ -641,7 +654,7 @@ const SupportTeam = () => {
             width: '200px',
             height: '200px',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(76,175,80,0.1) 0%, rgba(76,175,80,0) 70%)',
+            background: `radial-gradient(circle, ${alpha(theme.palette.success.main, 0.1)} 0%, ${alpha(theme.palette.success.main, 0)} 70%)`,
             top: '-100px',
             right: '-50px',
             zIndex: 0,
@@ -654,7 +667,7 @@ const SupportTeam = () => {
             width: '150px',
             height: '150px',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(33,150,243,0.1) 0%, rgba(33,150,243,0) 70%)',
+            background: `radial-gradient(circle, ${alpha(theme.palette.info.main, 0.1)} 0%, ${alpha(theme.palette.info.main, 0)} 70%)`,
             bottom: '-70px',
             left: '10%',
             zIndex: 0,
@@ -678,7 +691,7 @@ const SupportTeam = () => {
                   left: 0,
                   width: '60px',
                   height: '3px',
-                  background: 'linear-gradient(to right, #4caf50, #8bc34a)',
+                  background: `linear-gradient(to right, ${theme.palette.success.main}, ${theme.palette.success.light})`,
                   borderRadius: '3px',
                 }
               }}
@@ -693,7 +706,7 @@ const SupportTeam = () => {
             <Box sx={{ 
               mt: 3, 
               p: 2, 
-              bgcolor: 'rgba(255,255,255,0.7)', 
+              bgcolor: alpha(theme.palette.background.paper, 0.7), 
               borderRadius: 2,
               display: 'flex',
               flexDirection: { xs: 'column', sm: 'row' },
@@ -724,7 +737,7 @@ const SupportTeam = () => {
               sx={{ 
                 p: 4, 
                 borderRadius: 3, 
-                bgcolor: 'white',
+                bgcolor: theme.palette.background.paper,
                 maxWidth: { sm: '400px', md: '100%' },
                 mx: 'auto'
               }}
@@ -806,7 +819,7 @@ const SupportTeam = () => {
             <Box sx={{ 
               position: 'relative', 
               bgcolor: 'primary.main', 
-              color: 'white',
+              color: theme.palette.common.white,
               py: 2,
               px: 3
             }}>
@@ -828,7 +841,7 @@ const SupportTeam = () => {
                   position: 'absolute',
                   right: 12,
                   top: 12,
-                  color: 'white',
+                  color: theme.palette.common.white,
                 }}
               >
                 <CloseIcon />
@@ -839,7 +852,7 @@ const SupportTeam = () => {
               <Grid container>
                 {/* Member Info Column */}
                 <Grid item xs={12} md={4} sx={{ 
-                  bgcolor: 'grey.50', 
+                  bgcolor: isDark ? alpha(theme.palette.background.paper, 0.05) : alpha(theme.palette.grey[50], 1), 
                   p: 3,
                   display: 'flex',
                   flexDirection: 'column',
@@ -851,8 +864,8 @@ const SupportTeam = () => {
                     sx={{ 
                       width: 150, 
                       height: 150, 
-                      border: '4px solid white',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                      border: `4px solid ${theme.palette.common.white}`,
+                      boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.15)}`,
                       mb: 3
                     }}
                   />

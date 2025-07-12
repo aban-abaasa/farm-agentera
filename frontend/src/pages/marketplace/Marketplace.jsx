@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { 
@@ -6,7 +6,7 @@ import {
   Divider, Button, Avatar, CardHeader, CardActions,
   TextField, InputAdornment, IconButton, Paper, Tabs, Tab,
   FormControl, Select, MenuItem, InputLabel, Grid, Container,
-  Chip
+  Chip, CircularProgress, Alert
 } from '@mui/material';
 import { 
   Search as SearchIcon, 
@@ -16,12 +16,9 @@ import {
   Person as PersonIcon
 } from '@mui/icons-material';
 
-// Import mock data
-import { landListingsMockData } from '../../mocks/landListings';
-import { produceListingsMockData } from '../../mocks/produceListings';
-import { serviceListingsMockData } from '../../mocks/serviceListings';
-
-import {marketplaceCategories} from '../../mocks/marketplace_categories'
+// Import API services
+import { getListings } from '../../services/api/marketplaceService';
+import { marketplaceCategories } from '../../mocks/marketplace_categories'
 
 // Add region and crop lists for selectors
 const regions = [
@@ -76,27 +73,43 @@ const suppliers = [
 
 // Helper function to get image URL
 const getImageUrl = (listing) => {
-  if (!listing.images || listing.images.length === 0) {
-    return `https://source.unsplash.com/random?${listing.type}`;
+  // Handle both thumbnail and images array
+  if (listing.thumbnail) {
+    return listing.thumbnail;
   }
   
-  // If the image is already a string URL, just return it
-  if (typeof listing.images[0] === 'string') {
+  if (listing.images && listing.images.length > 0) {
+    // If it's a string URL, return it
+    if (typeof listing.images[0] === 'string') {
+      return listing.images[0];
+    }
+    // If it's an imported image, return it as is
     return listing.images[0];
   }
   
-  // Otherwise it's an imported image, return it as is
-  return listing.images[0];
+  // Fallback to placeholder image based on type
+  return `https://source.unsplash.com/400x300/?${listing.type},agriculture`;
+};
+
+// Helper function to format price
+const formatPrice = (listing) => {
+  if (listing.is_negotiable) {
+    return 'Negotiable';
+  }
+  
+  if (!listing.price) {
+    return 'Contact for price';
+  }
+  
+  // Format price with UGX currency
+  return new Intl.NumberFormat('en-UG', {
+    style: 'currency',
+    currency: 'UGX',
+    minimumFractionDigits: 0
+  }).format(listing.price);
 };
 
 // Get featured listings from mock data
-const featuredListings = [
-  {...landListingsMockData.find(item => item.id === 1), featured: true},
-  {...produceListingsMockData.find(item => item.id === 101), featured: true},
-  {...produceListingsMockData.find(item => item.id === 102), featured: true},
-  {...serviceListingsMockData.find(item => item.id === 201), featured: true}
-];
-
 // Helper function to check if a listing matches selected region/crop
 const matchesRegionAndCrop = (listing, selectedRegion, selectedCrop) => {
   // Check region in location string (case-insensitive)
@@ -120,31 +133,111 @@ const Marketplace = () => {
   // Add selectors for personalization
   const [selectedRegion, setSelectedRegion] = useState('Central');
   const [selectedCrop, setSelectedCrop] = useState('Maize');
+  
+  // State for API data
+  const [listings, setListings] = useState([]);
+  const [featuredListings, setFeaturedListings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch listings from API
+  useEffect(() => {
+    const fetchListings = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Fetch all active listings
+        const { data: allListings, error: listingsError } = await getListings({
+          status: 'active',
+          limit: 100
+        });
+        
+        if (listingsError) throw listingsError;
+        
+        setListings(allListings || []);
+        
+        // Set featured listings (first few listings with featured flag or recent ones)
+        const featured = (allListings || [])
+          .filter(listing => listing.featured)
+          .slice(0, 4);
+        
+        // If not enough featured listings, fill with recent ones
+        if (featured.length < 4) {
+          const recent = (allListings || [])
+            .filter(listing => !listing.featured)
+            .slice(0, 4 - featured.length);
+          featured.push(...recent);
+        }
+        
+        setFeaturedListings(featured);
+      } catch (err) {
+        console.error('Error fetching listings:', err);
+        setError(err.message || 'Failed to load listings');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchListings();
+  }, []);
+
+  // Filter listings by type
+  const landListings = listings.filter(listing => listing.type === 'land');
+  const produceListings = listings.filter(listing => listing.type === 'produce');
+  const serviceListings = listings.filter(listing => listing.type === 'service');
 
   // Filter featured listings
-  const filteredFeaturedListings = featuredListings.filter(listing => matchesRegionAndCrop(listing, selectedRegion, selectedCrop));
+  const filteredFeaturedListings = featuredListings.filter(listing => 
+    matchesRegionAndCrop(listing, selectedRegion, selectedCrop)
+  );
 
-  // In the Marketplace component, after filteredFeaturedListings:
-  const filteredLandListings = landListingsMockData.filter(listing => matchesRegionAndCrop(listing, selectedRegion, selectedCrop));
-  const filteredProduceListings = produceListingsMockData.filter(listing => matchesRegionAndCrop(listing, selectedRegion, selectedCrop));
-  const filteredServiceListings = serviceListingsMockData.filter(listing => matchesRegionAndCrop(listing, selectedRegion, selectedCrop));
+  // Filter listings by region and crop
+  const filteredLandListings = landListings.filter(listing => 
+    matchesRegionAndCrop(listing, selectedRegion, selectedCrop)
+  );
+  const filteredProduceListings = produceListings.filter(listing => 
+    matchesRegionAndCrop(listing, selectedRegion, selectedCrop)
+  );
+  const filteredServiceListings = serviceListings.filter(listing => 
+    matchesRegionAndCrop(listing, selectedRegion, selectedCrop)
+  );
 
   return (
     <Box>
-      {/* Region & Crop Selectors */}
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2, alignItems: 'center', mt: 3, ml: 2 }}>
-        <TextField
-          select
-          label="Region"
-          value={selectedRegion}
-          onChange={e => setSelectedRegion(e.target.value)}
-          size="small"
-          sx={{ minWidth: 160 }}
-        >
-          {regions.map(region => (
-            <MenuItem key={region} value={region}>{region}</MenuItem>
-          ))}
-        </TextField>
+      {/* Loading State */}
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
+          <CircularProgress size={60} />
+        </Box>
+      )}
+      
+      {/* Error State */}
+      {error && (
+        <Box sx={{ p: 3 }}>
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        </Box>
+      )}
+      
+      {/* Main Content - Only show when not loading */}
+      {!loading && (
+        <>
+          {/* Region & Crop Selectors */}
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2, alignItems: 'center', mt: 3, ml: 2 }}>
+            <TextField
+              select
+              label="Region"
+              value={selectedRegion}
+              onChange={e => setSelectedRegion(e.target.value)}
+              size="small"
+              sx={{ minWidth: 160 }}
+            >
+              {regions.map(region => (
+                <MenuItem key={region} value={region}>{region}</MenuItem>
+              ))}
+            </TextField>
         <TextField
           select
           label="Crop"
@@ -166,9 +259,9 @@ const Marketplace = () => {
         sx={{
           position: 'relative',
           overflow: 'hidden',
-          background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
+          background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.light}20 0%, ${theme.palette.primary.main}30 100%)`,
           borderRadius: 4,
-          boxShadow: '0 10px 30px rgba(76, 175, 80, 0.1)',
+          boxShadow: (theme) => `0 10px 30px ${theme.palette.primary.main}20`,
           mb: 6,
         }}
       >
@@ -179,7 +272,7 @@ const Marketplace = () => {
             width: '300px',
             height: '300px',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(76,175,80,0.15) 0%, rgba(76,175,80,0) 70%)',
+            background: (theme) => `radial-gradient(circle, ${theme.palette.primary.main}15 0%, ${theme.palette.primary.main}00 70%)`,
             top: '-100px',
             right: '-50px',
             zIndex: 0,
@@ -192,7 +285,7 @@ const Marketplace = () => {
             width: '200px',
             height: '200px',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(255,193,7,0.1) 0%, rgba(255,193,7,0) 70%)',
+            background: (theme) => `radial-gradient(circle, ${theme.palette.secondary.main}10 0%, ${theme.palette.secondary.main}00 70%)`,
             bottom: '-80px',
             left: '10%',
             zIndex: 0,
@@ -208,7 +301,7 @@ const Marketplace = () => {
             width: { xs: '200px', sm: '220px', md: '280px' },
             height: { xs: '200px', sm: '220px', md: '280px' },
             opacity: 0.2,
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 512'%3E%3Cpath fill='%234caf50' d='M423.3 440.7c0 25.3-20.3 45.6-45.6 45.6s-45.8-20.3-45.8-45.6 20.6-45.8 45.8-45.8c25.4 0 45.6 20.5 45.6 45.8zm-253.9 0c0 25.3-20.4 45.6-45.6 45.6s-45.6-20.3-45.6-45.6 20.3-45.8 45.6-45.8 45.6 20.5 45.6 45.8zm291.7-270C158.9 109.1 81.9 112.1 0 51.7V384c83.2 60.2 156.7 56 256.3 56 100.5 0 215.6 6.3 328.7-56V51.7c-74.8 53.9-167.6 112-324.9 119z'/%3E%3C/svg%3E")`,
+            backgroundImage: (theme) => `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 512'%3E%3Cpath fill='${encodeURIComponent(theme.palette.primary.main)}' d='M423.3 440.7c0 25.3-20.3 45.6-45.6 45.6s-45.8-20.3-45.8-45.6 20.6-45.8 45.8-45.8c25.4 0 45.6 20.5 45.6 45.8zm-253.9 0c0 25.3-20.4 45.6-45.6 45.6s-45.6-20.3-45.6-45.6 20.3-45.8 45.6-45.8 45.6 20.5 45.6 45.8zm291.7-270C158.9 109.1 81.9 112.1 0 51.7V384c83.2 60.2 156.7 56 256.3 56 100.5 0 215.6 6.3 328.7-56V51.7c-74.8 53.9-167.6 112-324.9 119z'/%3E%3C/svg%3E")`,
             backgroundRepeat: 'no-repeat',
             backgroundPosition: 'center',
             backgroundSize: 'contain',
@@ -232,14 +325,14 @@ const Marketplace = () => {
           }}>
             <Box sx={{ maxWidth: { md: '60%' } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <StoreIcon sx={{ mr: 1, color: '#4caf50' }} />
+                <StoreIcon sx={{ mr: 1, color: 'primary.main' }} />
                 <Typography 
                   variant="subtitle1" 
                   sx={{ 
                     textTransform: 'uppercase', 
                     fontWeight: 600, 
                     letterSpacing: 1, 
-                    color: '#4caf50'
+                    color: 'primary.main'
                   }}
                 >
                   Agricultural Trading Hub
@@ -255,7 +348,7 @@ const Marketplace = () => {
                   fontSize: { xs: '2.5rem', md: '3.75rem' },
                   textShadow: '0 2px 10px rgba(0,0,0,0.05)',
                   position: 'relative',
-                  color: '#2e7d32',
+                  color: 'primary.dark',
                   '&::after': {
                     content: '""',
                     position: 'absolute',
@@ -263,7 +356,7 @@ const Marketplace = () => {
                     left: 0,
                     width: '80px',
                     height: '4px',
-                    background: 'linear-gradient(to right, #4caf50, rgba(76,175,80,0.3))',
+                    background: (theme) => `linear-gradient(to right, ${theme.palette.primary.main}, ${theme.palette.primary.main}30)`,
                     borderRadius: '2px',
                   }
                 }}
@@ -299,16 +392,16 @@ const Marketplace = () => {
                 to="/marketplace/create"
                 startIcon={<AddIcon />}
                 sx={{
-                  bgcolor: '#4caf50',
-                  color: 'white',
-                  '&:hover': { bgcolor: '#3d8b40' },
+                  bgcolor: 'primary.main',
+                  color: 'primary.contrastText',
+                  '&:hover': { bgcolor: 'primary.dark' },
                   borderRadius: 2,
                   px: 4,
                   py: 1.5,
                   textTransform: 'none',
                   fontWeight: 'bold',
                   fontSize: '1rem',
-                  boxShadow: '0 4px 14px rgba(76,175,80,0.25)'
+                  boxShadow: (theme) => `0 4px 14px ${theme.palette.primary.main}40`
                 }}
               >
                 Create Listing
@@ -361,7 +454,7 @@ const Marketplace = () => {
                 '&:hover': {
                   boxShadow: 'none',
                 },
-                bgcolor: '#4caf50',
+                bgcolor: 'primary.main',
               }}
             >
               Search
@@ -384,7 +477,7 @@ const Marketplace = () => {
               sx={{ 
                 fontWeight: 'medium', 
                 px: 1,
-                bgcolor: category === '' ? 'rgba(76,175,80,0.9)' : 'rgba(255,255,255,0.9)',
+                bgcolor: (theme) => category === '' ? `${theme.palette.primary.main}E6` : 'rgba(255,255,255,0.9)',
               }}
             />
             <Chip 
@@ -396,7 +489,7 @@ const Marketplace = () => {
               sx={{ 
                 fontWeight: 'medium', 
                 px: 1,
-                bgcolor: category === 'land' ? 'rgba(76,175,80,0.9)' : 'rgba(255,255,255,0.9)',
+                bgcolor: (theme) => category === 'land' ? `${theme.palette.primary.main}E6` : 'rgba(255,255,255,0.9)',
               }}
             />
             <Chip 
@@ -408,7 +501,7 @@ const Marketplace = () => {
               sx={{ 
                 fontWeight: 'medium', 
                 px: 1,
-                bgcolor: category === 'produce' ? 'rgba(76,175,80,0.9)' : 'rgba(255,255,255,0.9)',
+                bgcolor: (theme) => category === 'produce' ? `${theme.palette.primary.main}E6` : 'rgba(255,255,255,0.9)',
               }}
             />
             <Chip 
@@ -420,7 +513,7 @@ const Marketplace = () => {
               sx={{ 
                 fontWeight: 'medium', 
                 px: 1,
-                bgcolor: category === 'services' ? 'rgba(76,175,80,0.9)' : 'rgba(255,255,255,0.9)',
+                bgcolor: (theme) => category === 'services' ? `${theme.palette.primary.main}E6` : 'rgba(255,255,255,0.9)',
               }}
             />
             {user && (
@@ -453,7 +546,7 @@ const Marketplace = () => {
       >
         <Box sx={{ 
           p: 3,
-          background: 'linear-gradient(to bottom, rgba(76, 175, 80, 0.05), rgba(255, 255, 255, 0))'
+          background: (theme) => `linear-gradient(to bottom, ${theme.palette.primary.main}0D, rgba(255, 255, 255, 0))`
         }}>
           <Typography 
             variant="subtitle1" 
@@ -488,7 +581,7 @@ const Marketplace = () => {
                     variant={region === '' ? 'filled' : 'outlined'}
                     sx={{ 
                       fontWeight: region === '' ? 'bold' : 'normal',
-                      bgcolor: region === '' ? 'rgba(76,175,80,0.9)' : 'transparent',
+                      bgcolor: (theme) => region === '' ? `${theme.palette.primary.main}E6` : 'transparent',
                       color: region === '' ? 'white' : 'text.primary',
                     }}
                   />
@@ -500,7 +593,7 @@ const Marketplace = () => {
                     variant={region === 'central' ? 'filled' : 'outlined'}
                     sx={{ 
                       fontWeight: region === 'central' ? 'bold' : 'normal',
-                      bgcolor: region === 'central' ? 'rgba(76,175,80,0.9)' : 'transparent',
+                      bgcolor: (theme) => region === 'central' ? `${theme.palette.primary.main}E6` : 'transparent',
                       color: region === 'central' ? 'white' : 'text.primary',
                     }}
                   />
@@ -512,7 +605,7 @@ const Marketplace = () => {
                     variant={region === 'eastern' ? 'filled' : 'outlined'}
                     sx={{ 
                       fontWeight: region === 'eastern' ? 'bold' : 'normal',
-                      bgcolor: region === 'eastern' ? 'rgba(76,175,80,0.9)' : 'transparent',
+                      bgcolor: (theme) => region === 'eastern' ? `${theme.palette.primary.main}E6` : 'transparent',
                       color: region === 'eastern' ? 'white' : 'text.primary',
                     }}
                   />
@@ -524,7 +617,7 @@ const Marketplace = () => {
                     variant={region === 'northern' ? 'filled' : 'outlined'}
                     sx={{ 
                       fontWeight: region === 'northern' ? 'bold' : 'normal',
-                      bgcolor: region === 'northern' ? 'rgba(76,175,80,0.9)' : 'transparent',
+                      bgcolor: (theme) => region === 'northern' ? `${theme.palette.primary.main}E6` : 'transparent',
                       color: region === 'northern' ? 'white' : 'text.primary',
                     }}
                   />
@@ -536,7 +629,7 @@ const Marketplace = () => {
                     variant={region === 'western' ? 'filled' : 'outlined'}
                     sx={{ 
                       fontWeight: region === 'western' ? 'bold' : 'normal',
-                      bgcolor: region === 'western' ? 'rgba(76,175,80,0.9)' : 'transparent',
+                      bgcolor: (theme) => region === 'western' ? `${theme.palette.primary.main}E6` : 'transparent',
                       color: region === 'western' ? 'white' : 'text.primary',
                     }}
                   />
@@ -566,7 +659,7 @@ const Marketplace = () => {
                     variant={priceRange === '' ? 'filled' : 'outlined'}
                     sx={{ 
                       fontWeight: priceRange === '' ? 'bold' : 'normal',
-                      bgcolor: priceRange === '' ? 'rgba(76,175,80,0.9)' : 'transparent',
+                      bgcolor: (theme) => priceRange === '' ? `${theme.palette.primary.main}E6` : 'transparent',
                       color: priceRange === '' ? 'white' : 'text.primary',
                     }}
                   />
@@ -578,7 +671,7 @@ const Marketplace = () => {
                     variant={priceRange === '0-50000' ? 'filled' : 'outlined'}
                     sx={{ 
                       fontWeight: priceRange === '0-50000' ? 'bold' : 'normal',
-                      bgcolor: priceRange === '0-50000' ? 'rgba(76,175,80,0.9)' : 'transparent',
+                      bgcolor: (theme) => priceRange === '0-50000' ? `${theme.palette.primary.main}E6` : 'transparent',
                       color: priceRange === '0-50000' ? 'white' : 'text.primary',
                     }}
                   />
@@ -590,7 +683,7 @@ const Marketplace = () => {
                     variant={priceRange === '50000-250000' ? 'filled' : 'outlined'}
                     sx={{ 
                       fontWeight: priceRange === '50000-250000' ? 'bold' : 'normal',
-                      bgcolor: priceRange === '50000-250000' ? 'rgba(76,175,80,0.9)' : 'transparent',
+                      bgcolor: (theme) => priceRange === '50000-250000' ? `${theme.palette.primary.main}E6` : 'transparent',
                       color: priceRange === '50000-250000' ? 'white' : 'text.primary',
                     }}
                   />
@@ -602,7 +695,7 @@ const Marketplace = () => {
                     variant={priceRange === '250000-1000000' ? 'filled' : 'outlined'}
                     sx={{ 
                       fontWeight: priceRange === '250000-1000000' ? 'bold' : 'normal',
-                      bgcolor: priceRange === '250000-1000000' ? 'rgba(76,175,80,0.9)' : 'transparent',
+                      bgcolor: (theme) => priceRange === '250000-1000000' ? `${theme.palette.primary.main}E6` : 'transparent',
                       color: priceRange === '250000-1000000' ? 'white' : 'text.primary',
                     }}
                   />
@@ -614,7 +707,7 @@ const Marketplace = () => {
                     variant={priceRange === '1000000+' ? 'filled' : 'outlined'}
                     sx={{ 
                       fontWeight: priceRange === '1000000+' ? 'bold' : 'normal',
-                      bgcolor: priceRange === '1000000+' ? 'rgba(76,175,80,0.9)' : 'transparent',
+                      bgcolor: (theme) => priceRange === '1000000+' ? `${theme.palette.primary.main}E6` : 'transparent',
                       color: priceRange === '1000000+' ? 'white' : 'text.primary',
                     }}
                   />
@@ -644,7 +737,7 @@ const Marketplace = () => {
                     variant={sortBy === 'newest' ? 'filled' : 'outlined'}
                     sx={{ 
                       fontWeight: sortBy === 'newest' ? 'bold' : 'normal',
-                      bgcolor: sortBy === 'newest' ? 'rgba(76,175,80,0.9)' : 'transparent',
+                      bgcolor: (theme) => sortBy === 'newest' ? `${theme.palette.primary.main}E6` : 'transparent',
                       color: sortBy === 'newest' ? 'white' : 'text.primary',
                     }}
                   />
@@ -656,7 +749,7 @@ const Marketplace = () => {
                     variant={sortBy === 'price-low' ? 'filled' : 'outlined'}
                     sx={{ 
                       fontWeight: sortBy === 'price-low' ? 'bold' : 'normal',
-                      bgcolor: sortBy === 'price-low' ? 'rgba(76,175,80,0.9)' : 'transparent',
+                      bgcolor: (theme) => sortBy === 'price-low' ? `${theme.palette.primary.main}E6` : 'transparent',
                       color: sortBy === 'price-low' ? 'white' : 'text.primary',
                     }}
                   />
@@ -668,7 +761,7 @@ const Marketplace = () => {
                     variant={sortBy === 'price-high' ? 'filled' : 'outlined'}
                     sx={{ 
                       fontWeight: sortBy === 'price-high' ? 'bold' : 'normal',
-                      bgcolor: sortBy === 'price-high' ? 'rgba(76,175,80,0.9)' : 'transparent',
+                      bgcolor: (theme) => sortBy === 'price-high' ? `${theme.palette.primary.main}E6` : 'transparent',
                       color: sortBy === 'price-high' ? 'white' : 'text.primary',
                     }}
                   />
@@ -680,7 +773,7 @@ const Marketplace = () => {
                     variant={sortBy === 'popular' ? 'filled' : 'outlined'}
                     sx={{ 
                       fontWeight: sortBy === 'popular' ? 'bold' : 'normal',
-                      bgcolor: sortBy === 'popular' ? 'rgba(76,175,80,0.9)' : 'transparent',
+                      bgcolor: (theme) => sortBy === 'popular' ? `${theme.palette.primary.main}E6` : 'transparent',
                       color: sortBy === 'popular' ? 'white' : 'text.primary',
                     }}
                   />
@@ -725,7 +818,7 @@ const Marketplace = () => {
                   label={`Region: ${region.charAt(0).toUpperCase() + region.slice(1)}`}
                   size="small"
                   onDelete={() => setRegion('')}
-                  sx={{ bgcolor: 'rgba(76,175,80,0.1)' }}
+                  sx={{ bgcolor: (theme) => `${theme.palette.primary.main}1A` }}
                 />
               )}
               
@@ -740,7 +833,7 @@ const Marketplace = () => {
                         : 'Over 1,000,000 UGX'}`}
                   size="small"
                   onDelete={() => setPriceRange('')}
-                  sx={{ bgcolor: 'rgba(76,175,80,0.1)' }}
+                  sx={{ bgcolor: (theme) => `${theme.palette.primary.main}1A` }}
                 />
               )}
               
@@ -753,7 +846,7 @@ const Marketplace = () => {
                       : 'Most Popular'}`}
                   size="small"
                   onDelete={() => setSortBy('newest')}
-                  sx={{ bgcolor: 'rgba(76,175,80,0.1)' }}
+                  sx={{ bgcolor: (theme) => `${theme.palette.primary.main}1A` }}
                 />
               )}
               
@@ -1201,6 +1294,8 @@ const Marketplace = () => {
           backgroundSize: '20px 20px'
         }} />
       </Paper>
+        </>
+      )}
     </Box>
   );
 };

@@ -4,8 +4,9 @@ import {
   Box, Typography, TextField, Button, InputAdornment, 
   IconButton, Paper, Card, CardContent, Chip, Avatar,
   CircularProgress, FormControl, InputLabel, Select, MenuItem,
-  Collapse, Fade
+  Collapse, Fade, useTheme
 } from '@mui/material';
+import { useAppTheme } from '../../context/ThemeContext';
 
 import { getPosts, getForumCategories, getPopularTags } from '../../services/api/communityService';
 
@@ -19,6 +20,10 @@ const CommunityDiscussions = ({
   forumCategories: propForumCategories,
   popularTags: propPopularTags
 }) => {
+  const theme = useTheme();
+  const { themeMode } = useAppTheme();
+  const isDark = themeMode === 'dark';
+  
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [forumCategories, setForumCategories] = useState(propForumCategories || []);
@@ -153,9 +158,12 @@ const CommunityDiscussions = ({
             mb: 3,
             borderRadius: 2,
             overflow: 'hidden',
+            bgcolor: theme.palette.background.paper,
             transition: 'box-shadow 0.3s ease-in-out',
             '&:hover': {
-              boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+              boxShadow: isDark 
+                ? `0 4px 20px ${theme.palette.grey[900]}40`
+                : `0 4px 20px ${theme.palette.grey[400]}30`
             }
           }}
         >
@@ -249,19 +257,22 @@ const CommunityDiscussions = ({
             mb: 3,
             borderRadius: 2,
             overflow: 'hidden',
-            border: '1px solid rgba(0,0,0,0.08)'
+            bgcolor: theme.palette.background.paper,
+            border: `1px solid ${theme.palette.divider}`
           }}
         >
           {/* Filter Header */}
           <Box
             sx={{
               p: 2,
-              bgcolor: 'rgba(76,175,80,0.05)',
+              bgcolor: isDark 
+                ? `${theme.palette.primary.dark}20`
+                : `${theme.palette.primary.light}20`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               cursor: 'pointer',
-              borderBottom: showFilters ? '1px solid rgba(0,0,0,0.08)' : 'none'
+              borderBottom: showFilters ? `1px solid ${theme.palette.divider}` : 'none'
             }}
             onClick={() => setShowFilters(!showFilters)}
           >
@@ -386,7 +397,7 @@ const CommunityDiscussions = ({
                 <Box sx={{ 
                   mt: 3, 
                   pt: 2, 
-                  borderTop: '1px solid rgba(0,0,0,0.08)',
+                  borderTop: `1px solid ${theme.palette.divider}`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
@@ -439,6 +450,7 @@ const CommunityDiscussions = ({
               borderRadius: 2,
               transition: 'all 0.3s ease',
               overflow: 'hidden',
+              bgcolor: theme.palette.background.paper,
               '&:hover': {
                 boxShadow: 6
               }
@@ -452,8 +464,10 @@ const CommunityDiscussions = ({
             }}>
               <Box sx={{
                 p: 3,
-                backgroundImage: 'linear-gradient(to right, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05))',
-                borderBottom: '1px solid rgba(0,0,0,0.05)',
+                background: isDark 
+                  ? `linear-gradient(to right, ${theme.palette.primary.dark}30, ${theme.palette.primary.dark}15)`
+                  : `linear-gradient(to right, ${theme.palette.primary.light}20, ${theme.palette.primary.light}10)`,
+                borderBottom: `1px solid ${theme.palette.divider}`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between'
@@ -472,7 +486,9 @@ const CommunityDiscussions = ({
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontWeight: 'bold',
-                    boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                    boxShadow: isDark 
+                      ? `0 2px 10px ${theme.palette.grey[900]}40`
+                      : `0 2px 10px ${theme.palette.grey[400]}40`
                   }}>
                     {user.displayName?.charAt(0) || user.email?.charAt(0) || 'U'}
                   </Box>
@@ -490,9 +506,9 @@ const CommunityDiscussions = ({
                     cursor: 'pointer',
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 2,
-                      bgcolor: 'grey.100',
+                      bgcolor: isDark ? theme.palette.grey[800] : theme.palette.grey[100],
                       '&:hover': {
-                        bgcolor: 'grey.200',
+                        bgcolor: isDark ? theme.palette.grey[700] : theme.palette.grey[200],
                       }
                     }
                   }}
@@ -579,10 +595,14 @@ const CommunityDiscussions = ({
         )}
 
         {/* Section Title */}
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">Recent Discussions</h2>
-          <p className="text-gray-600 mt-1">Join the conversation with fellow farmers across Uganda</p>
-        </div>
+        <Box sx={{ mb: 6 }}>
+          <Typography variant="h4" component="h2" fontWeight="bold" color="text.primary">
+            Recent Discussions
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
+            Join the conversation with fellow farmers across Uganda
+          </Typography>
+        </Box>
 
         {/* Discussion posts */}
         <div className="grid grid-cols-1 gap-6">
@@ -597,6 +617,7 @@ const CommunityDiscussions = ({
               elevation={2}
               sx={{ 
                 borderRadius: 2,
+                bgcolor: theme.palette.background.paper,
                 transition: 'all 0.3s ease',
                 '&:hover': {
                   transform: 'translateY(-4px)',
@@ -605,7 +626,7 @@ const CommunityDiscussions = ({
               }}
             >
               {/* Card Header with Author info */}
-              <Box sx={{ p: 3, borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
+              <Box sx={{ p: 3, borderBottom: `1px solid ${theme.palette.divider}` }}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Box 
                     sx={{ 
@@ -708,7 +729,7 @@ const CommunityDiscussions = ({
               </Box>
               
               {/* Card Footer with actions */}
-              <Box sx={{ px: 3, py: 2, borderTop: '1px solid rgba(0,0,0,0.08)', bgcolor: 'grey.50' }}>
+              <Box sx={{ px: 3, py: 2, borderTop: `1px solid ${theme.palette.divider}`, bgcolor: isDark ? theme.palette.grey[900] : theme.palette.grey[50] }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', color: 'text.secondary' }}>
                   <Button 
                     startIcon={
@@ -755,7 +776,7 @@ const CommunityDiscussions = ({
               </Box>
               
               {/* Card Action */}
-              <Box sx={{ px: 3, py: 2, borderTop: '1px solid rgba(0,0,0,0.08)', textAlign: 'center' }}>
+              <Box sx={{ px: 3, py: 2, borderTop: `1px solid ${theme.palette.divider}`, textAlign: 'center' }}>
                 <Button 
                   component={Link}
                   to={`/community/post/${post.id}`}
@@ -780,10 +801,9 @@ const CommunityDiscussions = ({
               textAlign: 'center', 
               py: 8,
               px: 4,
-              bgcolor: 'background.paper',
+              bgcolor: theme.palette.background.paper,
               borderRadius: 2,
-              border: '1px solid',
-              borderColor: 'divider'
+              border: `1px solid ${theme.palette.divider}`
             }}>
               <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
                 No discussions found
@@ -818,21 +838,99 @@ const CommunityDiscussions = ({
         {/* Pagination */}
         <div className="mt-10 flex justify-center">
           <nav aria-label="Pagination" className="inline-flex shadow-sm rounded-md overflow-hidden">
-            <a href="#" className="py-2 px-4 bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-primary transition-colors">
+            <Box 
+              component="a" 
+              href="#" 
+              sx={{ 
+                py: 2, 
+                px: 4, 
+                bgcolor: theme.palette.background.paper, 
+                border: `1px solid ${theme.palette.divider}`, 
+                color: theme.palette.text.secondary,
+                '&:hover': { 
+                  bgcolor: isDark ? theme.palette.grey[700] : theme.palette.grey[50], 
+                  color: theme.palette.primary.main 
+                },
+                transition: 'colors 0.2s ease'
+              }}
+            >
               <span className="sr-only">Previous</span>
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd"></path>
               </svg>
-            </a>
-            <a href="#" aria-current="page" className="py-2 px-4 bg-primary text-white font-medium border border-primary">1</a>
-            <a href="#" className="py-2 px-4 bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-primary transition-colors">2</a>
-            <a href="#" className="py-2 px-4 bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-primary transition-colors">3</a>
-            <a href="#" className="py-2 px-4 bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-primary transition-colors">
+            </Box>
+            <Box 
+              component="a" 
+              href="#" 
+              aria-current="page" 
+              sx={{ 
+                py: 2, 
+                px: 4, 
+                bgcolor: theme.palette.primary.main, 
+                color: 'white', 
+                fontWeight: 'medium', 
+                border: `1px solid ${theme.palette.primary.main}` 
+              }}
+            >
+              1
+            </Box>
+            <Box 
+              component="a" 
+              href="#" 
+              sx={{ 
+                py: 2, 
+                px: 4, 
+                bgcolor: theme.palette.background.paper, 
+                border: `1px solid ${theme.palette.divider}`, 
+                color: theme.palette.text.secondary,
+                '&:hover': { 
+                  bgcolor: isDark ? theme.palette.grey[700] : theme.palette.grey[50], 
+                  color: theme.palette.primary.main 
+                },
+                transition: 'colors 0.2s ease'
+              }}
+            >
+              2
+            </Box>
+            <Box 
+              component="a" 
+              href="#" 
+              sx={{ 
+                py: 2, 
+                px: 4, 
+                bgcolor: theme.palette.background.paper, 
+                border: `1px solid ${theme.palette.divider}`, 
+                color: theme.palette.text.secondary,
+                '&:hover': { 
+                  bgcolor: isDark ? theme.palette.grey[700] : theme.palette.grey[50], 
+                  color: theme.palette.primary.main 
+                },
+                transition: 'colors 0.2s ease'
+              }}
+            >
+              3
+            </Box>
+            <Box 
+              component="a" 
+              href="#" 
+              sx={{ 
+                py: 2, 
+                px: 4, 
+                bgcolor: theme.palette.background.paper, 
+                border: `1px solid ${theme.palette.divider}`, 
+                color: theme.palette.text.secondary,
+                '&:hover': { 
+                  bgcolor: isDark ? theme.palette.grey[700] : theme.palette.grey[50], 
+                  color: theme.palette.primary.main 
+                },
+                transition: 'colors 0.2s ease'
+              }}
+            >
               <span className="sr-only">Next</span>
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
               </svg>
-            </a>
+            </Box>
           </nav>
         </div>
       </div>
@@ -851,8 +949,8 @@ const CommunityDiscussions = ({
           }}
         >
           {/* Active members */}
-          <Card elevation={2}>
-            <CardContent sx={{ bgcolor: '#F5A623', color: 'white', py: 1.5, textAlign: 'center' }}>
+          <Card elevation={2} sx={{ bgcolor: theme.palette.background.paper }}>
+            <CardContent sx={{ bgcolor: theme.palette.warning.main, color: 'white', py: 1.5, textAlign: 'center' }}>
               <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
                 Active Discussants
               </Typography>
@@ -877,7 +975,7 @@ const CommunityDiscussions = ({
                     borderRadius: '10px',
                   },
                   '&::-webkit-scrollbar-thumb': {
-                    backgroundColor: '#F5A623',
+                    backgroundColor: theme.palette.warning.main,
                     borderRadius: '10px',
                   }
                 }}
@@ -898,7 +996,7 @@ const CommunityDiscussions = ({
                       alignItems: 'center', 
                       mb: 1.5,
                       pb: 1.5,
-                      borderBottom: i < 6 ? '1px solid rgba(0,0,0,0.06)' : 'none'
+                      borderBottom: i < 6 ? `1px solid ${theme.palette.divider}` : 'none'
                     }}
                   >
                     <Box 
@@ -906,7 +1004,7 @@ const CommunityDiscussions = ({
                         width: 36, 
                         height: 36, 
                         borderRadius: '50%', 
-                        bgcolor: '#F5A623', 
+                        bgcolor: theme.palette.warning.main, 
                         color: 'white',
                         display: 'flex',
                         alignItems: 'center',
@@ -934,11 +1032,11 @@ const CommunityDiscussions = ({
                 variant="outlined" 
                 fullWidth 
                 sx={{ 
-                  borderColor: '#F5A623', 
-                  color: '#F5A623',
+                  borderColor: theme.palette.warning.main, 
+                  color: theme.palette.warning.main,
                   '&:hover': {
-                    backgroundColor: '#FFF8E1',
-                    borderColor: '#F5A623'
+                    backgroundColor: isDark ? `${theme.palette.warning.dark}20` : `${theme.palette.warning.light}20`,
+                    borderColor: theme.palette.warning.main
                   }
                 }}
               >
@@ -948,8 +1046,8 @@ const CommunityDiscussions = ({
           </Card>
 
           {/* Popular discussions */}
-          <Card elevation={2}>
-            <CardContent sx={{ bgcolor: '#4CAF50', color: 'white', py: 1.5, textAlign: 'center' }}>
+          <Card elevation={2} sx={{ bgcolor: theme.palette.background.paper }}>
+            <CardContent sx={{ bgcolor: theme.palette.success.main, color: 'white', py: 1.5, textAlign: 'center' }}>
               <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
                 Trending Topics
               </Typography>
@@ -972,7 +1070,7 @@ const CommunityDiscussions = ({
                     borderRadius: '10px',
                   },
                   '&::-webkit-scrollbar-thumb': {
-                    backgroundColor: '#4CAF50',
+                    backgroundColor: theme.palette.success.main,
                     borderRadius: '10px',
                   }
                 }}
@@ -1020,9 +1118,9 @@ const CommunityDiscussions = ({
                     sx={{ 
                       mb: 2,
                       pb: 2,
-                      borderBottom: i < 5 ? '1px solid rgba(0,0,0,0.08)' : 'none',
+                      borderBottom: i < 5 ? `1px solid ${theme.palette.divider}` : 'none',
                       '&:hover': { 
-                        '& .topic-title': { color: '#4CAF50' }
+                        '& .topic-title': { color: theme.palette.success.main }
                       },
                       cursor: 'pointer'
                     }}
@@ -1064,11 +1162,11 @@ const CommunityDiscussions = ({
                 variant="outlined" 
                 fullWidth 
                 sx={{ 
-                  borderColor: '#4CAF50', 
-                  color: '#4CAF50',
+                  borderColor: theme.palette.success.main, 
+                  color: theme.palette.success.main,
                   '&:hover': {
-                    backgroundColor: '#E8F5E9',
-                    borderColor: '#4CAF50'
+                    backgroundColor: isDark ? `${theme.palette.success.dark}20` : `${theme.palette.success.light}20`,
+                    borderColor: theme.palette.success.main
                   }
                 }}
               >

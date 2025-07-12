@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Box, Typography, Card, CardContent, Grid, Button, Divider, Tabs, Tab, Fab, Fade, Paper, TextField, MenuItem, Modal, Snackbar } from '@mui/material';
+import { Box, Typography, Card, CardContent, Grid, Button, Divider, Tabs, Tab, Fab, Fade, Paper, TextField, MenuItem, Modal, Snackbar, useTheme } from '@mui/material';
 import AgricultureIcon from '@mui/icons-material/Agriculture';
 import GrassIcon from '@mui/icons-material/Grass';
 import ScienceIcon from '@mui/icons-material/Science';
@@ -84,6 +84,7 @@ function TabPanel({ children, value, index }) {
 }
 
 export default function SoilCropPlanner() {
+  const theme = useTheme();
   const [tab, setTab] = useState(0);
   const [openModal, setOpenModal] = useState(false);
   const [soilFile, setSoilFile] = useState(null);
@@ -277,7 +278,9 @@ export default function SoilCropPlanner() {
         overflow: 'hidden',
         mb: 8,
         boxShadow: '0 10px 30px rgba(76, 175, 80, 0.1)',
-        background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
+        background: theme.palette.mode === 'dark' 
+          ? 'linear-gradient(135deg, rgba(76, 175, 80, 0.2) 0%, rgba(200, 230, 201, 0.1) 100%)' 
+          : 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
       }}>
         {/* Decorative circles */}
         <Box sx={{
@@ -373,7 +376,14 @@ export default function SoilCropPlanner() {
         </Typography>
       </Box>
       {/* Access Good Farm Inputs Section */}
-      <Paper elevation={4} sx={{ p: 4, borderRadius: 4, mb: 6, background: 'linear-gradient(120deg, #fffde7 0%, #e0f7fa 100%)' }}>
+      <Paper elevation={4} sx={{ 
+        p: 4, 
+        borderRadius: 4, 
+        mb: 6, 
+        background: theme.palette.mode === 'dark' 
+          ? 'linear-gradient(120deg, rgba(255, 253, 231, 0.05) 0%, rgba(224, 247, 250, 0.05) 100%)' 
+          : 'linear-gradient(120deg, #fffde7 0%, #e0f7fa 100%)'
+      }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Box>
             <Typography variant="h4" fontWeight="bold" color="primary.main" sx={{ mb: 1 }}>
@@ -598,7 +608,15 @@ export default function SoilCropPlanner() {
         </Grid>
         
         {/* Call to Action */}
-        <Box sx={{ textAlign: 'center', mt: 6, p: 4, bgcolor: 'rgba(76,175,80,0.1)', borderRadius: 3 }}>
+        <Box sx={{ 
+          textAlign: 'center', 
+          mt: 6, 
+          p: 4, 
+          bgcolor: theme.palette.mode === 'dark' 
+            ? 'rgba(76, 175, 80, 0.1)' 
+            : 'rgba(76,175,80,0.1)', 
+          borderRadius: 3 
+        }}>
           <Typography variant="h6" fontWeight="bold" color="primary.main" sx={{ mb: 2 }}>
             Are you a supplier?
           </Typography>
@@ -893,7 +911,17 @@ export default function SoilCropPlanner() {
             ))}
           </Grid>
         </Paper>
-        <Paper elevation={3} sx={{ p: 3, borderRadius: 3, mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(90deg, #e3f2fd 0%, #fffde7 100%)' }}>
+        <Paper elevation={3} sx={{ 
+          p: 3, 
+          borderRadius: 3, 
+          mb: 4, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between', 
+          background: theme.palette.mode === 'dark' 
+            ? 'linear-gradient(90deg, rgba(33, 150, 243, 0.1) 0%, rgba(255, 193, 7, 0.1) 100%)' 
+            : 'linear-gradient(90deg, #e3f2fd 0%, #fffde7 100%)'
+        }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <InfoIcon color="primary" sx={{ fontSize: 32, mr: 2 }} />
             <Typography variant="h6" fontWeight="bold" color="primary.main" mr={2}>Tip:</Typography>

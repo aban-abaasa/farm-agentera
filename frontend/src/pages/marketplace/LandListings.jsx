@@ -1,49 +1,122 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { landListingsMockData } from '../../mocks/landListings';
+import { getListings } from '../../services/api/marketplaceService';
+import { 
+  getListingImageUrl, 
+  formatPrice, 
+  formatDate, 
+  getListingFeatures 
+} from '../../utils/marketplaceHelpers';
 import { 
   Typography, Box, Paper, TextField, InputAdornment, 
   FormControl, Select, MenuItem, Button, Chip,
   Card, CardMedia, CardContent, CardActionArea, Grid,
-  InputLabel, Divider, Rating
+  InputLabel, Divider, Rating, CircularProgress, Alert
 } from '@mui/material';
 
 const LandListings = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [listings, setListings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Helper function to extract size from text (simple regex)
+  const extractSizeFromText = (text) => {
+    const match = text.match(/(\d+(?:\.\d+)?)\s*(?:acres?|ha|hectares?)/i);
+    return match ? parseFloat(match[1]) : 0;
+  };
+
+  // Fetch land listings from API
+  useEffect(() => {
+    const fetchLandListings = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const { data, error: listingsError } = await getListings({
+          type: 'land',
+          status: 'active',
+          limit: 100
+        });
+        
+        if (listingsError) throw listingsError;
+        
+        setListings(data || []);
+      } catch (err) {
+        console.error('Error fetching land listings:', err);
+        setError(err.message || 'Failed to load land listings');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLandListings();
+  }, []);
 
   // Filter and sort listings
-  const filteredListings = landListingsMockData
+  const filteredListings = listings
     .filter(listing => 
       (searchTerm === '' || 
         listing.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         listing.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
         listing.description.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (filterType === '' || listing.type === filterType)
+      (filterType === '' || 
+        (filterType === 'Lease' && !listing.details?.is_for_sale) ||
+        (filterType === 'Sale' && listing.details?.is_for_sale) ||
+        (filterType === 'Partnership' && listing.title.toLowerCase().includes('partnership')))
     )
     .sort((a, b) => {
       if (sortBy === 'newest') {
-        return new Date(b.postedDate) - new Date(a.postedDate);
+        return new Date(b.created_at) - new Date(a.created_at);
       } else if (sortBy === 'oldest') {
-        return new Date(a.postedDate) - new Date(b.postedDate);
+        return new Date(a.created_at) - new Date(b.created_at);
       } else if (sortBy === 'priceHigh') {
-        return parseFloat(b.price.replace(/[^0-9.-]+/g, '')) - parseFloat(a.price.replace(/[^0-9.-]+/g, ''));
+        const priceA = a.price || 0;
+        const priceB = b.price || 0;
+        return priceB - priceA;
       } else if (sortBy === 'priceLow') {
-        return parseFloat(a.price.replace(/[^0-9.-]+/g, '')) - parseFloat(b.price.replace(/[^0-9.-]+/g, ''));
+        const priceA = a.price || 0;
+        const priceB = b.price || 0;
+        return priceA - priceB;
       } else if (sortBy === 'sizeLarge') {
-        return parseFloat(b.size) - parseFloat(a.size);
+        // Access size from details object, fallback to parsing from title/description
+        const sizeA = a.details?.size_acres || extractSizeFromText(a.title + ' ' + a.description) || 0;
+        const sizeB = b.details?.size_acres || extractSizeFromText(b.title + ' ' + b.description) || 0;
+        return sizeB - sizeA;
       } else if (sortBy === 'sizeSmall') {
-        return parseFloat(a.size) - parseFloat(b.size);
+        const sizeA = a.details?.size_acres || extractSizeFromText(a.title + ' ' + a.description) || 0;
+        const sizeB = b.details?.size_acres || extractSizeFromText(b.title + ' ' + b.description) || 0;
+        return sizeA - sizeB;
       }
       return 0;
     });
 
   return (
     <div className="w-full max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-      {/* Header section */}
-      <Box sx={{ mb: 6 }}>
-        <Typography variant="h3" component="h1" fontWeight="bold" color="text.primary" sx={{ mb: 2 }}>
+      {/* Loading State */}
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
+          <CircularProgress size={60} />
+        </Box>
+      )}
+      
+      {/* Error State */}
+      {error && (
+        <Box sx={{ p: 3 }}>
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        </Box>
+      )}
+      
+      {/* Main Content - Only show when not loading */}
+      {!loading && (
+        <>
+          {/* Header section */}
+          <Box sx={{ mb: 6 }}>
+            <Typography variant="h3" component="h1" fontWeight="bold" color="text.primary" sx={{ mb: 2 }}>
           Land Listings
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '800px' }}>
@@ -63,7 +136,7 @@ const LandListings = () => {
         }}
       >
         <Grid container spacing={3} alignItems="center">
-          <Grid item xs={12} md={5}>
+          <Grid size={{ xs: 12, md: 5 }}>
             <TextField
               fullWidth
               placeholder="Search by location, title, or description..."
@@ -198,7 +271,7 @@ const LandListings = () => {
                   <CardMedia
                     component="img"
                     height="200"
-                    image={listing.image}
+                    image={getListingImageUrl(listing)}
                     alt={listing.title}
                   />
                   <Box 
@@ -216,7 +289,7 @@ const LandListings = () => {
                       textTransform: 'uppercase'
                     }}
                   >
-                    {listing.type}
+                    Land
                   </Box>
                 </Box>
               </CardActionArea>
@@ -231,10 +304,10 @@ const LandListings = () => {
                 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="h6" color="primary.main" fontWeight="bold">
-                    {listing.price}
+                    {formatPrice(listing)}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {listing.size}
+                    {listing.details?.size_acres ? `${listing.details.size_acres} acres` : 'Size not specified'}
                   </Typography>
                 </Box>
                 
@@ -243,7 +316,7 @@ const LandListings = () => {
                 </Typography>
                 
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                  {listing.features.slice(0, 3).map((feature, index) => (
+                  {getListingFeatures(listing).slice(0, 3).map((feature, index) => (
                     <Chip 
                       key={index} 
                       label={feature} 
@@ -259,13 +332,13 @@ const LandListings = () => {
                 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Rating value={listing.owner.rating} readOnly size="small" precision={0.5} sx={{ mr: 1 }} />
+                    <Rating value={listing.owner?.rating || 0} readOnly size="small" precision={0.5} sx={{ mr: 1 }} />
                   </Box>
                   <Typography variant="body2" color="text.secondary">
-                    {listing.owner.name}
+                    {listing.owner?.name || 'Owner not specified'}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {new Date(listing.postedDate).toLocaleDateString()}
+                    {formatDate(listing.created_at)}
                   </Typography>
                 </Box>
               </CardContent>
@@ -307,6 +380,8 @@ const LandListings = () => {
             Clear All Filters
           </Button>
         </Paper>
+      )}
+        </>
       )}
     </div>
   );

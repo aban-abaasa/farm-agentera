@@ -8,8 +8,9 @@ import {
   TextField, InputAdornment, IconButton, Paper, Tabs, Tab,
   Dialog, DialogTitle, DialogContent, DialogActions, FormControl,
   InputLabel, Select, MenuItem, FormHelperText, Chip,
-  Fade, Zoom, CircularProgress
+  Fade, Zoom, CircularProgress, useTheme
 } from '@mui/material';
+import { useAppTheme } from '../../context/ThemeContext';
 import CommunityDiscussions from './CommunityDiscussions';
 import CommunityEvents from './CommunityEvents';
 import CommunityQA from './CommunityQA';
@@ -21,7 +22,11 @@ import {
 
 
 const Community = () => {
+  const theme = useTheme();
+  const { themeMode } = useAppTheme();
   const { user } = useAuth();
+  const isDark = themeMode === 'dark';
+  
   const [activeTab, setActiveTab] = useState('discussions');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory] = useState('all'); // Categories now handled in CommunityDiscussions
@@ -195,8 +200,12 @@ const Community = () => {
           borderRadius: 4,
           overflow: 'hidden',
           mb: 12,
-          boxShadow: '0 10px 30px rgba(76, 175, 80, 0.1)',
-          background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
+          boxShadow: isDark 
+            ? `0 10px 30px ${theme.palette.primary.dark}20`
+            : `0 10px 30px ${theme.palette.primary.light}40`,
+          background: isDark
+            ? `linear-gradient(135deg, ${theme.palette.grey[900]} 0%, ${theme.palette.primary.dark}40 100%)`
+            : `linear-gradient(135deg, ${theme.palette.primary.light}20 0%, ${theme.palette.success.light}20 100%)`,
         }}
       >
         {/* Decorative circles */}
@@ -205,7 +214,9 @@ const Community = () => {
           width: '300px',
           height: '300px',
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(76,175,80,0.15) 0%, rgba(76,175,80,0) 70%)',
+          background: isDark
+            ? `radial-gradient(circle, ${theme.palette.primary.dark}30 0%, transparent 70%)`
+            : `radial-gradient(circle, ${theme.palette.primary.light}30 0%, transparent 70%)`,
           top: '-100px',
           right: '-50px',
           zIndex: 0,
@@ -216,7 +227,9 @@ const Community = () => {
           width: '200px',
           height: '200px',
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,193,7,0.1) 0%, rgba(255,193,7,0) 70%)',
+          background: isDark
+            ? `radial-gradient(circle, ${theme.palette.warning.dark}20 0%, transparent 70%)`
+            : `radial-gradient(circle, ${theme.palette.warning.light}30 0%, transparent 70%)`,
           bottom: '-80px',
           left: '10%',
           zIndex: 0,
@@ -232,7 +245,7 @@ const Community = () => {
           opacity: { xs: 0.15, sm: 0.15, md: 0.2 },
           zIndex: 1,
           pointerEvents: 'none',
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 512' fill='%234caf50'%3E%3Cpath d='M528 336c-48.6 0-88 39.4-88 88s39.4 88 88 88 88-39.4 88-88-39.4-88-88-88zm0 112c-13.23 0-24-10.77-24-24s10.77-24 24-24 24 10.77 24 24-10.77 24-24 24zm80-288h-64v-40.2c0-14.12 4.7-27.76 13.15-38.84 4.42-5.8 3.55-14.06-1.32-19.49L534.2 37.3c-6.66-7.45-18.32-6.92-24.7.78C490.58 60.9 480 89.81 480 119.8V160H377.67L321.58 29.14A47.914 47.914 0 0 0 277.45 0H144c-26.47 0-48 21.53-48 48v146.52c-8.63-6.73-20.96-6.46-28.89 1.47L36 227.1c-8.59 8.59-8.59 22.52 0 31.11l5.06 5.06c-4.99 9.26-8.96 18.82-11.91 28.72H22c-12.15 0-22 9.85-22 22v44c0 12.15 9.85 22 22 22h7.14c2.96 9.91 6.92 19.46 11.91 28.73l-5.06 5.05c-8.59 8.59-8.59 22.52 0 31.11L67.1 476c8.59 8.59 22.52 8.59 31.11 0l5.06-5.05c9.26 4.99 18.82 8.96 28.72 11.91V490c0 12.15 9.85 22 22 22h44c12.15 0 22-9.85 22-22v-7.14c9.9-2.95 19.46-6.92 28.72-11.91l5.05 5.05c8.59 8.59 22.52 8.59 31.11 0l31.11-31.11c8.59-8.59 8.59-22.52 0-31.11l-5.05-5.05c4.99-9.26 8.96-18.82 11.91-28.72H330c12.15 0 22-9.85 22-22v-6h80.54c21.91-28.99 56.32-48 95.46-48 18.64 0 36.07 4.61 51.8 12.2l50.82-50.82c6-6 9.37-14.14 9.37-22.63V192c.01-17.67-14.32-32-31.99-32zM176 416c-44.18 0-80-35.82-80-80s35.82-80 80-80 80 35.82 80 80-35.82 80-80 80zm22-256h-38V64h106.89l41.15 96H198z'%3E%3C/path%3E%3C/svg%3E")`,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 512' fill='${encodeURIComponent(theme.palette.primary.main)}'%3E%3Cpath d='M528 336c-48.6 0-88 39.4-88 88s39.4 88 88 88 88-39.4 88-88-39.4-88-88-88zm0 112c-13.23 0-24-10.77-24-24s10.77-24 24-24 24 10.77 24 24-10.77 24-24 24zm80-288h-64v-40.2c0-14.12 4.7-27.76 13.15-38.84 4.42-5.8 3.55-14.06-1.32-19.49L534.2 37.3c-6.66-7.45-18.32-6.92-24.7.78C490.58 60.9 480 89.81 480 119.8V160H377.67L321.58 29.14A47.914 47.914 0 0 0 277.45 0H144c-26.47 0-48 21.53-48 48v146.52c-8.63-6.73-20.96-6.46-28.89 1.47L36 227.1c-8.59 8.59-8.59 22.52 0 31.11l5.06 5.06c-4.99 9.26-8.96 18.82-11.91 28.72H22c-12.15 0-22 9.85-22 22v44c0 12.15 9.85 22 22 22h7.14c2.96 9.91 6.92 19.46 11.91 28.73l-5.06 5.05c-8.59 8.59-8.59 22.52 0 31.11L67.1 476c8.59 8.59 22.52 8.59 31.11 0l5.06-5.05c9.26 4.99 18.82 8.96 28.72 11.91V490c0 12.15 9.85 22 22 22h44c12.15 0 22-9.85 22-22v-7.14c9.9-2.95 19.46-6.92 28.72-11.91l5.05 5.05c8.59 8.59 22.52 8.59 31.11 0l31.11-31.11c8.59-8.59 8.59-22.52 0-31.11l-5.05-5.05c4.99-9.26 8.96-18.82 11.91-28.72H330c12.15 0 22-9.85 22-22v-6h80.54c21.91-28.99 56.32-48 95.46-48 18.64 0 36.07 4.61 51.8 12.2l50.82-50.82c6-6 9.37-14.14 9.37-22.63V192c.01-17.67-14.32-32-31.99-32zM176 416c-44.18 0-80-35.82-80-80s35.82-80 80-80 80 35.82 80 80-35.82 80-80 80zm22-256h-38V64h106.89l41.15 96H198z'%3E%3C/path%3E%3C/svg%3E")`,
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'center',
           backgroundSize: 'contain',
@@ -252,7 +265,7 @@ const Community = () => {
           <Box sx={{ maxWidth: { md: '55%' } }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" 
-                style={{ width: '28px', height: '28px', marginRight: '12px', color: '#4caf50' }}>
+                style={{ width: '28px', height: '28px', marginRight: '12px', color: theme.palette.primary.main }}>
                 <path d="M6,3A3,3 0 0,1 9,6C9,7.31 8.17,8.42 7,8.83V15.17C8.17,15.58 9,16.69 9,18A3,3 0 0,1 6,21A3,3 0 0,1 3,18C3,16.69 3.83,15.58 5,15.17V8.83C3.83,8.42 3,7.31 3,6A3,3 0 0,1 6,3M6,5A1,1 0 0,0 5,6A1,1 0 0,0 6,7A1,1 0 0,0 7,6A1,1 0 0,0 6,5M6,17A1,1 0 0,0 5,18A1,1 0 0,0 6,19A1,1 0 0,0 7,18A1,1 0 0,0 6,17M21,18A3,3 0 0,1 18,21A3,3 0 0,1 15,18C15,16.69 15.83,15.58 17,15.17V7H15V10.25L10.75,6L15,1.75V5H17A2,2 0 0,1 19,7V15.17C20.17,15.58 21,16.69 21,18M18,17A1,1 0 0,0 17,18A1,1 0 0,0 18,19A1,1 0 0,0 19,18A1,1 0 0,0 18,17Z" />
               </svg>
               <Typography 
@@ -260,7 +273,7 @@ const Community = () => {
                 sx={{ 
                   fontSize: '1rem', 
                   fontWeight: 'medium', 
-                  color: '#4caf50', 
+                  color: theme.palette.primary.main, 
                   letterSpacing: '0.05em',
                   textTransform: 'uppercase',
                 }}
@@ -275,7 +288,7 @@ const Community = () => {
               sx={{ 
                 fontSize: { xs: '2.5rem', md: '3.5rem' }, 
                 fontWeight: 800, 
-                color: '#2e7d32',
+                color: theme.palette.primary.main,
                 mb: 3,
                 maxWidth: '800px',
                 position: 'relative',
@@ -286,7 +299,7 @@ const Community = () => {
                   left: 0,
                   width: '80px',
                   height: '4px',
-                  background: 'linear-gradient(to right, #4caf50, rgba(76,175,80,0.3))',
+                  background: `linear-gradient(to right, ${theme.palette.primary.main}, ${theme.palette.primary.main}60)`,
                   borderRadius: '2px',
                 }
               }}
@@ -311,11 +324,16 @@ const Community = () => {
             flexDirection: 'column', 
             gap: 3.5,
             maxWidth: { md: '40%' },
-            bgcolor: 'rgba(255,255,255,0.4)',
+            bgcolor: isDark 
+              ? `${theme.palette.grey[800]}80`
+              : `${theme.palette.background.paper}80`,
             p: 3,
             borderRadius: 3,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+            boxShadow: isDark 
+              ? `0 4px 20px ${theme.palette.grey[900]}40`
+              : `0 4px 20px ${theme.palette.grey[300]}40`,
             backdropFilter: 'blur(10px)',
+            border: `1px solid ${theme.palette.divider}`,
           }}>
             <Typography variant="subtitle1" color="text.secondary" sx={{ 
               fontWeight: 'medium',
@@ -330,7 +348,7 @@ const Community = () => {
                 width: 45, 
                 height: 45, 
                 borderRadius: '12px', 
-                bgcolor: 'rgba(76,175,80,0.1)', 
+                bgcolor: `${theme.palette.primary.main}20`, 
                 display: 'flex', 
                 alignItems: 'center', 
                 justifyContent: 'center',
@@ -338,7 +356,7 @@ const Community = () => {
                 flexShrink: 0
               }}>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" 
-                  style={{ width: '24px', height: '24px', color: '#4caf50' }}>
+                  style={{ width: '24px', height: '24px', color: theme.palette.primary.main }}>
                   <path d="M12,23A1,1 0 0,1 11,22V19H7A2,2 0 0,1 5,17V7A2,2 0 0,1 7,5H21A2,2 0 0,1 23,7V17A2,2 0 0,1 21,19H16.9L13.2,22.71C13,22.89 12.76,23 12.5,23H12M3,15H1V3A2,2 0 0,1 3,1H19V3H3V15Z" />
                 </svg>
               </Box>
@@ -357,7 +375,7 @@ const Community = () => {
                 width: 45, 
                 height: 45, 
                 borderRadius: '12px', 
-                bgcolor: 'rgba(76,175,80,0.1)', 
+                bgcolor: `${theme.palette.primary.main}20`, 
                 display: 'flex', 
                 alignItems: 'center', 
                 justifyContent: 'center',
@@ -365,7 +383,7 @@ const Community = () => {
                 flexShrink: 0
               }}>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" 
-                  style={{ width: '24px', height: '24px', color: '#4caf50' }}>
+                  style={{ width: '24px', height: '24px', color: theme.palette.primary.main }}>
                   <path d="M17.9,17.39C17.64,16.59 16.89,16 16,16H15V13A1,1 0 0,0 14,12H8V10H10A1,1 0 0,0 11,9V7H13A2,2 0 0,0 15,5V4.59C17.93,5.77 20,8.64 20,12C20,14.08 19.2,15.97 17.9,17.39M11,19.93C7.05,19.44 4,16.08 4,12C4,11.38 4.08,10.78 4.21,10.21L9,15V16A2,2 0 0,0 11,18M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z" />
                 </svg>
               </Box>
@@ -384,7 +402,7 @@ const Community = () => {
                 width: 45, 
                 height: 45, 
                 borderRadius: '12px', 
-                bgcolor: 'rgba(76,175,80,0.1)', 
+                bgcolor: `${theme.palette.primary.main}20`, 
                 display: 'flex', 
                 alignItems: 'center', 
                 justifyContent: 'center',
@@ -392,7 +410,7 @@ const Community = () => {
                 flexShrink: 0
               }}>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" 
-                  style={{ width: '24px', height: '24px', color: '#4caf50' }}>
+                  style={{ width: '24px', height: '24px', color: theme.palette.primary.main }}>
                   <path d="M12,5.5A3.5,3.5 0 0,1 15.5,9A3.5,3.5 0 0,1 12,12.5A3.5,3.5 0 0,1 8.5,9A3.5,3.5 0 0,1 12,5.5M5,8C5.56,8 6.08,8.15 6.53,8.42C6.38,9.85 6.8,11.27 7.66,12.38C7.16,13.34 6.16,14 5,14A3,3 0 0,1 2,11A3,3 0 0,1 5,8M19,8A3,3 0 0,1 22,11A3,3 0 0,1 19,14C17.84,14 16.84,13.34 16.34,12.38C17.2,11.27 17.62,9.85 17.47,8.42C17.92,8.15 18.44,8 19,8M5.5,18.25C5.5,16.18 8.41,14.5 12,14.5C15.59,14.5 18.5,16.18 18.5,18.25V20H5.5V18.25M0,20V18.5C0,17.11 1.89,15.94 4.45,15.6C3.86,16.28 3.5,17.22 3.5,18.25V20H0M24,20H20.5V18.25C20.5,17.22 20.14,16.28 19.55,15.6C22.11,15.94 24,17.11 24,18.5V20Z" />
                 </svg>
               </Box>
@@ -416,7 +434,8 @@ const Community = () => {
           sx={{ 
             borderRadius: 3,
             overflow: 'hidden',
-            mb: 2
+            mb: 2,
+            bgcolor: theme.palette.background.paper
           }}
         >
           <Box 
@@ -426,8 +445,8 @@ const Community = () => {
               alignItems: 'center',
               px: { xs: 2, sm: 3 },
               py: { xs: 1, sm: 1 },
-              bgcolor: 'white',
-              borderBottom: '1px solid rgba(0,0,0,0.08)',
+              bgcolor: theme.palette.background.paper,
+              borderBottom: `1px solid ${theme.palette.divider}`,
               flexWrap: { xs: 'wrap', sm: 'nowrap' },
               gap: { xs: 2, sm: 0 }
             }}
@@ -530,8 +549,8 @@ const Community = () => {
             sx={{ 
               px: 3, 
               py: 2,
-              bgcolor: 'rgba(0,0,0,0.02)',
-              borderTop: '1px solid rgba(0,0,0,0.05)'
+              bgcolor: isDark ? `${theme.palette.grey[800]}40` : `${theme.palette.grey[50]}`,
+              borderTop: `1px solid ${theme.palette.divider}`
             }}
           >
             <Typography variant="body1" color="text.secondary">
@@ -564,20 +583,25 @@ const Community = () => {
       {/* Community Stats Cards - Horizontal Layout */}
       <Box sx={{ mt: 6, mb: 4 }}>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <Card sx={{ borderRadius: 3, boxShadow: 2, border: '1px solid rgba(76,175,80,0.1)' }}>
+          <Card sx={{ 
+            borderRadius: 3, 
+            boxShadow: 2, 
+            border: `1px solid ${theme.palette.primary.main}20`,
+            bgcolor: theme.palette.background.paper
+          }}>
             <CardContent sx={{ p: 3, textAlign: 'center' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
                 <Box sx={{ 
                   width: 48, 
                   height: 48, 
                   borderRadius: '50%', 
-                  bgcolor: 'rgba(76,175,80,0.1)', 
+                  bgcolor: `${theme.palette.primary.main}20`, 
                   display: 'flex', 
                   alignItems: 'center', 
                   justifyContent: 'center',
                   mb: 1
                 }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor" style={{ color: theme.palette.primary.main }}>
                     <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </Box>
@@ -591,25 +615,30 @@ const Community = () => {
             </CardContent>
           </Card>
 
-          <Card sx={{ borderRadius: 3, boxShadow: 2, border: '1px solid rgba(255,152,0,0.1)' }}>
+          <Card sx={{ 
+            borderRadius: 3, 
+            boxShadow: 2, 
+            border: `1px solid ${theme.palette.warning.main}20`,
+            bgcolor: theme.palette.background.paper
+          }}>
             <CardContent sx={{ p: 3, textAlign: 'center' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
                 <Box sx={{ 
                   width: 48, 
                   height: 48, 
                   borderRadius: '50%', 
-                  bgcolor: 'rgba(255,152,0,0.1)', 
+                  bgcolor: `${theme.palette.warning.main}20`, 
                   display: 'flex', 
                   alignItems: 'center', 
                   justifyContent: 'center',
                   mb: 1
                 }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-orange-600" viewBox="0 0 20 20" fill="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor" style={{ color: theme.palette.warning.main }}>
                     <path fillRule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clipRule="evenodd" />
                   </svg>
                 </Box>
               </Box>
-              <Typography variant="h5" fontWeight="bold" sx={{ color: '#ff9800' }}>
+              <Typography variant="h5" fontWeight="bold" color="warning.main">
                 {communityStats.discussions}
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -618,25 +647,30 @@ const Community = () => {
             </CardContent>
           </Card>
 
-          <Card sx={{ borderRadius: 3, boxShadow: 2, border: '1px solid rgba(33,150,243,0.1)' }}>
+          <Card sx={{ 
+            borderRadius: 3, 
+            boxShadow: 2, 
+            border: `1px solid ${theme.palette.info.main}20`,
+            bgcolor: theme.palette.background.paper
+          }}>
             <CardContent sx={{ p: 3, textAlign: 'center' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
                 <Box sx={{ 
                   width: 48, 
                   height: 48, 
                   borderRadius: '50%', 
-                  bgcolor: 'rgba(33,150,243,0.1)', 
+                  bgcolor: `${theme.palette.info.main}20`, 
                   display: 'flex', 
                   alignItems: 'center', 
                   justifyContent: 'center',
                   mb: 1
                 }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor" style={{ color: theme.palette.info.main }}>
                     <path fillRule="evenodd" d="M18 13V5a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2zM5 7a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm1 3a1 1 0 100 2h3a1 1 0 100-2H6z" clipRule="evenodd" />
                   </svg>
                 </Box>
               </Box>
-              <Typography variant="h5" fontWeight="bold" sx={{ color: '#2196f3' }}>
+              <Typography variant="h5" fontWeight="bold" color="info.main">
                 {communityStats.comments.toLocaleString()}
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -645,21 +679,26 @@ const Community = () => {
             </CardContent>
           </Card>
 
-          <Card sx={{ borderRadius: 3, boxShadow: 2, border: '1px solid rgba(156,39,176,0.1)' }}>
+          <Card sx={{ 
+            borderRadius: 3, 
+            boxShadow: 2, 
+            border: `1px solid ${theme.palette.secondary.main}20`,
+            bgcolor: theme.palette.background.paper
+          }}>
             <CardContent sx={{ p: 3, textAlign: 'center' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
                 <Box sx={{ 
                   width: 48, 
                   height: 48, 
                   borderRadius: '50%', 
-                  bgcolor: 'rgba(156,39,176,0.1)', 
+                  bgcolor: `${theme.palette.secondary.main}20`, 
                   display: 'flex', 
                   alignItems: 'center', 
                   justifyContent: 'center',
                   mb: 1
                 }}>
                   <Box sx={{ position: 'relative' }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-600" viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor" style={{ color: theme.palette.secondary.main }}>
                       <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <Box sx={{ 
@@ -669,7 +708,7 @@ const Community = () => {
                       width: 8, 
                       height: 8, 
                       borderRadius: '50%', 
-                      bgcolor: '#4caf50',
+                      bgcolor: theme.palette.success.main,
                       '@keyframes pulse': {
                         '0%': { opacity: 1 },
                         '50%': { opacity: 0.5 },
@@ -680,7 +719,7 @@ const Community = () => {
                   </Box>
                 </Box>
               </Box>
-              <Typography variant="h5" fontWeight="bold" sx={{ color: '#9c27b0' }}>
+              <Typography variant="h5" fontWeight="bold" color="secondary.main">
                 {communityStats.activeNow}
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -735,7 +774,7 @@ const Community = () => {
                 sx: { borderRadius: 1.5 },
                 startAdornment: (
                   <InputAdornment position="start">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" style={{ color: theme.palette.text.secondary }}>
                       <path fillRule="evenodd" d="M18 5a1 1 0 00-1-1H3a1 1 0 00-1 1v10a1 1 0 001 1h14a1 1 0 001-1V5zM3 4h14a2 2 0 012 2v10a2 2 0 01-2 2H3a2 2 0 01-2-2V6a2 2 0 012-2z" clipRule="evenodd" />
                     </svg>
                   </InputAdornment>
@@ -753,7 +792,7 @@ const Community = () => {
                   sx={{ borderRadius: 1.5 }}
                   startAdornment={
                     <InputAdornment position="start">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" style={{ color: theme.palette.text.secondary }}>
                         <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                       </svg>
                     </InputAdornment>
@@ -805,7 +844,7 @@ const Community = () => {
                 sx: { borderRadius: 1.5 },
                 startAdornment: (
                   <InputAdornment position="start">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" style={{ color: theme.palette.text.secondary }}>
                       <path fillRule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                     </svg>
                   </InputAdornment>
@@ -875,7 +914,7 @@ const Community = () => {
               </Button>
               
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" style={{ color: theme.palette.text.disabled }}>
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                 </svg>
                 <Typography variant="body2" color="text.secondary">

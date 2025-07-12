@@ -1,23 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { getListingById, getListings, incrementListingView, saveListing, unsaveListing } from '../../services/api/marketplaceService';
+import { formatPrice, getListingImageUrl, formatDate, getListingFeatures, formatLocation } from '../../utils/marketplaceHelpers';
 import { 
   Box, Typography, Button, Chip, Paper, Avatar, 
   Divider, TextField, IconButton, Grid, Badge,
-  Dialog, DialogTitle, DialogContent, DialogActions
+  Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress, Alert
 } from '@mui/material';
-
-// Import mock data from their respective files
-import { landListingsMockData } from '../../mocks/landListings';
-import { produceListingsMockData } from '../../mocks/produceListings';
-import { serviceListingsMockData } from '../../mocks/serviceListings';
-
-// Combine all mock data listings
-const mockAllListings = [
-  ...landListingsMockData,
-  ...produceListingsMockData,
-  ...serviceListingsMockData
-];
 
 const ListingDetails = () => {
   const { id } = useParams();
@@ -33,50 +23,93 @@ const ListingDetails = () => {
   const [similarListings, setSimilarListings] = useState([]);
 
   useEffect(() => {
-    // Simulate API call to fetch listing details
-    setTimeout(() => {
-      const foundListing = mockAllListings.find(item => item.id === parseInt(id));
-      
-      if (foundListing) {
-        setListing(foundListing);
+    const fetchListingDetails = async () => {
+      try {
+        setLoading(true);
+        setError(null);
         
-        // Find similar listings of the same type
-        const related = mockAllListings
-          .filter(item => 
-            item.id !== parseInt(id) && 
-            item.type === foundListing.type &&
-            item.location.split(',')[0] === foundListing.location.split(',')[0]
-          )
-          .slice(0, 3); // Get up to 3 similar listings
+        // First, get the basic listing info to determine type
+        const { data: basicListing, error: basicError } = await getListingById(id);
         
-        // If we don't have enough location-based matches, add some more of the same type
-        if (related.length < 3) {
-          const additionalListings = mockAllListings
+        if (basicError) throw basicError;
+        if (!basicListing) throw new Error('Listing not found');
+        
+        // Get detailed listing with type-specific information
+        const { data: detailedListing, error: detailError } = await getListingById(id, basicListing.type);
+        
+        if (detailError) throw detailError;
+        
+        setListing(detailedListing);
+        
+        // Increment view count
+        await incrementListingView(id);
+        
+        // Fetch similar listings of the same type and region
+        const { data: allListings, error: listingsError } = await getListings({
+          type: detailedListing.type,
+          status: 'active',
+          limit: 20
+        });
+        
+        if (!listingsError && allListings) {
+          // Find similar listings based on type and location
+          const locationKeyword = detailedListing.location.split(',')[0];
+          const related = allListings
             .filter(item => 
               item.id !== parseInt(id) && 
-              item.type === foundListing.type &&
-              !related.some(rel => rel.id === item.id)
+              item.location.toLowerCase().includes(locationKeyword.toLowerCase())
             )
-            .slice(0, 3 - related.length);
+            .slice(0, 3);
           
-          setSimilarListings([...related, ...additionalListings]);
-        } else {
-          setSimilarListings(related);
+          // If not enough location-based matches, add more of the same type
+          if (related.length < 3) {
+            const additional = allListings
+              .filter(item => 
+                item.id !== parseInt(id) &&
+                !related.some(rel => rel.id === item.id)
+              )
+              .slice(0, 3 - related.length);
+            
+            setSimilarListings([...related, ...additional]);
+          } else {
+            setSimilarListings(related);
+          }
         }
         
-        setLoading(false);
-      } else {
-        setError('Listing not found');
+      } catch (err) {
+        console.error('Error fetching listing details:', err);
+        setError(err.message || 'Failed to load listing details');
+      } finally {
         setLoading(false);
       }
-    }, 500);
+    };
+
+    if (id) {
+      fetchListingDetails();
+    }
   }, [id]);
 
   const handleSendMessage = () => {
-    // Simulate sending a message
+    // TODO: Implement real message sending via API
     alert('Message sent! The owner will contact you soon.');
     setContactModalOpen(false);
     setMessage('');
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!user) return;
+    
+    try {
+      if (isFavorite) {
+        await unsaveListing(listing.id, user.id);
+        setIsFavorite(false);
+      } else {
+        await saveListing(listing.id, user.id);
+        setIsFavorite(true);
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    }
   };
 
   const handleSaveListing = () => {
@@ -186,7 +219,7 @@ const ListingDetails = () => {
   if (!listing) return null;
 
   const listingOwner = listing.owner || listing.seller || listing.provider;
-  const listingImages = listing.images || [listing.image];
+  const listingImages = listing.images && listing.images.length > 0 ? listing.images : [getListingImageUrl(listing)];
   
   // Helper function to check if an image is a local import or a URL
   const getImageSrc = (image) => {
@@ -336,7 +369,7 @@ const ListingDetails = () => {
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                 </svg>
-                <Typography variant="body1">{listing.location}</Typography>
+                <Typography variant="body1">{formatLocation(listing)}</Typography>
               </Box>
             </Box>
             <Box sx={{ 
@@ -348,12 +381,12 @@ const ListingDetails = () => {
               boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)'
             }}>
               <Typography variant="h4" component="p" sx={{ fontWeight: 'bold', color: 'white' }}>
-                {listing.price}
+                {formatPrice(listing)}
               </Typography>
               <Typography variant="body2" sx={{ color: 'grey.200' }}>
-                {listing.type === 'land' && listing.size}
-                {listing.type === 'produce' && listing.quantity}
-                {listing.type === 'service' && listing.availability}
+                {listing.type === 'land' && listing.size ? listing.size : ''}
+                {listing.type === 'produce' && listing.quantity ? listing.quantity : ''}
+                {listing.type === 'service' && listing.availability ? listing.availability : ''}
               </Typography>
             </Box>
           </Box>
@@ -364,7 +397,7 @@ const ListingDetails = () => {
       <Box sx={{ maxWidth: '7xl', mx: 'auto', px: 4, py: 8 }}>
         <Grid container spacing={4}>
           {/* Left column - Images and details */}
-          <Grid item xs={12} lg={8}>
+          <Grid size={{ xs: 12, lg: 8 }}>
             {/* Image gallery */}
             <Paper 
               elevation={3} 
@@ -595,7 +628,7 @@ const ListingDetails = () => {
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                       </svg>
                       <Typography variant="body2">
-                        Posted {new Date(listing.postedDate).toLocaleDateString()}
+                        Posted {formatDate(listing.created_at || listing.postedDate)}
                       </Typography>
                     </Box>
                   </Box>
@@ -609,14 +642,14 @@ const ListingDetails = () => {
                       <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                     </svg>
                     <Typography variant="body1">
-                      {listing.location}
+                      {formatLocation(listing)}
                     </Typography>
                   </Box>
                 </Box>
 
                 <Box sx={{ textAlign: 'right' }}>
                   <Typography variant="h4" color="primary.main" sx={{ fontWeight: 'bold' }}>
-                    {listing.price}
+                    {formatPrice(listing)}
                   </Typography>
                   
                   {listing.type === 'land' && (
@@ -624,7 +657,7 @@ const ListingDetails = () => {
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
                       </svg>
-                      <Typography variant="body2">{listing.size}</Typography>
+                      <Typography variant="body2">{listing.size || 'Size not specified'}</Typography>
                     </Box>
                   )}
                   
@@ -633,7 +666,7 @@ const ListingDetails = () => {
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
                       </svg>
-                      <Typography variant="body2">{listing.quantity}</Typography>
+                      <Typography variant="body2">{listing.quantity || 'Quantity not specified'}</Typography>
                     </Box>
                   )}
                   
@@ -642,7 +675,7 @@ const ListingDetails = () => {
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <Typography variant="body2">{listing.availability}</Typography>
+                      <Typography variant="body2">{listing.availability || 'Availability not specified'}</Typography>
                     </Box>
                   )}
                 </Box>
@@ -681,7 +714,7 @@ const ListingDetails = () => {
                     Key Features
                   </Typography>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {listing.features.map((feature, index) => (
+                    {getListingFeatures(listing).map((feature, index) => (
                       <Chip
                         key={index}
                         label={feature}
@@ -725,8 +758,8 @@ const ListingDetails = () => {
                       }}
                     >
                       <Grid container spacing={3}>
-                        {Object.entries(listing.details).map(([key, value]) => (
-                          <Grid item xs={12} sm={6} md={4} key={key}>
+                        {Object.entries(listing.details).filter(([, value]) => value != null && value !== '').map(([key, value]) => (
+                          <Grid size={{ xs: 12, sm: 6, md: 4 }} key={key}>
                             <Typography variant="body2" color="text.secondary" sx={{ 
                               fontWeight: 'medium',
                               mb: 0.5,
@@ -735,7 +768,7 @@ const ListingDetails = () => {
                               {key.replace(/([A-Z])/g, ' $1').replace(/([A-Z][a-z])/g, ' $1').trim()}
                             </Typography>
                             <Typography variant="body1" color="text.primary">
-                              {value}
+                              {String(value)}
                             </Typography>
                           </Grid>
                         ))}
@@ -748,7 +781,7 @@ const ListingDetails = () => {
           </Grid>
 
           {/* Right sidebar with info cards - on large screens these will be in a row */}
-          <Grid item xs={12} lg={5}>
+          <Grid size={{ xs: 12, lg: 5 }}>
             <Grid 
               container 
               spacing={3} 
@@ -799,10 +832,10 @@ const ListingDetails = () => {
                     {/* Owner info section */}
                     <Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                        {listingOwner.avatar ? (
+                        {listingOwner?.avatar ? (
                           <Avatar 
-                            src={listingOwner.avatar} 
-                            alt={listingOwner.name}
+                            src={listingOwner?.avatar} 
+                            alt={listingOwner?.name || 'User'}
                             sx={{ 
                               width: 70, 
                               height: 70, 
@@ -825,12 +858,12 @@ const ListingDetails = () => {
                               border: '2px solid white'
                             }}
                           >
-                            {listingOwner.name.charAt(0).toUpperCase()}
+                            {(listingOwner?.name || 'User').charAt(0).toUpperCase()}
                           </Avatar>
                         )}
                         <Box>
                           <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 0.5 }}>
-                            {listingOwner.name}
+                            {listingOwner?.name || 'User'}
                           </Typography>
                           <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
                             <Box sx={{ display: 'flex', color: 'warning.main', mr: 1 }}>
@@ -841,25 +874,25 @@ const ListingDetails = () => {
                                   className="h-4 w-4" 
                                   viewBox="0 0 20 20" 
                                   fill="currentColor"
-                                  style={{ opacity: i < Math.floor(listingOwner.rating) ? 1 : 0.3 }}
+                                  style={{ opacity: i < Math.floor(listingOwner?.rating || 0) ? 1 : 0.3 }}
                                 >
                                   <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                                 </svg>
                               ))}
                             </Box>
                             <Typography variant="body2" color="text.secondary">
-                              {listingOwner.rating.toFixed(1)}
+                              {listingOwner?.rating?.toFixed(1) || '0.0'}
                             </Typography>
                           </Box>
                           <Typography variant="caption" color="text.secondary">
                             {listing.type === 'service' 
-                              ? `${listingOwner.completedJobs} jobs completed` 
-                              : `${listingOwner.listings} active listings`}
+                              ? `${listingOwner?.completedJobs || 0} jobs completed` 
+                              : `${listingOwner?.listings || 0} active listings`}
                           </Typography>
                         </Box>
                       </Box>
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        Member since {new Date(listingOwner.memberSince).toLocaleDateString()}
+                        Member since {formatDate(listingOwner?.created_at || listingOwner?.memberSince)}
                       </Typography>
                       
                       <Divider sx={{ my: 2 }} />
@@ -870,7 +903,7 @@ const ListingDetails = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                           </svg>
                           <Typography variant="body2">
-                            {listingOwner.phone || "Phone number available after contact"}
+                            {listingOwner?.phone || "Phone number available after contact"}
                           </Typography>
                         </Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary' }}>
@@ -878,7 +911,7 @@ const ListingDetails = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                           </svg>
                           <Typography variant="body2">
-                            {listingOwner.email || "Email available after contact"}
+                            {listingOwner?.email || "Email available after contact"}
                           </Typography>
                         </Box>
                       </Box>
@@ -912,7 +945,7 @@ const ListingDetails = () => {
                       
                       {user ? (
                         <Grid container spacing={2}>
-                          <Grid item xs={6}>
+                          <Grid size={6}>
                             <Button 
                               variant={isFavorite ? "contained" : "outlined"}
                               color={isFavorite ? "secondary" : "primary"}
@@ -932,7 +965,7 @@ const ListingDetails = () => {
                               {isFavorite ? 'Saved' : 'Save'}
                             </Button>
                           </Grid>
-                          <Grid item xs={6}>
+                          <Grid size={6}>
                             <Button
                               variant="outlined"
                               color="primary"
@@ -1062,7 +1095,7 @@ const ListingDetails = () => {
                             >
                               <Box 
                                 component="img"
-                                src={getImageSrc(item.images ? item.images[0] : item.image)} 
+                                src={getImageSrc(getListingImageUrl(item))} 
                                 alt={item.title}
                                 sx={{
                                   width: '100%',
@@ -1102,7 +1135,7 @@ const ListingDetails = () => {
                                   fontWeight: 'bold'
                                 }}
                               >
-                                {item.price}
+                                {formatPrice(item)}
                               </Typography>
                             </Box>
                           </Box>
@@ -1208,7 +1241,7 @@ const ListingDetails = () => {
                         }}
                       >
                         <Typography variant="body2" color="text.secondary">Posted On</Typography>
-                        <Typography variant="body2" fontWeight="medium">{new Date(listing.postedDate).toLocaleDateString()}</Typography>
+                        <Typography variant="body2" fontWeight="medium">{formatDate(listing.created_at || listing.postedDate)}</Typography>
                       </Box>
                       <Box 
                         component="li" 
@@ -1221,7 +1254,7 @@ const ListingDetails = () => {
                         }}
                       >
                         <Typography variant="body2" color="text.secondary">Expires</Typography>
-                        <Typography variant="body2" fontWeight="medium">{new Date(listing.expiryDate).toLocaleDateString()}</Typography>
+                        <Typography variant="body2" fontWeight="medium">{formatDate(listing.expiry_date || listing.expiryDate)}</Typography>
                       </Box>
                       <Box 
                         component="li" 
@@ -1333,7 +1366,7 @@ const ListingDetails = () => {
               <path fillRule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clipRule="evenodd" />
             </svg>
             <Typography variant="h6" component="h2" sx={{ fontWeight: 'bold' }}>
-              Contact {listingOwner.name}
+              Contact {listingOwner?.name || 'Owner'}
             </Typography>
           </Box>
           <IconButton onClick={() => setContactModalOpen(false)} size="small">
@@ -1368,7 +1401,7 @@ const ListingDetails = () => {
                   Price:
                 </Typography>
                 <Typography variant="body1" fontWeight="bold" color="primary.main">
-                  {listing.price}
+                  {formatPrice(listing)}
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={4}>
@@ -1376,7 +1409,7 @@ const ListingDetails = () => {
                   Location:
                 </Typography>
                 <Typography variant="body1" fontWeight="medium">
-                  {listing.location}
+                  {formatLocation(listing)}
                 </Typography>
               </Grid>
             </Grid>
@@ -1410,7 +1443,7 @@ const ListingDetails = () => {
                   Contact Details
                 </Typography>
                 
-                {listingOwner.phone && (
+                {listingOwner?.phone && (
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
                     <Box sx={{
                       width: 36,
@@ -1431,7 +1464,7 @@ const ListingDetails = () => {
                         Phone
                       </Typography>
                       <Typography variant="body1">
-                        {listingOwner.phone}
+                        {listingOwner?.phone}
                       </Typography>
                     </Box>
                   </Box>

@@ -27,6 +27,13 @@ const lg = {
     logout: 'Fuluma',
     profile: 'Ebikulwako',
     settings: 'Entegeka',
+    farmManagement: 'Okulungatira Ennimiro',
+    myFarm: 'Ennimiro Yange',
+    analytics: 'Okwekenneenya',
+    finance: 'Ensimbi',
+    soilCrop: 'Ategeka w\'Ettaka n\'Ebimera',
+    livestock: 'Okulunda Ebisolo',
+    investments: 'Okussaamu Ensimbi',
   },
   
   settings: {

@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import './reduced-motion.css'
 import MainLayout from './components/layout/MainLayout'
 import Home from './pages/Home'
 import Dashboard from './pages/Dashboard'
@@ -7,6 +8,7 @@ import Register from './pages/auth/Register'
 import AuthCallback from './pages/auth/AuthCallback'
 import CompleteProfile from './pages/auth/CompleteProfile'
 import { AuthProvider } from './context/AuthContext'
+import ThemeContextProvider from './context/ThemeContext'
 import Settings from './pages/Settings'
 import Profile from './pages/profile/Profile'
 import EditProfile from './pages/profile/EditProfile'
@@ -27,6 +29,12 @@ import PostDetails from './pages/community/PostDetails'
 import SupportTeam from './pages/SupportTeam'
 import LivestockManagement from './pages/LivestockManagement'
 import SoilCropPlanner from './pages/SoilCropPlanner'
+import FarmManagement from './pages/FarmManagement'
+import IrrigationManagement from './pages/IrrigationManagement'
+import InventoryManagement from './pages/InventoryManagement'
+import LivestockAnalytics from './pages/LivestockAnalytics'
+import Analytics from './pages/Analytics'
+import Finance from './pages/Finance'
 import Investments from './pages/Investments'
 import Messages from './pages/Messages'
 import { Suspense } from 'react'
@@ -45,8 +53,9 @@ const withPageContainer = (Component, props = {}) => {
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
+    <ThemeContextProvider>
+      <Router>
+        <AuthProvider>
         <Suspense fallback={
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
             <CircularProgress />
@@ -77,8 +86,14 @@ function App() {
                 <Route path="weather" element={withPageContainer(Weather)} />
                 <Route path="resources" element={withPageContainer(Resources)} />
                 <Route path="support-team" element={withPageContainer(SupportTeam)} />
+                <Route path="farm-management" element={withPageContainer(FarmManagement)} />
                 <Route path="livestock-management" element={withPageContainer(LivestockManagement)} />
                 <Route path="soil-crop-planner" element={withPageContainer(SoilCropPlanner)} />
+                <Route path="irrigation-management" element={withPageContainer(IrrigationManagement)} />
+                <Route path="inventory-management" element={withPageContainer(InventoryManagement)} />
+                <Route path="livestock-analytics" element={withPageContainer(LivestockAnalytics)} />
+                <Route path="finance" element={withPageContainer(Finance)} />
+                <Route path="analytics" element={withPageContainer(Analytics)} />
                 <Route path="investments" element={withPageContainer(Investments)} />
                 <Route path="messages" element={withPageContainer(Messages)} />
                 
@@ -102,6 +117,7 @@ function App() {
         </Suspense>
       </AuthProvider>
     </Router>
+    </ThemeContextProvider>
   )
 }
 

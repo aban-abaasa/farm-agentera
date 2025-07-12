@@ -34,10 +34,13 @@ import {
   Login as LoginIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
+  Extension as ExtensionIcon,
+  ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
 import Footer from './Footer';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '../LanguageSwitcher';
+import ThemeToggle from '../ThemeToggle';
 import { useAuth } from '../../context/AuthContext';
 import AgricultureIcon from '@mui/icons-material/Agriculture';
 import GrassIcon from '@mui/icons-material/Grass';
@@ -48,6 +51,7 @@ const MainLayout = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileAnchorEl, setProfileAnchorEl] = useState(null);
+  const [extensionsAnchorEl, setExtensionsAnchorEl] = useState(null);
   const { t } = useTranslation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -66,6 +70,14 @@ const MainLayout = () => {
   const handleProfileMenuClose = () => {
     setProfileAnchorEl(null);
   };
+
+  const handleExtensionsMenuOpen = (event) => {
+    setExtensionsAnchorEl(event.currentTarget);
+  };
+
+  const handleExtensionsMenuClose = () => {
+    setExtensionsAnchorEl(null);
+  };
   
   const handleLogout = () => {
     logout();
@@ -74,34 +86,133 @@ const MainLayout = () => {
   };
 
   const navigationItems = [
-    { text: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
-    { text: t('header.home'), path: '/', icon: <HomeIcon /> },
-    { text: t('header.soilCrop'), path: '/soil-crop-planner', icon: <GrassIcon /> },
-    { text: t('header.livestock'), path: '/livestock-management', icon: <AgricultureIcon /> },
-    { text: t('header.marketplace'), path: '/marketplace', icon: <MarketplaceIcon /> },
-    { text: t('header.investments'), path: '/investments', icon: <PaidIcon /> },
-    { text: t('header.community'), path: '/community', icon: <CommunityIcon /> },
-    { text: t('header.supportTeam'), path: '/support-team', icon: <SupportIcon /> },
-    { text: t('header.weather'), path: '/weather', icon: <WeatherIcon /> },
+    // Main Navigation Items
+    { 
+      text: 'Dashboard', 
+      path: '/dashboard', 
+      icon: <DashboardIcon />, 
+      category: 'main',
+      requireAuth: true 
+    },
+    { 
+      text: t('header.marketplace'), 
+      path: '/marketplace', 
+      icon: <MarketplaceIcon />, 
+      category: 'main' 
+    },
+    { 
+      text: t('header.myFarm'), 
+      path: '/farm-management', 
+      icon: <AgricultureIcon />, 
+      category: 'main',
+      requireAuth: true 
+    },
+    { 
+      text: t('header.community'), 
+      path: '/community', 
+      icon: <CommunityIcon />, 
+      category: 'main' 
+    },
+    { 
+      text: t('header.resources'), 
+      path: '/resources', 
+      icon: <ResourcesIcon />, 
+      category: 'main' 
+    },
+    { 
+      text: t('header.supportTeam'), 
+      path: '/support-team', 
+      icon: <SupportIcon />, 
+      category: 'main' 
+    },
+  ];
+
+  // Extensions items (for dropdown)
+  const extensionsItems = [
+    { 
+      text: t('header.weather'), 
+      path: '/weather', 
+      icon: <WeatherIcon />, 
+      requireAuth: true 
+    },
   ];
 
   const drawer = (
     <div>
       <Toolbar sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
-        <Typography variant="h6" component="div" sx={{ fontWeight: 700 }}>
+        <Typography variant="h6" component={Link} to="/" sx={{ 
+          fontWeight: 700, 
+          textDecoration: 'none', 
+          color: 'inherit',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1
+        }}>
+          <HomeIcon />
           FARM-AGENT
         </Typography>
       </Toolbar>
       <Divider />
       <List>
+        {/* Main Navigation Items */}
         {navigationItems.filter(item => !item.requireAuth || (item.requireAuth && isAuthenticated)).map((item) => (
           <ListItem button component={Link} to={item.path} key={item.text} onClick={handleDrawerToggle}>
             <ListItemIcon>{item.icon}</ListItemIcon>
             <ListItemText primary={item.text} />
           </ListItem>
         ))}
+        
+        {/* Extensions Section */}
+        {extensionsItems.some(item => !item.requireAuth || (item.requireAuth && isAuthenticated)) && (
+          <>
+            <Divider sx={{ my: 1 }} />
+            <ListItem>
+              <ListItemIcon>
+                <ExtensionIcon />
+              </ListItemIcon>
+              <ListItemText primary="Extensions" sx={{ opacity: 0.7 }} />
+            </ListItem>
+            {extensionsItems.filter(item => !item.requireAuth || (item.requireAuth && isAuthenticated)).map((item) => (
+              <ListItem button component={Link} to={item.path} key={item.text} onClick={handleDrawerToggle} sx={{ pl: 4 }}>
+                <ListItemIcon>{item.icon}</ListItemIcon>
+                <ListItemText primary={item.text} />
+              </ListItem>
+            ))}
+          </>
+        )}
       </List>
     </div>
+  );
+
+  // Extensions menu
+  const extensionsMenu = (
+    <Menu
+      anchorEl={extensionsAnchorEl}
+      open={Boolean(extensionsAnchorEl)}
+      onClose={handleExtensionsMenuClose}
+      transformOrigin={{ horizontal: 'left', vertical: 'top' }}
+      anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
+      PaperProps={{
+        sx: {
+          mt: 1,
+          minWidth: 200,
+        }
+      }}
+    >
+      {extensionsItems.filter(item => !item.requireAuth || (item.requireAuth && isAuthenticated)).map((item) => (
+        <MenuItem 
+          key={item.text}
+          component={Link} 
+          to={item.path} 
+          onClick={handleExtensionsMenuClose}
+        >
+          <ListItemIcon>
+            {item.icon}
+          </ListItemIcon>
+          <ListItemText>{item.text}</ListItemText>
+        </MenuItem>
+      ))}
+    </Menu>
   );
 
   // Profile menu
@@ -164,18 +275,23 @@ const MainLayout = () => {
               </IconButton>
             )}
             <Typography variant="h6" component={Link} to="/" sx={{ 
-              flexGrow: 1, 
+              flexGrow: 0, 
               textDecoration: 'none', 
               color: 'inherit',
               fontWeight: 700,
-              letterSpacing: 1
+              letterSpacing: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              mr: 3
             }}>
+              <HomeIcon />
               FARM-AGENT
             </Typography>
 
             {/* Desktop Navigation */}
             {!isMobile && (
-              <Box sx={{ display: 'flex', flexGrow: 1, ml: 2 }}>
+              <Box sx={{ display: 'flex', flexGrow: 1, alignItems: 'center' }}>
                 {navigationItems.filter(item => !item.requireAuth || (item.requireAuth && isAuthenticated)).map((item) => (
                   <Button 
                     color="inherit" 
@@ -188,10 +304,24 @@ const MainLayout = () => {
                     {item.text}
                   </Button>
                 ))}
+                
+                {/* Extensions Dropdown */}
+                {extensionsItems.some(item => !item.requireAuth || (item.requireAuth && isAuthenticated)) && (
+                  <Button
+                    color="inherit"
+                    onClick={handleExtensionsMenuOpen}
+                    endIcon={<ExpandMoreIcon />}
+                    startIcon={<ExtensionIcon />}
+                    sx={{ mx: 0.5 }}
+                  >
+                    Extensions
+                  </Button>
+                )}
               </Box>
             )}
             
-            {/* Language Switcher Component */}
+            {/* Theme Toggle and Language Switcher */}
+            <ThemeToggle />
             <LanguageSwitcher />
             
             {/* Login/Profile Button */}
@@ -219,6 +349,9 @@ const MainLayout = () => {
       
       {/* Profile menu */}
       {profileMenu}
+      
+      {/* Extensions menu */}
+      {extensionsMenu}
       
       {/* Mobile drawer */}
       <Drawer

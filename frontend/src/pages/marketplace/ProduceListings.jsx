@@ -1,61 +1,118 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { produceListingsMockData } from '../../mocks/produceListings';
+import { getListings } from '../../services/api/marketplaceService';
+import { 
+  getListingImageUrl, 
+  formatPrice, 
+  formatDate, 
+  getListingFeatures,
+  formatLocation 
+} from '../../utils/marketplaceHelpers';
 import { 
   Typography, Box, Paper, TextField, InputAdornment, 
   FormControl, Select, MenuItem, Button, Chip,
   Card, CardMedia, CardContent, CardActionArea, Grid,
-  InputLabel, Divider, Rating
+  InputLabel, Divider, Rating, CircularProgress, Alert
 } from '@mui/material';
 
 const ProduceListings = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [listings, setListings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [categories, setCategories] = useState([]);
+
+  // Fetch produce listings from API
+  useEffect(() => {
+    const fetchProduceListings = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const { data, error: listingsError } = await getListings({
+          type: 'produce',
+          status: 'active',
+          limit: 100
+        });
+        
+        if (listingsError) throw listingsError;
+        
+        setListings(data || []);
+        
+        // Extract unique categories from listings (using produce_type from details)
+        const uniqueCategories = [...new Set((data || []).map(item => item.details?.produce_type).filter(Boolean))];
+        setCategories(uniqueCategories);
+      } catch (err) {
+        console.error('Error fetching produce listings:', err);
+        setError(err.message || 'Failed to load produce listings');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduceListings();
+  }, []);
 
   // Filter and sort listings
-  const filteredListings = produceListingsMockData
+  const filteredListings = listings
     .filter(listing => 
       (searchTerm === '' || 
         listing.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        listing.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (listing.location && listing.location.toLowerCase().includes(searchTerm.toLowerCase())) ||
         listing.description.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (filterCategory === '' || listing.category === filterCategory)
+      (filterCategory === '' || listing.details?.produce_type === filterCategory)
     )
     .sort((a, b) => {
       if (sortBy === 'newest') {
-        return new Date(b.postedDate) - new Date(a.postedDate);
+        return new Date(b.created_at) - new Date(a.created_at);
       } else if (sortBy === 'oldest') {
-        return new Date(a.postedDate) - new Date(b.postedDate);
+        return new Date(a.created_at) - new Date(b.created_at);
       } else if (sortBy === 'priceHigh') {
-        // Handle "Varies by type" case
-        if (a.price === 'Varies by type') return 1;
-        if (b.price === 'Varies by type') return -1;
-        return parseFloat(b.price.replace(/[^0-9.-]+/g, '')) - parseFloat(a.price.replace(/[^0-9.-]+/g, ''));
+        // Handle null prices and negotiable items
+        const priceA = a.price || 0;
+        const priceB = b.price || 0;
+        return priceB - priceA;
       } else if (sortBy === 'priceLow') {
-        // Handle "Varies by type" case
-        if (a.price === 'Varies by type') return 1;
-        if (b.price === 'Varies by type') return -1;
-        return parseFloat(a.price.replace(/[^0-9.-]+/g, '')) - parseFloat(b.price.replace(/[^0-9.-]+/g, ''));
+        const priceA = a.price || 0;
+        const priceB = b.price || 0;
+        return priceA - priceB;
       }
       return 0;
     });
 
-  // Get unique categories for filter
-  const categories = [...new Set(produceListingsMockData.map(item => item.category))];
-
   return (
     <div className="w-full max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-      {/* Header section */}
-      <Box sx={{ mb: 6 }}>
-        <Typography variant="h3" component="h1" fontWeight="bold" color="text.primary" sx={{ mb: 2 }}>
-          Agricultural Produce
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '800px' }}>
-          Buy and sell crops, seeds, livestock products, and other agricultural produce directly from 
-          farmers across Uganda. Find fresh, quality produce for your business or home.
-        </Typography>
-      </Box>
+      {/* Loading State */}
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
+          <CircularProgress size={60} />
+        </Box>
+      )}
+      
+      {/* Error State */}
+      {error && (
+        <Box sx={{ p: 3 }}>
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        </Box>
+      )}
+      
+      {/* Main Content - Only show when not loading */}
+      {!loading && (
+        <>
+          {/* Header section */}
+          <Box sx={{ mb: 6 }}>
+            <Typography variant="h3" component="h1" fontWeight="bold" color="text.primary" sx={{ mb: 2 }}>
+              Agricultural Produce
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '800px' }}>
+              Buy and sell crops, seeds, livestock products, and other agricultural produce directly from 
+              farmers across Uganda. Find fresh, quality produce for your business or home.
+            </Typography>
+          </Box>
 
       {/* Search and filter section */}
       <Paper 
@@ -68,7 +125,7 @@ const ProduceListings = () => {
         }}
       >
         <Grid container spacing={3} alignItems="center">
-          <Grid item xs={12} md={5}>
+          <Grid size={{ xs: 12, md: 5 }}>
             <TextField
               fullWidth
               placeholder="Search produce..."
@@ -97,7 +154,7 @@ const ProduceListings = () => {
               }}
             />
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid size={{ xs: 12, md: 3 }}>
             <FormControl fullWidth variant="outlined">
               <InputLabel id="category-label">Category</InputLabel>
               <Select
@@ -113,7 +170,7 @@ const ProduceListings = () => {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid size={{ xs: 12, md: 3 }}>
             <FormControl fullWidth variant="outlined">
               <InputLabel id="sort-label">Sort By</InputLabel>
               <Select
@@ -129,7 +186,7 @@ const ProduceListings = () => {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={1}>
+          <Grid size={{ xs: 12, md: 1 }}>
             <Button 
               variant="contained" 
               color="primary"
@@ -201,7 +258,7 @@ const ProduceListings = () => {
                   <CardMedia
                     component="img"
                     height="180"
-                    image={listing.image}
+                    image={getListingImageUrl(listing)}
                     alt={listing.title}
                   />
                   <Box 
@@ -219,7 +276,7 @@ const ProduceListings = () => {
                       textTransform: 'uppercase'
                     }}
                   >
-                    {listing.category}
+                    {listing.details?.produce_type || 'Produce'}
                   </Box>
                 </Box>
               </CardActionArea>
@@ -229,15 +286,15 @@ const ProduceListings = () => {
                   {listing.title}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  {listing.location}
+                  {formatLocation(listing)}
                 </Typography>
                 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="h6" color="primary.main" fontWeight="bold">
-                    {listing.price}
+                    {formatPrice(listing)}
                   </Typography>
                   <Chip 
-                    label={listing.quality} 
+                    label={listing.details?.availability || 'Available'} 
                     color="primary" 
                     size="small"
                     sx={{ fontWeight: 'medium' }}
@@ -249,7 +306,7 @@ const ProduceListings = () => {
                 </Typography>
                 
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                  {listing.features.slice(0, 3).map((feature, index) => (
+                  {getListingFeatures(listing).slice(0, 3).map((feature, index) => (
                     <Chip 
                       key={index} 
                       label={feature} 
@@ -265,13 +322,13 @@ const ProduceListings = () => {
                 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Rating value={listing.seller.rating} readOnly size="small" precision={0.5} sx={{ mr: 1 }} />
+                    <Rating value={listing.owner?.rating || 4.5} readOnly size="small" precision={0.5} sx={{ mr: 1 }} />
                   </Box>
                   <Typography variant="body2" color="text.secondary">
-                    {listing.quantity}
+                    {listing.details?.quantity ? `${listing.details.quantity} ${listing.details.unit || ''}` : 'Contact for quantity'}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {new Date(listing.postedDate).toLocaleDateString()}
+                    {formatDate(listing.created_at)}
                   </Typography>
                 </Box>
               </CardContent>
@@ -313,6 +370,8 @@ const ProduceListings = () => {
             Clear All Filters
           </Button>
         </Paper>
+      )}
+        </>
       )}
     </div>
   );

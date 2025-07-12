@@ -29,6 +29,7 @@ import {
   Tabs,
   Tab
 } from '@mui/material';
+import { useAppTheme } from '../context/ThemeContext';
 import {
   Search,
   CloudDownload,
@@ -53,8 +54,8 @@ import {
   CheckCircle,
   GroupAdd
 } from '@mui/icons-material';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { resourceCategories, featuredResources, recentResources } from '../mocks/resources.jsx';
-import { useTheme as useMuiTheme } from '@mui/material/styles';
 import GroupIcon from '@mui/icons-material/Group';
 import PersonIcon from '@mui/icons-material/Person';
 import Stepper from '@mui/material/Stepper';
@@ -112,7 +113,9 @@ const LabourResourcingSection = () => {
   const [bookingDetails, setBookingDetails] = useState({ date: '', time: '', location: '', notes: '' });
   const [paymentMethod, setPaymentMethod] = useState('mobile');
   const [paymentProcessing, setPaymentProcessing] = useState(false);
-  const theme = useMuiTheme();
+  const theme = useTheme();
+  const { themeMode } = useAppTheme();
+  const isDark = themeMode === 'dark';
   const filteredLabor = mockLaborSources.filter(l =>
     (!laborSkill || l.skills.some(s => s.toLowerCase().includes(laborSkill.toLowerCase()))) &&
     (!laborLocation || l.location.toLowerCase().includes(laborLocation.toLowerCase()))
@@ -197,8 +200,26 @@ const LabourResourcingSection = () => {
   return (
     <Box>
       {/* Hero Banner */}
-      <Paper elevation={3} sx={{ p: { xs: 3, md: 6 }, mb: 6, borderRadius: 4, background: 'linear-gradient(120deg, #e3f2fd 0%, #e8f5e9 100%)', position: 'relative', overflow: 'hidden' }}>
-        <Box sx={{ position: 'absolute', top: -40, right: -40, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, #4caf50 0%, rgba(76,175,80,0) 70%)', opacity: 0.12 }} />
+      <Paper elevation={3} sx={{ 
+        p: { xs: 3, md: 6 }, 
+        mb: 6, 
+        borderRadius: 4, 
+        background: isDark
+          ? `linear-gradient(120deg, ${theme.palette.grey[800]} 0%, ${theme.palette.primary.dark}40 100%)`
+          : `linear-gradient(120deg, ${theme.palette.primary.light}20 0%, ${theme.palette.success.light}20 100%)`,
+        position: 'relative', 
+        overflow: 'hidden' 
+      }}>
+        <Box sx={{ 
+          position: 'absolute', 
+          top: -40, 
+          right: -40, 
+          width: 180, 
+          height: 180, 
+          borderRadius: '50%', 
+          background: `radial-gradient(circle, ${theme.palette.success.main} 0%, ${alpha(theme.palette.success.main, 0)} 70%)`, 
+          opacity: 0.12 
+        }} />
         <Box sx={{ position: 'relative', zIndex: 1 }}>
           <Typography variant="h3" fontWeight="bold" color="primary.main" gutterBottom>
             Labour Resourcing
@@ -231,7 +252,14 @@ const LabourResourcingSection = () => {
         </Grid>
       </Grid>
       {/* Labor Groups Section */}
-      <Paper elevation={2} sx={{ mb: 4, p: 3, borderRadius: 3, background: 'linear-gradient(120deg, #e8f5e9 0%, #e3f2fd 100%)' }}>
+      <Paper elevation={2} sx={{ 
+        mb: 4, 
+        p: 3, 
+        borderRadius: 3, 
+        background: isDark
+          ? `linear-gradient(120deg, ${theme.palette.grey[800]} 0%, ${theme.palette.primary.dark}30 100%)`
+          : `linear-gradient(120deg, ${theme.palette.success.light}20 0%, ${theme.palette.primary.light}20 100%)`
+      }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <GroupIcon color="primary" sx={{ fontSize: 32, mr: 1 }} />
           <Typography variant="h5" fontWeight="bold" color="primary.main">Labor Groups</Typography>
@@ -246,7 +274,15 @@ const LabourResourcingSection = () => {
             const leader = getLaborerById(group.leaderId);
             return (
               <Grid item xs={12} md={6} lg={4} key={group.id}>
-                <Card sx={{ p: 2, borderRadius: 3, mb: 2, boxShadow: 3, background: 'white', transition: '0.2s', '&:hover': { boxShadow: 8 } }}>
+                <Card sx={{ 
+                  p: 2, 
+                  borderRadius: 3, 
+                  mb: 2, 
+                  boxShadow: 3, 
+                  backgroundColor: theme.palette.background.paper, 
+                  transition: '0.2s', 
+                  '&:hover': { boxShadow: 8 } 
+                }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                     <GroupIcon color="primary" sx={{ mr: 1 }} />
                     <Typography variant="h6" fontWeight="bold">{group.name}</Typography>
@@ -430,7 +466,17 @@ const LabourResourcingSection = () => {
           </Grid>
         ) : filteredLabor.map(labor => (
           <Grid item xs={12} md={6} lg={4} key={labor.id}>
-            <Card sx={{ p: 3, borderRadius: 3, display: 'flex', alignItems: 'center', mb: 2, boxShadow: 4, background: 'white', transition: 'transform 0.2s', '&:hover': { transform: 'scale(1.03)', boxShadow: 8 } }}>
+            <Card sx={{ 
+              p: 3, 
+              borderRadius: 3, 
+              display: 'flex', 
+              alignItems: 'center', 
+              mb: 2, 
+              boxShadow: 4, 
+              backgroundColor: theme.palette.background.paper, 
+              transition: 'transform 0.2s', 
+              '&:hover': { transform: 'scale(1.03)', boxShadow: 8 } 
+            }}>
               <Avatar sx={{ bgcolor: labor.verified ? 'success.main' : 'primary.main', mr: 2, width: 64, height: 64, fontSize: 32 }}>
                 {labor.name.charAt(0)}
               </Avatar>
@@ -493,13 +539,28 @@ const Resources = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
   const theme = useTheme();
+  const { themeMode } = useAppTheme();
+  const isDark = themeMode === 'dark';
 
   const handleTabChange = (event, newValue) => setTab(newValue);
 
   return (
-    <Box sx={{ pb: 5, background: 'linear-gradient(to bottom, #f5f5f5 0%, #e8f5e9 100%)', minHeight: '100vh' }}>
+    <Box sx={{ 
+      pb: 5, 
+      background: isDark
+        ? `linear-gradient(to bottom, ${theme.palette.grey[900]} 0%, ${theme.palette.grey[800]} 100%)`
+        : `linear-gradient(to bottom, ${theme.palette.grey[50]} 0%, ${theme.palette.success.light}10 100%)`,
+      minHeight: '100vh' 
+    }}>
       <Container maxWidth="xl">
-        <Paper elevation={2} sx={{ mb: 4, borderRadius: 3, p: 2, background: 'linear-gradient(90deg, #e3f2fd 0%, #e8f5e9 100%)' }}>
+        <Paper elevation={2} sx={{ 
+          mb: 4, 
+          borderRadius: 3, 
+          p: 2, 
+          background: isDark
+            ? `linear-gradient(90deg, ${theme.palette.grey[800]} 0%, ${theme.palette.primary.dark}30 100%)`
+            : `linear-gradient(90deg, ${theme.palette.primary.light}20 0%, ${theme.palette.success.light}20 100%)`
+        }}>
           <Tabs value={tab} onChange={handleTabChange} indicatorColor="primary" textColor="primary" variant="scrollable" scrollButtons="auto">
             <Tab label="Resources" sx={{ fontWeight: 'bold', fontSize: '1.1rem' }} />
             <Tab label="Labour Resourcing" sx={{ fontWeight: 'bold', fontSize: '1.1rem' }} />
@@ -508,7 +569,9 @@ const Resources = () => {
         {tab === 0 && (
           <Box sx={{ 
             pb: 5,
-            background: 'linear-gradient(to bottom, rgba(76, 175, 80, 0.05) 0%, rgba(76, 175, 80, 0) 250px)'
+            background: isDark
+              ? `linear-gradient(to bottom, ${alpha(theme.palette.primary.dark, 0.1)} 0%, transparent 250px)`
+              : `linear-gradient(to bottom, ${alpha(theme.palette.success.main, 0.05)} 0%, transparent 250px)`
           }}>
             <Container maxWidth="xl">
               {/* Enhanced Header section with background and graphics */}
@@ -521,8 +584,10 @@ const Resources = () => {
                   mt: 2,
                   py: 8,
                   px: { xs: 3, md: 6 },
-                  background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
-                  boxShadow: '0 10px 30px rgba(76, 175, 80, 0.1)',
+                  background: isDark
+                    ? `linear-gradient(135deg, ${theme.palette.grey[800]} 0%, ${theme.palette.primary.dark}40 100%)`
+                    : `linear-gradient(135deg, ${theme.palette.success.light}30 0%, ${theme.palette.success.light}50 100%)`,
+                  boxShadow: isDark ? '0 10px 30px rgba(0, 0, 0, 0.3)' : '0 10px 30px rgba(76, 175, 80, 0.1)',
                 }}
               >
                 {/* Decorative circles */}
@@ -531,7 +596,7 @@ const Resources = () => {
                   width: '300px',
                   height: '300px',
                   borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(76,175,80,0.15) 0%, rgba(76,175,80,0) 70%)',
+                  background: `radial-gradient(circle, ${alpha(theme.palette.success.main, 0.15)} 0%, transparent 70%)`,
                   top: '-100px',
                   right: '-50px',
                   zIndex: 0,
@@ -542,7 +607,7 @@ const Resources = () => {
                   width: '200px',
                   height: '200px',
                   borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(255,193,7,0.1) 0%, rgba(255,193,7,0) 70%)',
+                  background: `radial-gradient(circle, ${alpha(theme.palette.warning.main, 0.1)} 0%, transparent 70%)`,
                   bottom: '-80px',
                   left: '10%',
                   zIndex: 0,
@@ -596,7 +661,7 @@ const Resources = () => {
                         left: 0,
                         width: '80px',
                         height: '4px',
-                        background: 'linear-gradient(to right, #4caf50, rgba(76,175,80,0.3))',
+                        background: `linear-gradient(to right, ${theme.palette.success.main}, ${alpha(theme.palette.success.main, 0.3)})`,
                         borderRadius: '2px',
                       }
                     }}
@@ -1391,7 +1456,7 @@ const Resources = () => {
                   width: '200px',
                   height: '200px',
                   borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)'
+                  background: `radial-gradient(circle, ${alpha(theme.palette.background.paper, 0.1)} 0%, transparent 70%)`
                 }} />
                 
                 <Box sx={{ 
@@ -1401,7 +1466,7 @@ const Resources = () => {
                   width: '300px',
                   height: '300px',
                   borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)'
+                  background: `radial-gradient(circle, ${alpha(theme.palette.background.paper, 0.1)} 0%, transparent 70%)`
                 }} />
                 
                 <Box sx={{ 
@@ -1591,7 +1656,7 @@ const Resources = () => {
                   <Box sx={{ 
                     maxWidth: 'lg',
                     mx: 'auto',
-                    background: 'white',
+                    background: theme.palette.background.paper,
                     p: 2,
                     borderRadius: 3,
                     boxShadow: '0 4px 20px rgba(0,0,0,0.05)'

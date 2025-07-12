@@ -1,0 +1,47 @@
+/* Reduced motion styles */
+:root {
+  --motion-duration: 0.2s;
+  --motion-timing: ease-in-out;
+  --slow-motion-duration: 3s;
+}
+
+/* Apply reduced motion when the setting is enabled */
+.reduced-motion * {
+  animation-duration: var(--motion-duration) !important;
+  animation-timing-function: var(--motion-timing) !important;
+  transition-duration: var(--motion-duration) !important;
+  transition-timing-function: var(--motion-timing) !important;
+}
+
+/* Special handling for loading spinners - keep them rotating but slower */
+.reduced-motion .MuiCircularProgress-root *,
+.reduced-motion .MuiCircularProgress-root,
+.reduced-motion .MuiCircularProgress-svg,
+.reduced-motion .MuiCircularProgress-circle,
+.reduced-motion [class*="spinner"],
+.reduced-motion [class*="loading"],
+.reduced-motion [class*="rotate"] {
+  animation-duration: var(--slow-motion-duration) !important;
+  animation-iteration-count: infinite !important;
+}
+
+/* Respect system preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  /* Keep loading spinners functional but very slow */
+  .MuiCircularProgress-root *,
+  .MuiCircularProgress-root,
+  .MuiCircularProgress-svg,
+  .MuiCircularProgress-circle,
+  [class*="spinner"],
+  [class*="loading"],
+  [class*="rotate"] {
+    animation-duration: 4s !important;
+    animation-iteration-count: infinite !important;
+  }
+}

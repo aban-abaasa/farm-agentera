@@ -1,7 +1,9 @@
 import { Box, Container, Grid, Typography, Link, IconButton, TextField, Button, Divider, Paper, Tooltip } from '@mui/material';
 import { Facebook, Twitter, Instagram, LinkedIn, Send, Phone, Email, LocationOn } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
 
 const Footer = () => {
+  const theme = useTheme();
   return (
     <Box
       component="footer"
@@ -11,9 +13,13 @@ const Footer = () => {
         mt: { xs: 2, sm: 3, md: 4 },
         mx: { xs: 2, sm: 2, md: 2, lg: 2 },
         mb: 2,
-        background: 'linear-gradient(to right, #2e7d32, #4caf50, #66bb6a)',
+        background: theme.palette.mode === 'dark' 
+          ? 'linear-gradient(to right, #1a4d37, #2d5a3d, #3d6a4d)'
+          : 'linear-gradient(to right, #2e7d32, #4caf50, #66bb6a)',
         color: 'white',
-        boxShadow: '0 -4px 10px rgba(0,0,0,0.05)',
+        boxShadow: theme.palette.mode === 'dark'
+          ? '0 -4px 10px rgba(0,0,0,0.3)'
+          : '0 -4px 10px rgba(0,0,0,0.05)',
         position: 'relative',
         overflow: 'hidden',
         borderRadius: { xs: 2, md: 4 },
@@ -24,7 +30,9 @@ const Footer = () => {
           left: 0,
           right: 0,
           height: '4px',
-          background: 'linear-gradient(to right, #fbc02d, #f57c00, #f57f17)',
+          background: theme.palette.mode === 'dark'
+            ? 'linear-gradient(to right, #ffa726, #ff8f00, #ff6f00)'
+            : 'linear-gradient(to right, #fbc02d, #f57c00, #f57f17)',
         }
       }}
     >
@@ -168,11 +176,15 @@ const Footer = () => {
               
               <Box sx={{ 
                 display: 'flex',
-                backgroundColor: 'rgba(255,255,255,0.2)',
+                backgroundColor: theme.palette.mode === 'dark' 
+                  ? 'rgba(255,255,255,0.15)'
+                  : 'rgba(255,255,255,0.2)',
                 borderRadius: 2,
                 overflow: 'hidden',
                 '&:hover': {
-                  boxShadow: '0 0 10px rgba(255,255,255,0.3)'
+                  boxShadow: theme.palette.mode === 'dark'
+                    ? '0 0 10px rgba(255,255,255,0.4)'
+                    : '0 0 10px rgba(255,255,255,0.3)'
                 }
               }}>
                 <TextField 
@@ -180,7 +192,9 @@ const Footer = () => {
                   fullWidth
                   variant="outlined"
                   sx={{ 
-                    bgcolor: 'rgba(255,255,255,0.1)',
+                    bgcolor: theme.palette.mode === 'dark' 
+                      ? 'rgba(255,255,255,0.08)'
+                      : 'rgba(255,255,255,0.1)',
                     '& .MuiOutlinedInput-root': {
                       '& fieldset': { border: 'none' },
                     },

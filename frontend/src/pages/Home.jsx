@@ -30,14 +30,15 @@ const Home = () => {
     setScrollPosition(scrollPercentage);
   };
 
-  // Features array with added animation properties
+  // Features array with added animation properties and theme-aware colors
   const features = [
     {
       icon: <Agriculture fontSize="large" sx={{ color: '#4caf50' }} />,
       title: 'Land Management',
       description: 'Find available farmland for lease, purchase, or partnership. Connect with landowners and collaborate on agricultural projects.',
       link: '/marketplace/land',
-      color: '#e8f5e9',
+      lightColor: '#e8f5e9',
+      darkColor: '#1b5e20',
       animationDelay: '0s'
     },
     {
@@ -45,7 +46,8 @@ const Home = () => {
       title: 'Marketplace',
       description: 'Buy and sell agricultural produce, livestock, equipment, and more with farmers across Uganda.',
       link: '/marketplace/produce',
-      color: '#fff8e1',
+      lightColor: '#fff8e1',
+      darkColor: '#e65100',
       animationDelay: '0.1s'
     },
     {
@@ -53,7 +55,8 @@ const Home = () => {
       title: 'Services Exchange',
       description: 'Offer your farming expertise or hire skilled agricultural services for your farm operations.',
       link: '/marketplace/services',
-      color: '#e3f2fd',
+      lightColor: '#e3f2fd',
+      darkColor: '#0d47a1',
       animationDelay: '0.2s'
     },
     {
@@ -61,7 +64,8 @@ const Home = () => {
       title: 'Community Forums',
       description: 'Connect with fellow farmers, share knowledge, ask questions, and collaborate on agricultural initiatives.',
       link: '/community',
-      color: '#f3e5f5',
+      lightColor: '#f3e5f5',
+      darkColor: '#4a148c',
       animationDelay: '0.3s'
     },
     {
@@ -69,7 +73,8 @@ const Home = () => {
       title: 'Resource Center',
       description: 'Access valuable farming resources, best practices, training materials, and educational content.',
       link: '/resources',
-      color: '#e0f2f1',
+      lightColor: '#e0f2f1',
+      darkColor: '#004d40',
       animationDelay: '0.4s'
     },
     {
@@ -77,7 +82,8 @@ const Home = () => {
       title: 'Weather Updates',
       description: 'Stay informed with localized weather forecasts, seasonal predictions, and farming calendars.',
       link: '/weather',
-      color: '#e1f5fe',
+      lightColor: '#e1f5fe',
+      darkColor: '#01579b',
       animationDelay: '0.5s'
     }
   ];
@@ -101,7 +107,9 @@ const Home = () => {
         sx={{
           position: 'relative',
           overflow: 'hidden',
-          background: 'linear-gradient(135deg, #2e7d32 0%, #43a047 50%, #4caf50 100%)',
+          background: theme.palette.mode === 'dark' 
+            ? 'linear-gradient(135deg, #0d1b0f 0%, #1a2e1d 50%, #263f29 100%)'
+            : 'linear-gradient(135deg, #2e7d32 0%, #43a047 50%, #4caf50 100%)',
           color: 'white',
           pt: { xs: 8, md: 12 },
           pb: { xs: 12, md: 16 },
@@ -117,7 +125,9 @@ const Home = () => {
             width: '400px',
             height: '400px',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)',
+            background: theme.palette.mode === 'dark'
+              ? 'radial-gradient(circle, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 70%)'
+              : 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)',
             top: '-100px',
             right: '-100px',
             zIndex: 0,
@@ -129,7 +139,9 @@ const Home = () => {
             width: '300px',
             height: '300px',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)',
+            background: theme.palette.mode === 'dark'
+              ? 'radial-gradient(circle, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 70%)'
+              : 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)',
             bottom: '-50px',
             left: '10%',
             zIndex: 0,
@@ -367,7 +379,13 @@ const Home = () => {
                           position: 'absolute',
                           padding: 3,
                           borderRadius: 4,
-                          bgcolor: 'rgba(255, 255, 255, 0.9)',
+                          bgcolor: theme.palette.mode === 'dark' 
+                            ? 'rgba(46, 125, 50, 0.1)' 
+                            : 'rgba(255, 255, 255, 0.9)',
+                          backdropFilter: 'blur(10px)',
+                          border: theme.palette.mode === 'dark' 
+                            ? '1px solid rgba(255, 255, 255, 0.1)' 
+                            : 'none',
                           textAlign: 'center',
                           width: 180,
                           transform: `translate(${(index % 2) * 220 - 110}px, ${Math.floor(index / 2) * 160 - 80}px) 
@@ -377,7 +395,9 @@ const Home = () => {
                             transform: `translate(${(index % 2) * 220 - 110}px, ${Math.floor(index / 2) * 160 - 80}px) 
                                         rotate(${(index * 5) - 5}deg) scale(1.05)`,
                             zIndex: 10,
-                            boxShadow: '0 10px 30px rgba(0,0,0,0.15)'
+                            boxShadow: theme.palette.mode === 'dark' 
+                              ? '0 10px 30px rgba(0,0,0,0.5)' 
+                              : '0 10px 30px rgba(0,0,0,0.15)'
                           },
                           zIndex: 5 - index
                         }}
@@ -431,7 +451,9 @@ const Home = () => {
             py: 10, 
             position: 'relative',
             overflow: 'hidden',
-            bgcolor: '#fafafa'
+            bgcolor: theme.palette.mode === 'dark' 
+              ? theme.palette.background.default 
+              : '#fafafa'
           }}
         >
           {/* Background decorative elements */}
@@ -464,8 +486,12 @@ const Home = () => {
                 component="span" 
                 sx={{
                   display: 'inline-block',
-                  bgcolor: '#e8f5e9',
-                  color: '#2e7d32',
+                  bgcolor: theme.palette.mode === 'dark' 
+                    ? 'rgba(76, 175, 80, 0.2)' 
+                    : '#e8f5e9',
+                  color: theme.palette.mode === 'dark' 
+                    ? '#81c784' 
+                    : '#2e7d32',
                   px: 2,
                   py: 0.5,
                   borderRadius: 10,
@@ -574,12 +600,20 @@ const Home = () => {
                         display: 'flex', 
                         flexDirection: 'column',
                         borderRadius: 4,
-                        border: '1px solid rgba(0,0,0,0.05)',
+                        border: theme.palette.mode === 'dark' 
+                          ? '1px solid rgba(255,255,255,0.1)' 
+                          : '1px solid rgba(0,0,0,0.05)',
                         overflow: 'hidden',
                         position: 'relative',
                         transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                         transform: hoveredCard === index ? 'translateY(-8px) scale(1.02)' : 'translateY(0) scale(1)',
-                        boxShadow: hoveredCard === index ? '0 15px 35px rgba(0,0,0,0.12)' : '0 8px 25px rgba(0,0,0,0.08)',
+                        boxShadow: hoveredCard === index 
+                          ? (theme.palette.mode === 'dark' 
+                              ? '0 15px 35px rgba(0,0,0,0.5)' 
+                              : '0 15px 35px rgba(0,0,0,0.12)')
+                          : (theme.palette.mode === 'dark' 
+                              ? '0 8px 25px rgba(0,0,0,0.3)' 
+                              : '0 8px 25px rgba(0,0,0,0.08)'),
                         '&::before': {
                           content: '""',
                           position: 'absolute',
@@ -600,8 +634,12 @@ const Home = () => {
                         p: 3, 
                         display: 'flex', 
                         alignItems: 'center',
-                        bgcolor: feature.color,
-                        borderBottom: '1px solid rgba(0,0,0,0.05)'
+                        bgcolor: theme.palette.mode === 'dark' 
+                          ? feature.darkColor 
+                          : feature.lightColor,
+                        borderBottom: theme.palette.mode === 'dark' 
+                          ? '1px solid rgba(255,255,255,0.1)' 
+                          : '1px solid rgba(0,0,0,0.05)'
                       }}>
                         <Box 
                           className="feature-icon-wrapper"
@@ -613,8 +651,12 @@ const Home = () => {
                             alignItems: 'center',
                             justifyContent: 'center',
                             mr: 2,
-                            bgcolor: 'white',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                            bgcolor: theme.palette.mode === 'dark' 
+                              ? 'rgba(255, 255, 255, 0.1)' 
+                              : 'white',
+                            boxShadow: theme.palette.mode === 'dark' 
+                              ? '0 4px 12px rgba(0,0,0,0.3)' 
+                              : '0 4px 12px rgba(0,0,0,0.08)',
                             transition: 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
                           }}
                         >
@@ -682,7 +724,11 @@ const Home = () => {
                           right: 0,
                           width: '50px',
                           height: '50px',
-                          background: `radial-gradient(circle at bottom right, ${feature.color}, transparent 70%)`,
+                          background: `radial-gradient(circle at bottom right, ${
+                            theme.palette.mode === 'dark' 
+                              ? feature.darkColor 
+                              : feature.lightColor
+                          }, transparent 70%)`,
                           opacity: 0.7,
                           transition: 'all 0.3s ease',
                           transform: hoveredCard === index ? 'scale(1.3)' : 'scale(1)',
@@ -729,13 +775,17 @@ const Home = () => {
                         display: 'flex', 
                         flexDirection: 'column',
                         borderRadius: 4,
-                        border: '1px solid rgba(0,0,0,0.05)',
+                        border: theme.palette.mode === 'dark' 
+                          ? '1px solid rgba(255,255,255,0.1)' 
+                          : '1px solid rgba(0,0,0,0.05)',
                         overflow: 'hidden',
                         position: 'relative',
                         transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                         '&:hover': {
                           transform: 'translateY(-12px) scale(1.03)',
-                          boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
+                          boxShadow: theme.palette.mode === 'dark' 
+                            ? '0 20px 40px rgba(0,0,0,0.5)' 
+                            : '0 20px 40px rgba(0,0,0,0.12)',
                           '&::before': {
                             opacity: 1,
                           },
@@ -761,8 +811,12 @@ const Home = () => {
                         p: 3, 
                         display: 'flex', 
                         alignItems: 'center',
-                        bgcolor: feature.color,
-                        borderBottom: '1px solid rgba(0,0,0,0.05)'
+                        bgcolor: theme.palette.mode === 'dark' 
+                          ? feature.darkColor 
+                          : feature.lightColor,
+                        borderBottom: theme.palette.mode === 'dark' 
+                          ? '1px solid rgba(255,255,255,0.1)' 
+                          : '1px solid rgba(0,0,0,0.05)'
                       }}>
                         <Box 
                           className="feature-icon-wrapper"
@@ -774,8 +828,12 @@ const Home = () => {
                             alignItems: 'center',
                             justifyContent: 'center',
                             mr: 2,
-                            bgcolor: 'white',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                            bgcolor: theme.palette.mode === 'dark' 
+                              ? 'rgba(255, 255, 255, 0.1)' 
+                              : 'white',
+                            boxShadow: theme.palette.mode === 'dark' 
+                              ? '0 4px 12px rgba(0,0,0,0.3)' 
+                              : '0 4px 12px rgba(0,0,0,0.08)',
                             transition: 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
                           }}
                         >
@@ -833,7 +891,11 @@ const Home = () => {
                           right: 0,
                           width: '60px',
                           height: '60px',
-                          background: `radial-gradient(circle at bottom right, ${feature.color}, transparent 70%)`,
+                          background: `radial-gradient(circle at bottom right, ${
+                            theme.palette.mode === 'dark' 
+                              ? feature.darkColor 
+                              : feature.lightColor
+                          }, transparent 70%)`,
                           opacity: 0.7,
                           transition: 'all 0.3s ease',
                           transform: hoveredCard === index ? 'scale(1.5)' : 'scale(1)',
@@ -887,7 +949,9 @@ const Home = () => {
         {/* Testimonials */}
         <Box sx={{ 
           py: 10, 
-          bgcolor: '#ffffff',
+          bgcolor: theme.palette.mode === 'dark' 
+            ? theme.palette.background.paper 
+            : '#ffffff',
           position: 'relative',
           overflow: 'hidden'
         }}>
@@ -909,8 +973,12 @@ const Home = () => {
                 component="span" 
                 sx={{
                   display: 'inline-block',
-                  bgcolor: '#fff8e1',
-                  color: '#ff9800',
+                  bgcolor: theme.palette.mode === 'dark' 
+                    ? 'rgba(255, 152, 0, 0.2)' 
+                    : '#fff8e1',
+                  color: theme.palette.mode === 'dark' 
+                    ? '#ffb74d' 
+                    : '#ff9800',
                   px: 2,
                   py: 0.5,
                   borderRadius: 10,
@@ -993,10 +1061,16 @@ const Home = () => {
                       overflow: 'visible',
                       position: 'relative',
                       pt: 4,
-                      boxShadow: '0 10px 40px rgba(0,0,0,0.07)',
-                      border: '1px solid rgba(0,0,0,0.05)',
+                      boxShadow: theme.palette.mode === 'dark' 
+                        ? '0 10px 40px rgba(0,0,0,0.3)' 
+                        : '0 10px 40px rgba(0,0,0,0.07)',
+                      border: theme.palette.mode === 'dark' 
+                        ? '1px solid rgba(255,255,255,0.1)' 
+                        : '1px solid rgba(0,0,0,0.05)',
                       '&:hover': {
-                        boxShadow: '0 15px 50px rgba(0,0,0,0.12)',
+                        boxShadow: theme.palette.mode === 'dark' 
+                          ? '0 15px 50px rgba(0,0,0,0.5)' 
+                          : '0 15px 50px rgba(0,0,0,0.12)',
                         '&::after': {
                           transform: 'rotate(10deg)',
                         }
@@ -1025,7 +1099,9 @@ const Home = () => {
                           position: 'absolute',
                           top: -40,
                           left: 24,
-                          border: '4px solid white',
+                          border: theme.palette.mode === 'dark' 
+                            ? '4px solid rgba(255, 255, 255, 0.1)' 
+                            : '4px solid white',
                           boxShadow: '0 4px 14px rgba(0,0,0,0.1)',
                           fontSize: '1.75rem',
                           fontWeight: 'bold',
@@ -1091,7 +1167,9 @@ const Home = () => {
                             lineHeight: 1.6,
                             mb: 4,
                             fontStyle: 'italic',
-                            color: '#555',
+                            color: theme.palette.mode === 'dark' 
+                              ? 'rgba(255, 255, 255, 0.8)' 
+                              : '#555',
                             '&::first-letter': {
                               fontSize: '1.5em',
                               fontWeight: 'bold',
@@ -1204,7 +1282,9 @@ const Home = () => {
             py: { xs: 8, md: 12 },
             color: 'white',
             textAlign: 'center',
-            background: 'linear-gradient(135deg, #ff9800 0%, #ff5722 100%)',
+            background: theme.palette.mode === 'dark' 
+              ? 'linear-gradient(135deg, #2d4a32 0%, #1b3a1e 100%)' 
+              : 'linear-gradient(135deg, #ff9800 0%, #ff5722 100%)',
           }}
         >
           {/* Background texture */}
@@ -1256,8 +1336,8 @@ const Home = () => {
                 component={RouterLink}
                 to={user ? "/dashboard" : "/register"}
                 sx={{
-                  bgcolor: 'white',
-                  color: '#ff5722',
+                  bgcolor: theme.palette.mode === 'dark' ? '#2e4f34' : 'white',
+                  color: theme.palette.mode === 'dark' ? 'white' : '#ff5722',
                   fontWeight: 'bold',
                   px: 5,
                   py: 1.5,
@@ -1265,7 +1345,7 @@ const Home = () => {
                   fontSize: '1.1rem',
                   boxShadow: '0 6px 20px rgba(0,0,0,0.15)',
                   '&:hover': {
-                    bgcolor: 'rgba(255,255,255,0.9)',
+                    bgcolor: theme.palette.mode === 'dark' ? '#3a5f40' : 'rgba(255,255,255,0.9)',
                     boxShadow: '0 8px 30px rgba(0,0,0,0.2)',
                   }
                 }}

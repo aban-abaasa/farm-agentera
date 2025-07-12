@@ -16,7 +16,16 @@ export const getListings = async (options = {}) => {
   try {
     let query = supabase
       .from('marketplace_listings')
-      .select('*');
+      .select(`
+        *,
+        profiles:user_id (
+          id,
+          first_name,
+          last_name,
+          avatar_url,
+          is_verified
+        )
+      `);
     
     // Apply filters if provided
     if (options.type) {
@@ -55,10 +64,84 @@ export const getListings = async (options = {}) => {
     
     if (error) throw error;
     
-    return { data, error: null };
+    // Transform the data to include owner information in a consistent format
+    const transformedData = (data || []).map(listing => ({
+      ...listing,
+      owner: listing.profiles ? {
+        id: listing.profiles.id,
+        name: `${listing.profiles.first_name || ''} ${listing.profiles.last_name || ''}`.trim() || 'Owner',
+        avatar: listing.profiles.avatar_url,
+        isVerified: listing.profiles.is_verified,
+        rating: 4.5 // Default rating since we don't have reviews yet
+      } : {
+        id: listing.user_id,
+        name: 'Owner',
+        avatar: null,
+        isVerified: false,
+        rating: 4.5
+      }
+    }));
+    
+    return { data: transformedData, error: null };
   } catch (error) {
     console.error('Error fetching listings:', error);
-    return { data: null, error };
+    
+    // Fallback: try to get listings without profiles if the join fails
+    try {
+      let fallbackQuery = supabase
+        .from('marketplace_listings')
+        .select('*');
+      
+      // Apply the same filters
+      if (options.type) {
+        fallbackQuery = fallbackQuery.eq('type', options.type);
+      }
+      
+      if (options.status) {
+        fallbackQuery = fallbackQuery.eq('status', options.status);
+      } else {
+        fallbackQuery = fallbackQuery.eq('status', 'active');
+      }
+      
+      if (options.location) {
+        fallbackQuery = fallbackQuery.ilike('location', `%${options.location}%`);
+      }
+      
+      if (options.sortBy) {
+        fallbackQuery = fallbackQuery.order(options.sortBy, { ascending: options.ascending ?? true });
+      } else {
+        fallbackQuery = fallbackQuery.order('created_at', { ascending: false });
+      }
+      
+      if (options.limit) {
+        fallbackQuery = fallbackQuery.limit(options.limit);
+      }
+      
+      if (options.offset) {
+        fallbackQuery = fallbackQuery.range(options.offset, options.offset + (options.limit || 10) - 1);
+      }
+      
+      const { data: fallbackData, error: fallbackError } = await fallbackQuery;
+      
+      if (fallbackError) throw fallbackError;
+      
+      // Add default owner information
+      const dataWithDefaults = (fallbackData || []).map(listing => ({
+        ...listing,
+        owner: {
+          id: listing.user_id,
+          name: 'Owner',
+          avatar: null,
+          isVerified: false,
+          rating: 4.5
+        }
+      }));
+      
+      return { data: dataWithDefaults, error: null };
+    } catch (fallbackError) {
+      console.error('Fallback query also failed:', fallbackError);
+      return { data: null, error: fallbackError };
+    }
   }
 };
 
@@ -102,31 +185,56 @@ export const getListingById = async (id, type) => {
       .eq('listing_id', id)
       .single();
     
-    if (detailsError) throw detailsError;
+    if (detailsError) {
+      console.warn(`Could not fetch details for ${type} listing ${id}:`, detailsError);
+      // Continue without details if they don't exist
+    }
     
-    // Get the seller/owner information
-    const { data: owner, error: ownerError } = await supabase
-      .from('profiles')
-      .select('id, first_name, last_name, avatar_url, phone_number, email, location, role, is_verified')
-      .eq('id', listing.user_id)
-      .single();
+    // Get the seller/owner information (optional)
+    let owner = null;
+    try {
+      const { data: ownerData, error: ownerError } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, avatar_url, phone_number, email, location, role, is_verified')
+        .eq('id', listing.user_id)
+        .single();
+      
+      if (ownerData && !ownerError) {
+        owner = {
+          id: ownerData.id,
+          name: `${ownerData.first_name || ''} ${ownerData.last_name || ''}`.trim() || 'Unknown User',
+          avatar: ownerData.avatar_url,
+          phone: ownerData.phone_number,
+          email: ownerData.email,
+          location: ownerData.location,
+          role: ownerData.role,
+          isVerified: ownerData.is_verified
+        };
+      }
+    } catch (ownerError) {
+      console.warn(`Could not fetch owner information for listing ${id}:`, ownerError);
+      // Continue without owner information
+    }
     
-    if (ownerError) throw ownerError;
+    // Use fallback owner information if profiles table doesn't exist or user not found
+    if (!owner) {
+      owner = {
+        id: listing.user_id,
+        name: 'Owner',
+        avatar: null,
+        phone: null,
+        email: null,
+        location: null,
+        role: 'user',
+        isVerified: false
+      };
+    }
     
     // Combine all data
     const combinedData = {
       ...listing,
-      details,
-      owner: {
-        id: owner.id,
-        name: `${owner.first_name || ''} ${owner.last_name || ''}`.trim(),
-        avatar: owner.avatar_url,
-        phone: owner.phone_number,
-        email: owner.email,
-        location: owner.location,
-        role: owner.role,
-        isVerified: owner.is_verified
-      }
+      details: details || {}, // Provide empty object if no details
+      owner
     };
     
     return { data: combinedData, error: null };
