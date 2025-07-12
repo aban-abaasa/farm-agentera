@@ -141,8 +141,8 @@ const CommunityDiscussions = ({
     
   return (
     <div className="w-full">
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-8">
-        <div className="xl:col-span-3">
+      <div className="flex flex-col xl:flex-row xl:gap-6 mb-8">
+        <div className="flex-1 xl:flex-[3]">
         {/* Search bar */}
         <Paper
           elevation={2}
@@ -837,8 +837,8 @@ const CommunityDiscussions = ({
         </div>
       </div>
       
-      {/* Right sidebar - restored */}
-      <div className="xl:col-span-1">
+      {/* Right sidebar - only visible on xl screens and above */}
+      <div className="hidden xl:block xl:flex-[1]">
         <Box 
           sx={{ 
             position: 'sticky',

@@ -427,12 +427,16 @@ const Community = () => {
               px: { xs: 2, sm: 3 },
               py: { xs: 1, sm: 1 },
               bgcolor: 'white',
-              borderBottom: '1px solid rgba(0,0,0,0.08)'
+              borderBottom: '1px solid rgba(0,0,0,0.08)',
+              flexWrap: { xs: 'wrap', sm: 'nowrap' },
+              gap: { xs: 2, sm: 0 }
             }}
           >
             <Tabs 
               value={activeTab}
               onChange={(e, newValue) => setActiveTab(newValue)}
+              variant="scrollable"
+              scrollButtons="auto"
               sx={{ 
                 '& .MuiTabs-indicator': {
                   height: 3,
@@ -440,14 +444,19 @@ const Community = () => {
                 },
                 '& .MuiTab-root': {
                   textTransform: 'none',
-                  fontSize: '1.1rem',
+                  fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
                   fontWeight: 600,
-                  px: 4,
+                  px: { xs: 2, sm: 3, md: 4 },
                   py: 2,
-                  minWidth: 120,
+                  minWidth: { xs: 100, sm: 120 },
                   color: 'text.secondary',
                   '&.Mui-selected': {
                     color: 'primary.main'
+                  }
+                },
+                '& .MuiTabs-scrollButtons': {
+                  '&.Mui-disabled': {
+                    opacity: 0.3
                   }
                 }
               }}
@@ -459,7 +468,8 @@ const Community = () => {
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clipRule="evenodd" />
                     </svg>
-                    Discussions
+                    <Box sx={{ display: { xs: 'none', sm: 'block' } }}>Discussions</Box>
+                    <Box sx={{ display: { xs: 'block', sm: 'none' } }}>Chat</Box>
                   </Box>
                 } 
               />
@@ -499,17 +509,19 @@ const Community = () => {
                 }
                 sx={{ 
                   borderRadius: 2,
-                  px: 4, 
+                  px: { xs: 2, sm: 4 }, 
                   py: 1,
                   textTransform: 'none',
                   fontWeight: 'bold',
                   boxShadow: 2,
+                  fontSize: { xs: '0.875rem', sm: '1rem' },
                   '&:hover': {
                     boxShadow: 4
                   }
                 }}
               >
-                New Post
+                <Box sx={{ display: { xs: 'none', sm: 'block' } }}>New Post</Box>
+                <Box sx={{ display: { xs: 'block', sm: 'none' } }}>Post</Box>
               </Button>
             )}
           </Box>
