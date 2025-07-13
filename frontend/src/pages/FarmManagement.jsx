@@ -19,10 +19,24 @@ import {
   Alert,
   AlertTitle,
   Fade,
-  Zoom
+  Zoom,
+  CircularProgress,
+  Backdrop
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAppTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+
+// Import onboarding component
+import FarmOnboarding from '../components/FarmOnboarding';
+
+// Import farm services
+import { farmService } from '../services/api/farmService';
+import { farmAnalyticsService } from '../services/api/farmAnalyticsService';
+import { farmFinanceService } from '../services/api/farmFinanceService';
+import { farmInventoryService } from '../services/api/farmInventoryService';
+import { farmTaskService } from '../services/api/farmTaskService';
+import { farmWeatherService } from '../services/api/farmWeatherService';
 
 // Icons
 import AgricultureIcon from '@mui/icons-material/Agriculture';
@@ -58,26 +72,28 @@ import ReceiptIcon from '@mui/icons-material/Receipt';
 const FarmManagement = () => {
   const theme = useTheme();
   const { themeMode } = useAppTheme();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const isDark = themeMode === 'dark';
   const [activeTab, setActiveTab] = useState(0);
+  
+  // State for farm setup and data
+  const [isLoading, setIsLoading] = useState(true);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [farmData, setFarmData] = useState(null);
   const [farmStats, setFarmStats] = useState(null);
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [financialData, setFinancialData] = useState(null);
+  const [alerts, setAlerts] = useState([]);
+  const [upcomingTasks, setUpcomingTasks] = useState([]);
+  const [weatherData, setWeatherData] = useState(null);
+  const [inventoryData, setInventoryData] = useState(null);
 
-  // Mock farm data
-  const farmData = {
-    farmName: "Green Valley Farm",
-    location: "Mbarara, Uganda",
-    size: "25 hectares",
-    established: "2018",
-    crops: ["Maize", "Coffee", "Bananas", "Beans"],
-    livestock: ["30 Cattle", "15 Goats", "50 Chickens"],
-    lastVisit: "2024-07-10",
-    healthScore: 85,
-    productivity: 78,
-    sustainability: 92
-  };
-
-  const farmModules = [
+  // Dynamic farm modules (will be updated based on farm setup)
+  const getDynamicFarmModules = () => {
+    if (!farmData) return [];
+    
+    return [
     {
       id: 'livestock',
       title: 'Livestock Management',
@@ -85,7 +101,7 @@ const FarmManagement = () => {
       icon: <PetsIcon sx={{ fontSize: 40 }} />,
       color: theme.palette.primary.main,
       path: '/livestock-management',
-      stats: { total: 95, healthy: 90, alerts: 2 },
+      stats: farmData?.livestock_summary || { total: 0, healthy: 0, alerts: 0 },
       features: ['Animal Registry', 'Health Tracking', 'Breeding Records', 'Vaccination Schedule']
     },
     {
@@ -95,7 +111,7 @@ const FarmManagement = () => {
       icon: <GrassIcon sx={{ fontSize: 40 }} />,
       color: theme.palette.success.main,
       path: '/soil-crop-planner',
-      stats: { total: '15 hectares', planted: '12 hectares', harvesting: '3 hectares' },
+      stats: farmData?.crop_summary || { total: '0 hectares', planted: '0 hectares', harvesting: '0 hectares' },
       features: ['Soil Analysis', 'Crop Planning', 'Yield Tracking', 'Pest Management']
     },
     {
@@ -105,7 +121,7 @@ const FarmManagement = () => {
       icon: <WaterDropIcon sx={{ fontSize: 40 }} />,
       color: theme.palette.info.main,
       path: '/irrigation-management',
-      stats: { systems: 4, active: 3, efficiency: '87%' },
+      stats: farmData?.irrigation_summary || { systems: 0, active: 0, efficiency: '0%' },
       features: ['Smart Irrigation', 'Water Quality', 'Usage Analytics', 'Weather Integration']
     },
     {
@@ -115,7 +131,7 @@ const FarmManagement = () => {
       icon: <AssessmentIcon sx={{ fontSize: 40 }} />,
       color: theme.palette.secondary.main,
       path: '/analytics',
-      stats: { reports: 15, insights: 8, trends: 'Positive' },
+      stats: analyticsData?.summary || { reports: 0, insights: 0, trends: 'No Data' },
       features: ['Performance Metrics', 'Predictive Analytics', 'Cost Analysis', 'ROI Tracking']
     },
     {
@@ -125,7 +141,7 @@ const FarmManagement = () => {
       icon: <PaidIcon sx={{ fontSize: 40 }} />,
       color: theme.palette.success.dark,
       path: '/finance',
-      stats: { revenue: 'UGX 45M', profit: 'UGX 16.5M', roi: '+18.5%' },
+      stats: financialData?.summary || { revenue: 'UGX 0', profit: 'UGX 0', roi: '0%' },
       features: ['Revenue Tracking', 'Expense Management', 'Profit Analysis', 'ROI Calculation']
     },
     {
@@ -135,7 +151,7 @@ const FarmManagement = () => {
       icon: <StorageIcon sx={{ fontSize: 40 }} />,
       color: theme.palette.warning.main,
       path: '/inventory-management',
-      stats: { items: 45, lowStock: 5, expiring: 2 },
+      stats: inventoryData?.summary || { items: 0, lowStock: 0, expiring: 0 },
       features: ['Stock Management', 'Expiry Tracking', 'Equipment Log', 'Purchase Planning']
     },
     {
@@ -145,10 +161,11 @@ const FarmManagement = () => {
       icon: <FilterDramaIcon sx={{ fontSize: 40 }} />,
       color: theme.palette.info.dark,
       path: '/weather',
-      stats: { alerts: 1, forecast: '7 days', accuracy: '94%' },
+      stats: weatherData?.summary || { alerts: 0, forecast: '0 days', accuracy: '0%' },
       features: ['Weather Forecast', 'Climate Data', 'Risk Alerts', 'Seasonal Planning']
     }
-  ];
+    ];
+  };
 
   const quickActions = [
     { title: 'Add New Animal', icon: <PetsIcon />, action: () => navigate('/livestock-management'), color: 'primary' },
@@ -159,82 +176,127 @@ const FarmManagement = () => {
     { title: 'Financial Overview', icon: <TrendingUpIcon />, action: () => navigate('/finance'), color: 'secondary' }
   ];
 
-  // Analytics data for the dashboard
-  const analyticsData = {
-    overallMetrics: {
-      productivity: '87%',
-      profitMargin: '36.7%',
-      sustainability: '85%',
-      efficiency: '92%'
-    },
-    sectorPerformance: [
-      { sector: 'Livestock', revenue: 18500000, growth: '+15.2%', efficiency: 89, color: theme.palette.primary.main },
-      { sector: 'Crops', revenue: 14200000, growth: '+8.7%', efficiency: 85, color: theme.palette.success.main },
-      { sector: 'Irrigation', savings: 22, efficiency: 91, cost: 2800000, color: theme.palette.info.main },
-      { sector: 'Inventory', value: 8500000, turnover: '+18%', efficiency: 87, color: theme.palette.warning.main }
-    ],
-    monthlyTrends: [
-      { month: 'Jan', revenue: 3800, profit: 1600, productivity: 82 },
-      { month: 'Feb', revenue: 4200, profit: 1800, productivity: 85 },
-      { month: 'Mar', revenue: 3900, profit: 1600, productivity: 83 },
-      { month: 'Apr', revenue: 4500, profit: 1900, productivity: 87 },
-      { month: 'May', revenue: 4800, profit: 2000, productivity: 89 },
-      { month: 'Jun', revenue: 5200, profit: 2200, productivity: 92 }
-    ],
-    insights: [
-      { type: 'success', title: 'Revenue Growth', message: 'Farm revenue increased by 12.3% this quarter' },
-      { type: 'info', title: 'Irrigation Efficiency', message: 'Smart irrigation reduced water usage by 22%' },
-      { type: 'warning', title: 'Inventory Alert', message: '3 items running low in stock' }
-    ]
+  // Load all farm data
+  const loadFarmData = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Check if user has completed farm setup
+      const { data: setupProgress } = await farmService.getFarmSetupProgress();
+      if (!setupProgress?.setup_completed) {
+        setNeedsOnboarding(true);
+        setIsLoading(false);
+        return;
+      }
+
+      // Check if user has a farm
+      const { data: farms } = await farmService.getFarms();
+      if (!farms || farms.length === 0) {
+        setNeedsOnboarding(true);
+        setIsLoading(false);
+        return;
+      }
+
+      setFarmData(farms[0]); // Use the first farm
+      setNeedsOnboarding(false);
+
+      // Load other farm data (mock for now since other services might not exist)
+      try {
+        const [
+          analytics,
+          financial,
+          inventory,
+          tasks,
+          weather
+        ] = await Promise.all([
+          farmAnalyticsService?.getDashboardAnalytics?.() || Promise.resolve({}),
+          farmFinanceService?.getFinancialSummary?.() || Promise.resolve({}),
+          farmInventoryService?.getInventorySummary?.() || Promise.resolve({}),
+          farmTaskService?.getUpcomingTasks?.() || Promise.resolve([]),
+          farmWeatherService?.getCurrentWeather?.() || Promise.resolve({})
+        ]);
+
+        setAnalyticsData(analytics);
+        setFinancialData(financial);
+        setInventoryData(inventory);
+        setUpcomingTasks(tasks);
+        setWeatherData(weather);
+        setAlerts(analytics.alerts || []);
+        
+        // Set farm stats from analytics
+        setFarmStats({
+          totalRevenue: financial.total_revenue || 0,
+          monthlyGrowth: financial.growth_rate || 0,
+          efficiency: analytics.efficiency_score || 0,
+          sustainability: analytics.sustainability_score || 0
+        });
+      } catch (serviceError) {
+        console.warn('Some services failed to load:', serviceError);
+        // Continue with basic farm data even if other services fail
+      }
+      
+    } catch (error) {
+      console.error('Error loading farm data:', error);
+      // Show error or fallback to demo mode
+      setNeedsOnboarding(true);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const alerts = [
-    { 
-      type: 'warning', 
-      title: 'Vaccination Due', 
-      message: '5 cattle need vaccination this week',
-      icon: <WarningIcon />,
-      action: 'View Schedule'
-    },
-    { 
-      type: 'info', 
-      title: 'Weather Alert', 
-      message: 'Heavy rains expected tomorrow. Secure outdoor equipment.',
-      icon: <FilterDramaIcon />,
-      action: 'View Forecast'
-    },
-    { 
-      type: 'success', 
-      title: 'Harvest Ready', 
-      message: 'Maize in Field B is ready for harvest',
-      icon: <LocalFloristIcon />,
-      action: 'Plan Harvest'
-    }
-  ];
+  // Handle onboarding completion
+  const handleOnboardingComplete = async () => {
+    setNeedsOnboarding(false);
+    await loadFarmData();
+  };
 
-  const upcomingTasks = [
-    { task: 'Feed livestock', time: '6:00 AM', status: 'pending' },
-    { task: 'Water crops - Field A', time: '8:00 AM', status: 'completed' },
-    { task: 'Vet visit - Cattle health check', time: '2:00 PM', status: 'pending' },
-    { task: 'Fertilizer application', time: '4:00 PM', status: 'pending' }
-  ];
-
-  // Load farm statistics
+  // Load farm data on component mount
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setFarmStats({
-        totalRevenue: 'UGX 45,000,000',
-        monthlyGrowth: '+12%',
-        efficiency: '87%',
-        sustainability: '92%'
-      });
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
+    if (user) {
+      loadFarmData();
+    }
+  }, [user]);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
+
+  // Show loading spinner while loading data
+  if (isLoading) {
+    return (
+      <Backdrop open={true} sx={{ zIndex: theme.zIndex.modal + 1 }}>
+        <Box sx={{ textAlign: 'center' }}>
+          <CircularProgress size={60} />
+          <Typography variant="h6" sx={{ mt: 2 }}>
+            Loading your farm data...
+          </Typography>
+        </Box>
+      </Backdrop>
+    );
+  }
+
+  // Show onboarding if user hasn't completed setup
+  if (needsOnboarding) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <FarmOnboarding onComplete={handleOnboardingComplete} />
+      </Container>
+    );
+  }
+
+  // If no farm data, show error or demo mode
+  if (!farmData) {
+    return (
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        <Alert severity="error" sx={{ mb: 4 }}>
+          <AlertTitle>Unable to Load Farm Data</AlertTitle>
+          We couldn't load your farm information. Please try refreshing the page or contact support.
+        </Alert>
+      </Container>
+    );
+  }
+
+  const farmModules = getDynamicFarmModules();
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
@@ -261,13 +323,13 @@ const FarmManagement = () => {
               </Typography>
               <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                 <Chip 
-                  label={farmData.farmName} 
+                  label={farmData.farm_name || 'Your Farm'} 
                   avatar={<Avatar><AgricultureIcon /></Avatar>}
                   color="primary" 
                   size="medium"
                 />
-                <Chip label={farmData.location} icon={<InfoIcon />} variant="outlined" />
-                <Chip label={farmData.size} icon={<NatureIcon />} variant="outlined" />
+                <Chip label={farmData.location || 'Location not set'} icon={<InfoIcon />} variant="outlined" />
+                <Chip label={farmData.total_area ? `${farmData.total_area} hectares` : 'Size not set'} icon={<NatureIcon />} variant="outlined" />
               </Box>
             </Grid>
             <Grid item xs={12} md={4}>
@@ -293,10 +355,34 @@ const FarmManagement = () => {
       {/* Farm Statistics */}
       <Grid container spacing={3} mb={4}>
         {[
-          { title: 'Farm Health Score', value: farmData.healthScore, suffix: '%', color: 'success', icon: <NatureIcon /> },
-          { title: 'Productivity Index', value: farmData.productivity, suffix: '%', color: 'primary', icon: <TrendingUpIcon /> },
-          { title: 'Sustainability Score', value: farmData.sustainability, suffix: '%', color: 'info', icon: <LocalFloristIcon /> },
-          { title: 'Monthly Revenue', value: farmStats?.totalRevenue || 'Loading...', suffix: '', color: 'secondary', icon: <AssessmentIcon /> }
+          { 
+            title: 'Farm Health Score', 
+            value: farmData.health_score || 0, 
+            suffix: '%', 
+            color: 'success', 
+            icon: <NatureIcon /> 
+          },
+          { 
+            title: 'Productivity Index', 
+            value: analyticsData?.productivity_score || 0, 
+            suffix: '%', 
+            color: 'primary', 
+            icon: <TrendingUpIcon /> 
+          },
+          { 
+            title: 'Sustainability Score', 
+            value: analyticsData?.sustainability_score || 0, 
+            suffix: '%', 
+            color: 'info', 
+            icon: <LocalFloristIcon /> 
+          },
+          { 
+            title: 'Monthly Revenue', 
+            value: farmStats?.totalRevenue || 'UGX 0', 
+            suffix: '', 
+            color: 'secondary', 
+            icon: <AssessmentIcon /> 
+          }
         ].map((stat, index) => (
           <Grid item xs={12} sm={6} md={3} key={stat.title}>
             <Zoom in timeout={600 + index * 200}>
@@ -462,10 +548,38 @@ const FarmManagement = () => {
               {/* Key Performance Indicators */}
               <Grid container spacing={3} mb={4}>
                 {[
-                  { title: 'Farm Productivity', value: analyticsData.overallMetrics.productivity, color: 'primary', icon: <AgricultureIcon />, description: 'Overall farm output efficiency', change: '+5.2%' },
-                  { title: 'Profit Margin', value: analyticsData.overallMetrics.profitMargin, color: 'success', icon: <TrendingUpIcon />, description: 'Financial performance growth', change: '+3.1%' },
-                  { title: 'Sustainability', value: analyticsData.overallMetrics.sustainability, color: 'info', icon: <NatureIcon />, description: 'Environmental impact score', change: '+2.8%' },
-                  { title: 'Efficiency', value: analyticsData.overallMetrics.efficiency, color: 'secondary', icon: <InsightsIcon />, description: 'Resource utilization rate', change: '+1.5%' }
+                  { 
+                    title: 'Farm Productivity', 
+                    value: analyticsData?.overall_metrics?.productivity || '0%', 
+                    color: 'primary', 
+                    icon: <AgricultureIcon />, 
+                    description: 'Overall farm output efficiency', 
+                    change: analyticsData?.overall_metrics?.productivity_change || '0%' 
+                  },
+                  { 
+                    title: 'Profit Margin', 
+                    value: analyticsData?.overall_metrics?.profit_margin || '0%', 
+                    color: 'success', 
+                    icon: <TrendingUpIcon />, 
+                    description: 'Financial performance growth', 
+                    change: analyticsData?.overall_metrics?.profit_change || '0%' 
+                  },
+                  { 
+                    title: 'Sustainability', 
+                    value: analyticsData?.overall_metrics?.sustainability || '0%', 
+                    color: 'info', 
+                    icon: <NatureIcon />, 
+                    description: 'Environmental impact score', 
+                    change: analyticsData?.overall_metrics?.sustainability_change || '0%' 
+                  },
+                  { 
+                    title: 'Efficiency', 
+                    value: analyticsData?.overall_metrics?.efficiency || '0%', 
+                    color: 'secondary', 
+                    icon: <InsightsIcon />, 
+                    description: 'Resource utilization rate', 
+                    change: analyticsData?.overall_metrics?.efficiency_change || '0%' 
+                  }
                 ].map((metric, index) => (
                   <Grid item xs={12} sm={6} md={3} key={metric.title}>
                     <Zoom in timeout={300 + index * 100}>
@@ -526,7 +640,7 @@ const FarmManagement = () => {
                       <Chip label="Productivity %" color="info" size="small" />
                     </Box>
                     <Box sx={{ height: 250, display: 'flex', alignItems: 'end', gap: 2 }}>
-                      {analyticsData.monthlyTrends.map((data) => (
+                      {analyticsData?.monthly_trends?.length ? analyticsData.monthly_trends.map((data) => (
                         <Box key={data.month} sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                           <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', height: 200, justifyContent: 'end', gap: 1 }}>
                             <Box sx={{
@@ -562,7 +676,13 @@ const FarmManagement = () => {
                             {data.month}
                           </Typography>
                         </Box>
-                      ))}
+                      )) : (
+                        <Box sx={{ width: '100%', textAlign: 'center', py: 4 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            No monthly data available yet. Data will appear as you start tracking your farm activities.
+                          </Typography>
+                        </Box>
+                      )}
                     </Box>
                   </Paper>
                 </Grid>
@@ -573,12 +693,12 @@ const FarmManagement = () => {
                     Sector Performance Analysis
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {analyticsData.sectorPerformance.map((sector, index) => (
+                    {analyticsData?.sector_performance?.length ? analyticsData.sector_performance.map((sector, index) => (
                       <Fade in timeout={200 + index * 100} key={sector.sector}>
                         <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                             <Avatar sx={{ 
-                              bgcolor: sector.color,
+                              bgcolor: sector.color || theme.palette.primary.main,
                               mr: 2,
                               width: 32,
                               height: 32
@@ -627,13 +747,19 @@ const FarmManagement = () => {
                               borderRadius: 2,
                               height: 8,
                               '& .MuiLinearProgress-bar': {
-                                backgroundColor: sector.color
+                                backgroundColor: sector.color || theme.palette.primary.main
                               }
                             }}
                           />
                         </Paper>
                       </Fade>
-                    ))}
+                    )) : (
+                      <Paper elevation={2} sx={{ p: 3, borderRadius: 2, textAlign: 'center' }}>
+                        <Typography variant="body2" color="text.secondary">
+                          No sector performance data available yet. Start tracking your farm activities to see detailed analytics.
+                        </Typography>
+                      </Paper>
+                    )}
                   </Box>
                 </Grid>
               </Grid>
@@ -646,7 +772,7 @@ const FarmManagement = () => {
                     AI-Powered Insights & Recommendations
                   </Typography>
                   <Grid container spacing={2}>
-                    {analyticsData.insights.map((insight, index) => (
+                    {analyticsData?.insights?.length ? analyticsData.insights.map((insight, index) => (
                       <Grid item xs={12} md={6} key={index}>
                         <Fade in timeout={300 + index * 100}>
                           <Alert 
@@ -678,7 +804,18 @@ const FarmManagement = () => {
                           </Alert>
                         </Fade>
                       </Grid>
-                    ))}
+                    )) : (
+                      <Grid item xs={12}>
+                        <Alert severity="info" sx={{ borderRadius: 2 }}>
+                          <Typography variant="subtitle2" fontWeight="bold" mb={1}>
+                            No Insights Available
+                          </Typography>
+                          <Typography variant="body2">
+                            Start tracking your farm activities to receive AI-powered insights and recommendations.
+                          </Typography>
+                        </Alert>
+                      </Grid>
+                    )}
                   </Grid>
                 </Grid>
 
@@ -762,32 +899,32 @@ const FarmManagement = () => {
                 {[
                   { 
                     title: 'Total Revenue', 
-                    value: 'UGX 45,000,000', 
-                    change: '+12.3%', 
+                    value: financialData?.total_revenue || 'UGX 0', 
+                    change: financialData?.revenue_change || '0%', 
                     color: 'success', 
                     icon: <AttachMoneyIcon />, 
                     description: 'Total farm income this period' 
                   },
                   { 
                     title: 'Net Profit', 
-                    value: 'UGX 16,500,000', 
-                    change: '+8.7%', 
+                    value: financialData?.net_profit || 'UGX 0', 
+                    change: financialData?.profit_change || '0%', 
                     color: 'primary', 
                     icon: <SavingsIcon />, 
                     description: 'Profit after all expenses' 
                   },
                   { 
                     title: 'Total Expenses', 
-                    value: 'UGX 28,500,000', 
-                    change: '+4.2%', 
+                    value: financialData?.total_expenses || 'UGX 0', 
+                    change: financialData?.expense_change || '0%', 
                     color: 'warning', 
                     icon: <ReceiptIcon />, 
                     description: 'All operational costs' 
                   },
                   { 
                     title: 'ROI', 
-                    value: '+18.5%', 
-                    change: '+2.1%', 
+                    value: financialData?.roi || '0%', 
+                    change: financialData?.roi_change || '0%', 
                     color: 'info', 
                     icon: <TrendingUpIcon />, 
                     description: 'Return on investment' 
@@ -1147,7 +1284,7 @@ const FarmManagement = () => {
                   <NotificationsIcon sx={{ mr: 1 }} />
                   Active Alerts
                 </Typography>
-                {alerts.map((alert, index) => (
+                {alerts?.length ? alerts.map((alert, index) => (
                   <Fade in timeout={300 + index * 100} key={index}>
                     <Alert 
                       severity={alert.type} 
@@ -1163,7 +1300,12 @@ const FarmManagement = () => {
                       {alert.message}
                     </Alert>
                   </Fade>
-                ))}
+                )) : (
+                  <Alert severity="info" sx={{ borderRadius: 2 }}>
+                    <AlertTitle>No Active Alerts</AlertTitle>
+                    All good! Your farm operations are running smoothly.
+                  </Alert>
+                )}
               </Grid>
               
               <Grid item xs={12} md={6}>
@@ -1171,17 +1313,17 @@ const FarmManagement = () => {
                   <CalendarTodayIcon sx={{ mr: 1 }} />
                   Today's Tasks
                 </Typography>
-                {upcomingTasks.map((task, index) => (
+                {upcomingTasks?.length ? upcomingTasks.map((task, index) => (
                   <Fade in timeout={300 + index * 100} key={index}>
                     <Card elevation={1} sx={{ mb: 2, borderRadius: 2 }}>
                       <CardContent sx={{ p: 2 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Box>
                             <Typography variant="subtitle1" fontWeight="bold">
-                              {task.task}
+                              {task.task || task.title}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              {task.time}
+                              {task.time || task.due_time}
                             </Typography>
                           </Box>
                           <Chip 
@@ -1193,7 +1335,15 @@ const FarmManagement = () => {
                       </CardContent>
                     </Card>
                   </Fade>
-                ))}
+                )) : (
+                  <Card elevation={1} sx={{ borderRadius: 2 }}>
+                    <CardContent sx={{ p: 3, textAlign: 'center' }}>
+                      <Typography variant="body2" color="text.secondary">
+                        No tasks scheduled for today. Great job staying on top of your farm management!
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                )}
               </Grid>
             </Grid>
           )}

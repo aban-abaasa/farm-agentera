@@ -62,6 +62,8 @@ Schemas:
   marketplace Initialize marketplace tables (04_marketplace_tables.sql)
   community   Initialize community tables (from community/ directory with multiple SQL files)
   messages    Initialize messaging tables (06_messages_tables.sql)
+  settings    Initialize user settings tables (07_user_settings.sql)
+  farm        Initialize farm management tables (from farm/ directory with multiple SQL files)
 
 Examples:
   node initialize_db.js                                   # Initialize all schemas
@@ -102,7 +104,9 @@ const SCHEMA_MAP = {
   'events': "03_events_tables.sql",
   'marketplace': "04_marketplace_tables.sql",
   'community': "community", // Directory containing multiple SQL files
-  'messages': "06_messages_tables.sql"
+  'messages': "06_messages_tables.sql",
+  'settings': "07_user_settings.sql",
+  'farm': "farm" // Directory containing farm management SQL files
 };
 
 // Default order of schema files to execute
@@ -112,7 +116,9 @@ const SCHEMA_FILES_ORDER = [
   "03_events_tables.sql",
   "04_marketplace_tables.sql",
   "community", // Directory containing multiple SQL files
-  "06_messages_tables.sql"
+  "06_messages_tables.sql",
+  "07_user_settings.sql",
+  "farm" // Directory containing farm management SQL files
 ];
 
 /**
