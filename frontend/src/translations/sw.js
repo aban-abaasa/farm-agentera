@@ -1,0 +1,127 @@
+// Swahili translations
+
+const sw = {
+  common: {
+    save: 'Hifadhi',
+    cancel: 'Ghairi',
+    reset: 'Weka upya',
+    search: 'Tafuta',
+    loading: 'Inapakia...',
+    confirm: 'Thibitisha',
+    delete: 'Futa',
+    edit: 'Hariri',
+    back: 'Rudi nyuma',
+    next: 'Endelea',
+    submit: 'Wasilisha',
+  },
+  
+  header: {
+    home: 'Nyumbani',
+    dashboard: 'Dashibodi',
+    marketplace: 'Soko',
+    supportTeam: 'Timu ya Msaada',
+    community: 'Jumuiya',
+    resources: 'Rasilimali',
+    weather: 'Hali ya hewa',
+    login: 'Ingia',
+    logout: 'Toka',
+    profile: 'Wasifu',
+    settings: 'Mipangilio',
+    farmManagement: 'Usimamizi wa Shamba',
+    myFarm: 'Shamba Langu',
+    analytics: 'Uchambuzi',
+    finance: 'Fedha',
+    soilCrop: 'Mpango wa Udongo na Mazao',
+    livestock: 'Usimamizi wa Mifugo',
+    investments: 'Uwekezaji',
+  },
+  
+  settings: {
+    title: 'Mipangilio ya Programu',
+    subtitle: 'Geuza Matumizi Yako',
+    description: 'Badilisha uzoefu wako wa UGA-FARM na mipangilio ya kibinafsi ya muonekano, arifa, lugha, faragha, na zaidi.',
+    
+    saveSettings: 'Hifadhi Mipangilio',
+    resetToDefault: 'Rudisha kwa Chaguo-Msingi',
+    savedSuccessfully: 'Mipangilio imehifadhiwa kikamilifu',
+    resetSuccessfully: 'Mipangilio imerudi kwa chaguo-msingi',
+    
+    appearance: {
+      title: 'Mipangilio ya Muonekano',
+      description: 'Badilisha muonekano na hisi ya programu kulingana na mapendekezo yako.',
+      themeMode: 'Hali ya Mandhari',
+      light: 'Angavu',
+      dark: 'Giza',
+      system: 'Mfumo',
+      colorScheme: 'Mpangilio wa Rangi',
+      fontSize: 'Ukubwa wa Maandishi',
+      fontSizePreview: 'Hivi ndivyo maandishi yako yataonekana kwa ukubwa wa {size}%',
+    },
+    
+    language: {
+      title: 'Mipangilio ya Lugha na Eneo',
+      description: 'Badilisha mapendekezo ya lugha na mifumo ya kikanda kwa akaunti yako.',
+      displayLanguage: 'Lugha ya Onyesho',
+      dateFormat: 'Mpangilio wa Tarehe',
+      timeFormat: 'Mpangilio wa Muda',
+      timeFormat12h: 'Saa 12 (mfano, 2:30 PM)',
+      timeFormat24h: 'Saa 24 (mfano, 14:30)',
+      formatPreview: 'Maonyesho ya Mpangilio',
+      date: 'Tarehe',
+      time: 'Muda',
+    },
+    
+    notifications: {
+      title: 'Mipangilio ya Arifa',
+      description: 'Simamia wakati na jinsi ya kupokea arifa kutoka UGA-FARM.',
+      emailNotifications: 'Arifa za Barua Pepe',
+      emailNotificationsDesc: 'Pokea masasisho na tahadhari kupitia barua pepe',
+      pushNotifications: 'Arifa za Papo kwa Papo',
+      pushNotificationsDesc: 'Pokea arifa za moja kwa moja kwenye kifaa chako',
+      categories: 'Jamii za Arifa',
+      marketplaceAlerts: 'Tahadhari za Soko',
+      marketplaceAlertsDesc: 'Orodha mpya, masasisho ya bei, na ofa',
+      communityNotifications: 'Arifa za Jumuiya',
+      communityNotificationsDesc: 'Majibu ya majadiliano, matajo, na matukio',
+      weatherAlerts: 'Tahadhari za Hali ya Hewa',
+      weatherAlertsDesc: 'Tahadhari za hali mbaya ya hewa na utabiri',
+    },
+    
+    privacy: {
+      title: 'Mipangilio ya Faragha',
+      description: 'Dhibiti mwonekano wa wasifu wako na jinsi habari yako inashirikiwa.',
+      profileVisibility: 'Mwonekano wa Wasifu',
+      profileVisibilityDesc: 'Inadhibiti ni nani anaweza kuona habari kamili ya wasifu wako',
+      contactVisibility: 'Mwonekano wa Habari ya Mawasiliano',
+      contactVisibilityDesc: 'Inadhibiti ni nani anaweza kuona maelezo yako ya mawasiliano',
+      public: 'Umma (Kila mtu)',
+      connections: 'Mawasiliano Pekee',
+      private: 'Binafsi',
+      activityTracking: 'Ufuatiliaji wa Shughuli',
+      activityTrackingDesc: 'Ruhusu programu kukusanya data ya matumizi ili kuboresha uzoefu wako. Hii inatusaidia kupendekeza maudhui na vipengele vinavyofaa kulingana na shughuli yako.',
+    },
+    
+    dataUsage: {
+      title: 'Mipangilio ya Matumizi ya Data',
+      description: 'Boresha jinsi programu inavyotumia data kuboresha utendaji kwenye miunganisho tofauti.',
+      mediaAutoplay: 'Kucheza Vyombo vya Habari Kiotomatiki',
+      mediaAutoplayDesc: 'Cheza video kiotomatiki wakati wa kuvinjari',
+      highQualityImages: 'Picha za Ubora wa Juu',
+      highQualityImagesDesc: 'Pakia picha za ubora wa juu zinapopatikana',
+      dataOptimization: 'Uboreshaji wa Matumizi ya Data',
+      dataOptimizationDesc: 'Punguza matumizi ya data kwenye mitandao ya simu',
+      dataOptimizationInfo: 'Wakati uboreshaji wa data umewezeshwa, programu itapakia picha za ubora wa chini na kuchelewesha maudhui yasiyo ya muhimu wakati imeunganishwa na mitandao ya data ya simu.',
+    },
+    
+    accessibility: {
+      title: 'Mipangilio ya Ufikivu',
+      description: 'Badilisha uzoefu wako kulingana na mahitaji yako ya ufikivu.',
+      reducedMotion: 'Kupunguza Mwendo',
+      reducedMotionDesc: 'Punguza vipengele vya uhuishaji na mwendo katika programu nzima.',
+      commitmentMessage: 'Tumejitolea kufanya UGA-FARM ifikiwe na watumiaji wote.',
+      supportMessage: 'Ikiwa una mahitaji maalum ya ufikivu au mapendekezo, tafadhali wasiliana na timu yetu ya msaada.',
+    },
+  },
+};
+
+export default sw;

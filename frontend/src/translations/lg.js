@@ -1,0 +1,127 @@
+// Luganda translations
+
+const lg = {
+  common: {
+    save: 'Tereka',
+    cancel: 'Sazaamu',
+    reset: 'Ddamu obuggya',
+    search: 'Noonya',
+    loading: 'Kikolera...',
+    confirm: 'Kakasa',
+    delete: 'Gyawo',
+    edit: 'Kyusa',
+    back: 'Ddayo',
+    next: 'Weyongerayo',
+    submit: 'Weereza',
+  },
+  
+  header: {
+    home: 'Ennyumba',
+    dashboard: 'Ekipande',
+    marketplace: 'Akatale',
+    supportTeam: 'Ekibinja ky\'obuyambi',
+    community: 'Ekibiina',
+    resources: 'Ebikozesebwa',
+    weather: 'Embeera y\'obudde',
+    login: 'Yingira',
+    logout: 'Fuluma',
+    profile: 'Ebikulwako',
+    settings: 'Entegeka',
+    farmManagement: 'Okulungatira Ennimiro',
+    myFarm: 'Ennimiro Yange',
+    analytics: 'Okwekenneenya',
+    finance: 'Ensimbi',
+    soilCrop: 'Ategeka w\'Ettaka n\'Ebimera',
+    livestock: 'Okulunda Ebisolo',
+    investments: 'Okussaamu Ensimbi',
+  },
+  
+  settings: {
+    title: 'Entegeka z\'Aplikeeshini',
+    subtitle: 'Kyusa Engeri gy\'okozesa',
+    description: 'Kyusa engeri UGA-FARM gy\'ekolamu n\'entegeka ez\'obuntu ku ndabika, obubaka, olulimi, obukuumi n\'ebirala.',
+    
+    saveSettings: 'Tereka Entegeka',
+    resetToDefault: 'Ddamu mu Ntegeka Enkulu',
+    savedSuccessfully: 'Entegeka ziterekeddwa bulungi',
+    resetSuccessfully: 'Entegeka zidde mu nkulu',
+    
+    appearance: {
+      title: 'Entegeka z\'Endabika',
+      description: 'Kyusa engeri aplikeeshini gy\'efaanana n\'engeri gy\'ewulirwamu okusinziira ku by\'oyagala.',
+      themeMode: 'Enkola y\'Endabika',
+      light: 'Eyakaayakana',
+      dark: 'Enzikiza',
+      system: 'Enkola ya Sisitemu',
+      colorScheme: 'Entegeka y\'Alangi',
+      fontSize: 'Obunene bw\'Ennukuta',
+      fontSizePreview: 'Bw\'eti ebigambo byo bwe binaafaanana ku bunene bwa {size}%',
+    },
+    
+    language: {
+      title: 'Entegeka z\'Olulimi n\'Ekitundu',
+      description: 'Kyusa olulimi lw\'oyagala n\'enkola y\'ebitundu ku akawunti yo.',
+      displayLanguage: 'Olulimi olulabika',
+      dateFormat: 'Enkola y\'Ennaku',
+      timeFormat: 'Enkola y\'Essaawa',
+      timeFormat12h: 'Essaawa 12 (okugeza, 2:30 PM)',
+      timeFormat24h: 'Essaawa 24 (okugeza, 14:30)',
+      formatPreview: 'Okulaba Enkola',
+      date: 'Ennaku',
+      time: 'Essaawa',
+    },
+    
+    notifications: {
+      title: 'Entegeka z\'Obubaka',
+      description: 'Tegeka ddi era engeri gy\'ofuna obubaka okuva ku UGA-FARM.',
+      emailNotifications: 'Obubaka bw\'Imeyiro',
+      emailNotificationsDesc: 'Funa okukyusa n\'okulabula okuyita mu imeyiro',
+      pushNotifications: 'Obubaka Obwangu',
+      pushNotificationsDesc: 'Funa obubaka mu kiseera kyennyini ku kyuma kyo',
+      categories: 'Ebika by\'Obubaka',
+      marketplaceAlerts: 'Okulabula kw\'Akatale',
+      marketplaceAlertsDesc: 'Okulambuddwa okupya, okukyusa ku bbeeyi, n\'ebiwebwayo',
+      communityNotifications: 'Obubaka bw\'Ekibiina',
+      communityNotificationsDesc: 'Okuddamu okwogera, okumenyebwa, n\'ebintu',
+      weatherAlerts: 'Okulabula kw\'Obudde',
+      weatherAlertsDesc: 'Okulabula ku budde obubi n\'okulagula',
+    },
+    
+    privacy: {
+      title: 'Entegeka z\'Obukuumi',
+      description: 'Tegeka okulabika kw\'ebikulwako n\'engeri amawulire go gw\'agabanyizibwamu.',
+      profileVisibility: 'Okulabika kw\'Ebikulwako',
+      profileVisibilityDesc: 'Etegeka abalaba amawulire go gonna',
+      contactVisibility: 'Okulabika kw\'Amawulire g\'Okutukirira',
+      contactVisibilityDesc: 'Etegeka abalaba obubaka obukukwatako',
+      public: 'Bonna (Buli omu)',
+      connections: 'Ab\'omenya nabo bokka',
+      private: 'Eky\'ekyama',
+      activityTracking: 'Okulondoola Eby\'okolera',
+      activityTrackingDesc: 'Kikkiriza aplikeeshini okukunganya data y\'enkoozesa okusobola okwongera engeri gy\'okolamu. Kino kituyamba okukuwabula ebintu n\'enkola ebikwata ku by\'okolera.',
+    },
+    
+    dataUsage: {
+      title: 'Entegeka z\'Enkozesa ya Data',
+      description: 'Lungiya engeri aplikeeshini gy\'ekozesaamu data okwongera enkola ku mikwatagana egy\'enjawulo.',
+      mediaAutoplay: 'Okuzanya Media Mwene',
+      mediaAutoplayDesc: 'Zanya vidiyo mwene nga obutta mu kifo',
+      highQualityImages: 'Ebifaananyi eby\'Omutindo Omugimu',
+      highQualityImagesDesc: 'Leeta ebifaananyi eby\'omutindo omugimu bwe biba nga bisoboka',
+      dataOptimization: 'Okukolera ku Nkozesa ya Data',
+      dataOptimizationDesc: 'Kendeeza enkozesa ya data ku mitimbagano gy\'esimu',
+      dataOptimizationInfo: 'Okukolera ku data bwe kukola, aplikeeshini ejja kuleeta ebifaananyi eby\'omutindo omutono n\'ebirala ebyetaagisa wabula nga ekozesa mitimbagano gy\'esimu.',
+    },
+    
+    accessibility: {
+      title: 'Entegeka z\'Okufuna',
+      description: 'Kyusa engeri gy\'okozesaamu okusobola okukola nga byetaago byo.',
+      reducedMotion: 'Okukendeza ku Kujjulukuka',
+      reducedMotionDesc: 'Kendeeza enkuyunga n\'ebiraga okujjulukuka mu aplikeeshini yonna.',
+      commitmentMessage: 'Tweweeredde okukola UGA-FARM efunike eri abakozesa bonna.',
+      supportMessage: 'Bw\'oba n\'ebyetaago eby\'enjawulo oba ebirowoozo, tukusaba otuukirire ekibinja kyaffe eky\'obuyambi.',
+    },
+  },
+};
+
+export default lg; 

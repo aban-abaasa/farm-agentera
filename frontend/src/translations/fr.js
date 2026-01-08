@@ -1,0 +1,127 @@
+// French translations
+
+const fr = {
+  common: {
+    save: 'Enregistrer',
+    cancel: 'Annuler',
+    reset: 'Réinitialiser',
+    search: 'Rechercher',
+    loading: 'Chargement...',
+    confirm: 'Confirmer',
+    delete: 'Supprimer',
+    edit: 'Modifier',
+    back: 'Retour',
+    next: 'Suivant',
+    submit: 'Soumettre',
+  },
+  
+  header: {
+    home: 'Accueil',
+    dashboard: 'Tableau de bord',
+    marketplace: 'Marché',
+    supportTeam: 'Équipe de soutien',
+    community: 'Communauté',
+    resources: 'Ressources',
+    weather: 'Météo',
+    login: 'Connexion',
+    logout: 'Déconnexion',
+    profile: 'Profil',
+    settings: 'Paramètres',
+    farmManagement: 'Gestion de la Ferme',
+    myFarm: 'Ma Ferme',
+    analytics: 'Analyses',
+    finance: 'Finance',
+    soilCrop: 'Planificateur Sol et Culture',
+    livestock: 'Gestion du Bétail',
+    investments: 'Investissements',
+  },
+  
+  settings: {
+    title: 'Paramètres de l\'application',
+    subtitle: 'Personnalisez votre expérience',
+    description: 'Personnalisez votre expérience UGA-FARM avec des paramètres personnalisés pour l\'apparence, les notifications, la langue, la confidentialité et plus encore.',
+    
+    saveSettings: 'Enregistrer les paramètres',
+    resetToDefault: 'Réinitialiser aux valeurs par défaut',
+    savedSuccessfully: 'Paramètres enregistrés avec succès',
+    resetSuccessfully: 'Les paramètres ont été réinitialisés aux valeurs par défaut',
+    
+    appearance: {
+      title: 'Paramètres d\'apparence',
+      description: 'Personnalisez l\'apparence et la convivialité de l\'application selon vos préférences.',
+      themeMode: 'Mode de thème',
+      light: 'Clair',
+      dark: 'Sombre',
+      system: 'Système',
+      colorScheme: 'Schéma de couleur',
+      fontSize: 'Taille de police',
+      fontSizePreview: 'Voici à quoi ressemblera votre texte à {size}% de taille',
+    },
+    
+    language: {
+      title: 'Paramètres de langue et de région',
+      description: 'Personnalisez les préférences de langue et les formats régionaux pour votre compte.',
+      displayLanguage: 'Langue d\'affichage',
+      dateFormat: 'Format de date',
+      timeFormat: 'Format d\'heure',
+      timeFormat12h: '12 heures (ex., 2:30 PM)',
+      timeFormat24h: '24 heures (ex., 14:30)',
+      formatPreview: 'Aperçu du format',
+      date: 'Date',
+      time: 'Heure',
+    },
+    
+    notifications: {
+      title: 'Paramètres de notification',
+      description: 'Gérez quand et comment vous recevez des notifications d\'UGA-FARM.',
+      emailNotifications: 'Notifications par e-mail',
+      emailNotificationsDesc: 'Recevoir des mises à jour et des alertes par e-mail',
+      pushNotifications: 'Notifications push',
+      pushNotificationsDesc: 'Recevoir des notifications en temps réel sur votre appareil',
+      categories: 'Catégories de notifications',
+      marketplaceAlerts: 'Alertes du marché',
+      marketplaceAlertsDesc: 'Nouvelles annonces, mises à jour de prix et offres',
+      communityNotifications: 'Notifications de la communauté',
+      communityNotificationsDesc: 'Réponses aux discussions, mentions et événements',
+      weatherAlerts: 'Alertes météo',
+      weatherAlertsDesc: 'Avertissements et prévisions météorologiques sévères',
+    },
+    
+    privacy: {
+      title: 'Paramètres de confidentialité',
+      description: 'Contrôlez la visibilité de votre profil et la façon dont vos informations sont partagées.',
+      profileVisibility: 'Visibilité du profil',
+      profileVisibilityDesc: 'Contrôle qui peut voir vos informations de profil complètes',
+      contactVisibility: 'Visibilité des informations de contact',
+      contactVisibilityDesc: 'Contrôle qui peut voir vos coordonnées',
+      public: 'Public (Tout le monde)',
+      connections: 'Connexions uniquement',
+      private: 'Privé',
+      activityTracking: 'Suivi d\'activité',
+      activityTrackingDesc: 'Permettre à l\'application de collecter des données d\'utilisation pour améliorer votre expérience. Cela nous aide à recommander du contenu et des fonctionnalités pertinents en fonction de votre activité.',
+    },
+    
+    dataUsage: {
+      title: 'Paramètres d\'utilisation des données',
+      description: 'Optimisez la façon dont l\'application utilise les données pour améliorer les performances sur différentes connexions.',
+      mediaAutoplay: 'Lecture automatique des médias',
+      mediaAutoplayDesc: 'Lire automatiquement les vidéos lors de la navigation',
+      highQualityImages: 'Images de haute qualité',
+      highQualityImagesDesc: 'Charger des images haute résolution lorsqu\'elles sont disponibles',
+      dataOptimization: 'Optimisation de l\'utilisation des données',
+      dataOptimizationDesc: 'Réduire la consommation de données sur les réseaux mobiles',
+      dataOptimizationInfo: 'Lorsque l\'optimisation des données est activée, l\'application chargera des images de qualité inférieure et retardera le contenu non essentiel lorsqu\'elle est connectée à des réseaux de données mobiles.',
+    },
+    
+    accessibility: {
+      title: 'Paramètres d\'accessibilité',
+      description: 'Personnalisez votre expérience pour répondre à vos besoins d\'accessibilité.',
+      reducedMotion: 'Mouvement réduit',
+      reducedMotionDesc: 'Minimiser les animations et effets de mouvement dans toute l\'application.',
+      commitmentMessage: 'Nous nous engageons à rendre UGA-FARM accessible à tous les utilisateurs.',
+      supportMessage: 'Si vous avez des besoins ou des suggestions d\'accessibilité spécifiques, veuillez contacter notre équipe de support.',
+    },
+  },
+};
+
+export default fr; 
