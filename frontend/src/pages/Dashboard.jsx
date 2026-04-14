@@ -1064,6 +1064,7 @@ const Dashboard = () => {
                         </Avatar>
                       </ListItemAvatar>
                       <ListItemText
+                        secondaryTypographyProps={{ component: 'div' }}
                         primary={
                           <Box sx={{ mb: 1 }}>
                             <Typography component="span" fontWeight="bold">
@@ -1216,6 +1217,7 @@ const Dashboard = () => {
                         </Badge>
                       </ListItemAvatar>
                       <ListItemText
+                        secondaryTypographyProps={{ component: 'div' }}
                         primary={
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                             <Typography fontWeight={message.unread ? 'bold' : 'medium'}>

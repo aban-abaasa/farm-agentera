@@ -32,6 +32,19 @@ let canUseTrendingTopicsView = true;
 let canUseUserReputationTable = true;
 let canUseCommunityNotificationsTable = true;
 
+function isRecoverableSchemaError(error) {
+  if (!error) return false;
+
+  return [
+    '42P01',
+    '42703',
+    'PGRST200',
+    'PGRST201',
+    'PGRST202',
+    'PGRST205'
+  ].includes(error.code);
+}
+
 /**
  * Fetch all discussion posts with optional filtering
  * @param {Object} options - Query options
@@ -644,7 +657,7 @@ export async function getUpcomingEvents(limit = 5) {
         .limit(limit);
 
       if (error) {
-        if (error.code === 'PGRST200') {
+        if (isRecoverableSchemaError(error)) {
           canUseCommunityEventProfileJoin = false;
         } else {
           throw error;
@@ -664,7 +677,7 @@ export async function getUpcomingEvents(limit = 5) {
         .limit(limit);
 
       if (fallbackError) {
-        if (fallbackError.code === '42P01') {
+        if (isRecoverableSchemaError(fallbackError)) {
           return { data: [], error: null };
         }
         throw fallbackError;
@@ -702,7 +715,7 @@ export async function getUserCommunityStats(userId) {
     
     // Get post count
     const { count: postsCount } = await supabase
-      .from(POSTS_TABLE)
+        .from(POSTS_TABLE)
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
       .eq('status', 'published');
@@ -749,7 +762,7 @@ export async function getUserCommunityStats(userId) {
         .eq('is_read', false);
 
       if (notificationsError) {
-        if (notificationsError.code === '42P01') {
+        if (isRecoverableSchemaError(notificationsError)) {
           canUseCommunityNotificationsTable = false;
         } else {
           throw notificationsError;
@@ -815,12 +828,10 @@ export async function getRecentCommunityActivity(limit = 10) {
           .limit(Math.ceil(limit / 2))
       ]);
 
-      const joinMissing = postsError?.code === 'PGRST200' || questionsError?.code === 'PGRST200';
-      if (joinMissing) {
+      const shouldFallbackToSimpleQuery = Boolean(postsError || questionsError);
+      if (shouldFallbackToSimpleQuery) {
         canUseCommunityRecentActivityProfileJoin = false;
       } else {
-        if (postsError) throw postsError;
-        if (questionsError) throw questionsError;
         recentPosts = postsData || [];
         recentQuestions = questionsData || [];
       }
@@ -841,8 +852,8 @@ export async function getRecentCommunityActivity(limit = 10) {
           .limit(Math.ceil(limit / 2))
       ]);
 
-      if (postsFallbackError && postsFallbackError.code !== '42P01') throw postsFallbackError;
-      if (questionsFallbackError && questionsFallbackError.code !== '42P01') throw questionsFallbackError;
+      if (postsFallbackError && !isRecoverableSchemaError(postsFallbackError)) throw postsFallbackError;
+      if (questionsFallbackError && !isRecoverableSchemaError(questionsFallbackError)) throw questionsFallbackError;
 
       recentPosts = (postsFallback || []).map((post) => ({
         ...post,
@@ -902,7 +913,7 @@ export async function getTrendingTopics(limit = 10) {
         return { data: data || [], error: null };
       }
 
-      if (error.code === '42P01') {
+      if (isRecoverableSchemaError(error)) {
         canUseTrendingTopicsView = false;
       } else {
         throw error;
@@ -916,7 +927,7 @@ export async function getTrendingTopics(limit = 10) {
       .limit(limit);
 
     if (fallbackError) {
-      if (fallbackError.code === '42P01') {
+      if (isRecoverableSchemaError(fallbackError)) {
         return { data: [], error: null };
       }
       throw fallbackError;
