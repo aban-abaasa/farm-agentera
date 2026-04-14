@@ -16,16 +16,7 @@ export const getListings = async (options = {}) => {
   try {
     let query = supabase
       .from('marketplace_listings')
-      .select(`
-        *,
-        profiles:user_id (
-          id,
-          first_name,
-          last_name,
-          avatar_url,
-          is_verified
-        )
-      `);
+      .select('*');
     
     // Apply filters if provided
     if (options.type) {
@@ -63,15 +54,33 @@ export const getListings = async (options = {}) => {
     const { data, error } = await query;
     
     if (error) throw error;
+
+    const userIds = [...new Set((data || []).map((listing) => listing.user_id).filter(Boolean))];
+    const profilesMap = new Map();
+
+    if (userIds.length > 0) {
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', userIds);
+
+      if (profilesError) {
+        console.warn('Could not fetch listing owner profiles:', profilesError);
+      } else {
+        for (const profile of profilesData || []) {
+          profilesMap.set(profile.id, profile);
+        }
+      }
+    }
     
     // Transform the data to include owner information in a consistent format
     const transformedData = (data || []).map(listing => ({
       ...listing,
-      owner: listing.profiles ? {
-        id: listing.profiles.id,
-        name: `${listing.profiles.first_name || ''} ${listing.profiles.last_name || ''}`.trim() || 'Owner',
-        avatar: listing.profiles.avatar_url,
-        isVerified: listing.profiles.is_verified,
+      owner: profilesMap.has(listing.user_id) ? {
+        id: profilesMap.get(listing.user_id).id,
+        name: `${profilesMap.get(listing.user_id).first_name || profilesMap.get(listing.user_id).firstName || ''} ${profilesMap.get(listing.user_id).last_name || profilesMap.get(listing.user_id).lastName || ''}`.trim() || profilesMap.get(listing.user_id).full_name || profilesMap.get(listing.user_id).name || 'Owner',
+        avatar: profilesMap.get(listing.user_id).avatar_url || profilesMap.get(listing.user_id).avatar,
+        isVerified: profilesMap.get(listing.user_id).is_verified ?? profilesMap.get(listing.user_id).verified ?? false,
         rating: 4.5 // Default rating since we don't have reviews yet
       } : {
         id: listing.user_id,
@@ -85,63 +94,7 @@ export const getListings = async (options = {}) => {
     return { data: transformedData, error: null };
   } catch (error) {
     console.error('Error fetching listings:', error);
-    
-    // Fallback: try to get listings without profiles if the join fails
-    try {
-      let fallbackQuery = supabase
-        .from('marketplace_listings')
-        .select('*');
-      
-      // Apply the same filters
-      if (options.type) {
-        fallbackQuery = fallbackQuery.eq('type', options.type);
-      }
-      
-      if (options.status) {
-        fallbackQuery = fallbackQuery.eq('status', options.status);
-      } else {
-        fallbackQuery = fallbackQuery.eq('status', 'active');
-      }
-      
-      if (options.location) {
-        fallbackQuery = fallbackQuery.ilike('location', `%${options.location}%`);
-      }
-      
-      if (options.sortBy) {
-        fallbackQuery = fallbackQuery.order(options.sortBy, { ascending: options.ascending ?? true });
-      } else {
-        fallbackQuery = fallbackQuery.order('created_at', { ascending: false });
-      }
-      
-      if (options.limit) {
-        fallbackQuery = fallbackQuery.limit(options.limit);
-      }
-      
-      if (options.offset) {
-        fallbackQuery = fallbackQuery.range(options.offset, options.offset + (options.limit || 10) - 1);
-      }
-      
-      const { data: fallbackData, error: fallbackError } = await fallbackQuery;
-      
-      if (fallbackError) throw fallbackError;
-      
-      // Add default owner information
-      const dataWithDefaults = (fallbackData || []).map(listing => ({
-        ...listing,
-        owner: {
-          id: listing.user_id,
-          name: 'Owner',
-          avatar: null,
-          isVerified: false,
-          rating: 4.5
-        }
-      }));
-      
-      return { data: dataWithDefaults, error: null };
-    } catch (fallbackError) {
-      console.error('Fallback query also failed:', fallbackError);
-      return { data: null, error: fallbackError };
-    }
+    return { data: null, error };
   }
 };
 
@@ -195,20 +148,20 @@ export const getListingById = async (id, type) => {
     try {
       const { data: ownerData, error: ownerError } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name, avatar_url, phone_number, email, location, role, is_verified')
+        .select('*')
         .eq('id', listing.user_id)
         .single();
       
       if (ownerData && !ownerError) {
         owner = {
           id: ownerData.id,
-          name: `${ownerData.first_name || ''} ${ownerData.last_name || ''}`.trim() || 'Unknown User',
-          avatar: ownerData.avatar_url,
-          phone: ownerData.phone_number,
+          name: `${ownerData.first_name || ownerData.firstName || ''} ${ownerData.last_name || ownerData.lastName || ''}`.trim() || ownerData.full_name || ownerData.name || 'Unknown User',
+          avatar: ownerData.avatar_url || ownerData.avatar,
+          phone: ownerData.phone_number || ownerData.phone,
           email: ownerData.email,
-          location: ownerData.location,
-          role: ownerData.role,
-          isVerified: ownerData.is_verified
+          location: ownerData.location || ownerData.address,
+          role: ownerData.role || ownerData.user_role,
+          isVerified: ownerData.is_verified ?? ownerData.verified ?? false
         };
       }
     } catch (ownerError) {

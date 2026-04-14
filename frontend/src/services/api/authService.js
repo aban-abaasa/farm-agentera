@@ -181,18 +181,56 @@ export async function getUserProfile(userId) {
  * @returns {Promise} - Updated profile
  */
 export async function updateUserProfile(userId, updates) {
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString()
+  const extractMissingColumn = (error) => {
+    const message = error?.message || '';
+    const match = message.match(/Could not find the '([^']+)' column/);
+    return match ? match[1] : null;
+  };
+
+  const buildSafePayload = (payload, blockedColumns = new Set()) => {
+    return Object.fromEntries(
+      Object.entries(payload).filter(([key, value]) => {
+        if (value === undefined) return false;
+        if (blockedColumns.has(key)) return false;
+        return true;
       })
-      .eq('id', userId)
-      .select();
-    
-    if (error) throw error;
-    return { data, error: null };
+    );
+  };
+
+  try {
+    const blockedColumns = new Set();
+    const basePayload = {
+      ...updates,
+      updated_at: new Date().toISOString()
+    };
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const safePayload = buildSafePayload(basePayload, blockedColumns);
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(safePayload)
+        .eq('id', userId)
+        .select();
+
+      if (!error) {
+        return { data, error: null };
+      }
+
+      if (error.code !== 'PGRST204') {
+        throw error;
+      }
+
+      const missingColumn = extractMissingColumn(error);
+      if (!missingColumn || blockedColumns.has(missingColumn)) {
+        throw error;
+      }
+
+      blockedColumns.add(missingColumn);
+      console.warn(`Skipping unknown profiles column '${missingColumn}' and retrying update.`);
+    }
+
+    throw new Error('Profile update failed due to incompatible profile schema.');
   } catch (error) {
     console.error('Error updating user profile:', error);
     return { data: null, error };
@@ -388,19 +426,26 @@ export async function isProfileComplete(userId) {
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('first_name, last_name, phone_number, location, role')
+      .select('*')
       .eq('id', userId)
       .single();
     
     if (error) throw error;
+
+    const firstName = data?.first_name || data?.firstname || data?.firstName || data?.given_name || '';
+    const lastName = data?.last_name || data?.lastname || data?.lastName || data?.family_name || '';
+    const fullName = data?.full_name || data?.name || '';
+    const hasName = Boolean(firstName && lastName) || Boolean(fullName);
+    const phone = data?.phone_number || data?.phone || data?.phoneNumber || '';
+    const location = data?.location || data?.address || '';
+    const role = data?.role || data?.user_role || 'user';
     
     // Check if essential fields are filled
     const isComplete = Boolean(
-      data.first_name && 
-      data.last_name && 
-      data.phone_number && 
-      data.location && 
-      data.role
+      hasName &&
+      phone &&
+      location &&
+      role
     );
     
     return { isComplete, data, error: null };
