@@ -232,14 +232,25 @@ export async function updateUserProfile(userId, updates) {
       return { data: [existingProfile], error: null };
     }
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('profiles')
       .update(payload)
-      .eq('id', userId)
-      .select();
+      .eq('id', userId);
 
     if (error) throw error;
-    return { data, error: null };
+
+    const { data: refreshedProfile, error: refreshError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (refreshError) {
+      console.warn('Profile updated but could not re-fetch updated row; returning merged fallback.', refreshError);
+      return { data: [{ ...existingProfile, ...payload }], error: null };
+    }
+
+    return { data: [refreshedProfile], error: null };
   } catch (error) {
     console.error('Error updating user profile:', error);
     return { data: null, error };
