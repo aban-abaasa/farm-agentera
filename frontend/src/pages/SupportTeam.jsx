@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import Grid from '@mui/material/GridLegacy';
 import { 
-  Box, Container, Typography, Grid, Card, CardContent, 
+  Box, Container, Typography, Card, CardContent, 
   Avatar, Chip, Button, TextField, InputAdornment, 
   Paper, Divider, Fade, Grow, Dialog, DialogTitle, 
   DialogContent, DialogActions, IconButton, FormControl,

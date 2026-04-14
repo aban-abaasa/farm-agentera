@@ -3,10 +3,13 @@ import { createClient } from '@supabase/supabase-js';
 // Initialize Supabase client with environment variables
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const hasPlaceholderKey =
+  typeof supabaseAnonKey === 'string' &&
+  (supabaseAnonKey.includes('<SECRET>') || supabaseAnonKey.includes('YOUR_SUPABASE'));
 
-if (!supabaseUrl || !supabaseAnonKey) {
+if (!supabaseUrl || !supabaseAnonKey || hasPlaceholderKey) {
   console.error(
-    'Supabase URL or Anonymous Key is missing. Make sure to set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.'
+    'Supabase URL or Anonymous Key is missing/invalid. Set real values for VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in frontend/.env and restart the Vite server.'
   );
 }
 

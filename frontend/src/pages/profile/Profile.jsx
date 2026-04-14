@@ -3,10 +3,10 @@ import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getUserProfile } from '../../services/api/authService';
 import { getUserListings, changeListingStatus } from '../../services/api/marketplaceService';
+import Grid from '@mui/material/GridLegacy';
 import { 
   Box, 
   Container, 
-  Grid, 
   Typography, 
   Avatar, 
   Button, 
@@ -114,10 +114,10 @@ const ScrollProgressIndicator = () => {
 };
 
 // MotionBox component for easy animation
-const MotionBox = motion(Box);
-const MotionPaper = motion(Paper);
-const MotionCard = motion(Card);
-const MotionGrid = motion(Grid);
+const MotionBox = motion.create(Box);
+const MotionPaper = motion.create(Paper);
+const MotionCard = motion.create(Card);
+const MotionGrid = motion.create(Grid);
 
 const Profile = () => {
   const { id } = useParams();

@@ -11,7 +11,7 @@ export async function getUserSettings(userId = null) {
     if (!userId) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        throw new Error('User not authenticated');
+        return { data: null, error: null };
       }
       userId = user.id;
     }
@@ -33,6 +33,9 @@ export async function getUserSettings(userId = null) {
 
     return { data, error: null };
   } catch (error) {
+    if (error?.message === 'User not authenticated') {
+      return { data: null, error: null };
+    }
     console.error('Error fetching user settings:', error);
     return { data: null, error };
   }

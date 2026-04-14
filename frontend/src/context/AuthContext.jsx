@@ -148,6 +148,23 @@ const AuthContext = createContext();
 function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
+    if (import.meta.env.DEV) {
+      console.warn('useAuth called outside AuthProvider during development refresh; returning fallback auth context.');
+      return {
+        user: null,
+        loading: false,
+        profileStatus: { isComplete: true, isChecking: false },
+        googleMetadata: null,
+        login: async () => null,
+        loginWithGoogle: async () => ({ data: null, error: null }),
+        register: async () => null,
+        logout: async () => null,
+        updateProfile: async () => null,
+        deleteAccount: async () => ({ success: false }),
+        setRememberMe: () => {},
+        isRemembered: false
+      };
+    }
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

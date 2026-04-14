@@ -33,8 +33,23 @@ const NOTIFICATIONS_TABLE = 'community_notifications';
 export async function getPosts(options = {}) {
   try {
     const { supabase } = await import('../../lib/supabase/client');
-    
-    let query = supabase
+
+    const applyFilters = (queryBuilder) => {
+      let q = queryBuilder.eq('status', 'published').order('created_at', { ascending: false });
+
+      if (options.category_id) {
+        q = q.eq('category_id', options.category_id);
+      }
+
+      if (options.limit) {
+        q = q.limit(options.limit);
+      }
+
+      return q;
+    };
+
+    const buildPrimaryQuery = () => applyFilters(
+      supabase
       .from(POSTS_TABLE)
       .select(`
         *,
@@ -46,31 +61,69 @@ export async function getPosts(options = {}) {
         comments_count:${COMMENTS_TABLE}(count),
         likes_count:${POST_LIKES_TABLE}(count)
       `)
-      .eq('status', 'published')
-      .order('created_at', { ascending: false });
+    );
 
-    if (options.category_id) {
-      query = query.eq('category_id', options.category_id);
-    }
+    const buildFallbackQuery = () => applyFilters(
+      supabase
+      .from(POSTS_TABLE)
+      .select(`
+        *,
+        category:${CATEGORIES_TABLE}(id, name, color_hex),
+        tags:${POST_TAGS_TABLE}(
+          tag:${TAGS_TABLE}(id, name, slug, color_hex)
+        ),
+        comments_count:${COMMENTS_TABLE}(count),
+        likes_count:${POST_LIKES_TABLE}(count)
+      `)
+    );
 
-    if (options.limit) {
-      query = query.limit(options.limit);
-    }
-
-    const { data, error } = await query;
-    
-    if (error) throw error;
-    
-    // Format the data
-    return { 
-      data: data?.map(post => ({
+    const formatPosts = (posts, profileMap = null) => {
+      return (posts || []).map(post => ({
         ...post,
+        user: post.user || (profileMap ? profileMap.get(post.user_id) || null : null),
         tags: post.tags?.map(tagItem => tagItem.tag) || [],
         comments_count: post.comments_count?.length || 0,
         likes_count: post.likes_count?.length || 0
-      })) || [], 
-      error: null 
+      }));
     };
+
+    const { data, error } = await buildPrimaryQuery();
+
+    if (!error) {
+      return { data: formatPosts(data), error: null };
+    }
+
+    if (error.code !== 'PGRST200') {
+      throw error;
+    }
+
+    console.warn('PostgREST relationship metadata missing for community_posts -> profiles. Falling back to manual profile lookup.');
+
+    const { data: fallbackPosts, error: fallbackError } = await buildFallbackQuery();
+
+    if (fallbackError) {
+      throw fallbackError;
+    }
+
+    const userIds = [...new Set((fallbackPosts || []).map(post => post.user_id).filter(Boolean))];
+    const profileMap = new Map();
+
+    if (userIds.length > 0) {
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, avatar_url')
+        .in('id', userIds);
+
+      if (profilesError) {
+        console.warn('Could not fetch profiles for community posts fallback:', profilesError);
+      } else {
+        for (const profile of profilesData || []) {
+          profileMap.set(profile.id, profile);
+        }
+      }
+    }
+
+    return { data: formatPosts(fallbackPosts, profileMap), error: null };
   } catch (error) {
     console.error('Error fetching posts:', error);
     return { data: [], error };

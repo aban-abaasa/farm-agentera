@@ -9,6 +9,7 @@ import {
   Typography,
   List,
   ListItem,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
   Button,
@@ -156,9 +157,11 @@ const MainLayout = () => {
       <List>
         {/* Main Navigation Items */}
         {navigationItems.filter(item => !item.requireAuth || (item.requireAuth && isAuthenticated)).map((item) => (
-          <ListItem button component={Link} to={item.path} key={item.text} onClick={handleDrawerToggle}>
-            <ListItemIcon>{item.icon}</ListItemIcon>
-            <ListItemText primary={item.text} />
+          <ListItem key={item.text} disablePadding>
+            <ListItemButton component={Link} to={item.path} onClick={handleDrawerToggle}>
+              <ListItemIcon>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.text} />
+            </ListItemButton>
           </ListItem>
         ))}
         
@@ -173,9 +176,11 @@ const MainLayout = () => {
               <ListItemText primary="Extensions" sx={{ opacity: 0.7 }} />
             </ListItem>
             {extensionsItems.filter(item => !item.requireAuth || (item.requireAuth && isAuthenticated)).map((item) => (
-              <ListItem button component={Link} to={item.path} key={item.text} onClick={handleDrawerToggle} sx={{ pl: 4 }}>
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.text} />
+              <ListItem key={item.text} disablePadding>
+                <ListItemButton component={Link} to={item.path} onClick={handleDrawerToggle} sx={{ pl: 4 }}>
+                  <ListItemIcon>{item.icon}</ListItemIcon>
+                  <ListItemText primary={item.text} />
+                </ListItemButton>
               </ListItem>
             ))}
           </>

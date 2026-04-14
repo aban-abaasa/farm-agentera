@@ -79,14 +79,14 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Motion components for animations
-const MotionContainer = motion(Container);
-const MotionBox = motion(Box);
-const MotionPaper = motion(Paper);
-const MotionCard = motion(Card);
-const MotionGrid = motion(Grid);
-const MotionStack = motion(Stack);
-const MotionTypography = motion(Typography);
-const MotionDivider = motion(Divider);
+const MotionContainer = motion.create(Container);
+const MotionBox = motion.create(Box);
+const MotionPaper = motion.create(Paper);
+const MotionCard = motion.create(Card);
+const MotionGrid = motion.create(Grid);
+const MotionStack = motion.create(Stack);
+const MotionTypography = motion.create(Typography);
+const MotionDivider = motion.create(Divider);
 
 // Animation variants
 const containerVariants = {

@@ -41,6 +41,7 @@ import { Suspense } from 'react'
 import { CircularProgress, Box } from '@mui/material'
 import PageContainer from './components/layout/PageContainer'
 import ProtectedRoute from './components/ProtectedRoute'
+import ErrorBoundary from './components/ErrorBoundary'
 
 // Wrap page components with PageContainer for consistent layout
 const withPageContainer = (Component, props = {}) => {
@@ -56,6 +57,7 @@ function App() {
     <ThemeContextProvider>
       <Router>
         <AuthProvider>
+        <ErrorBoundary>
         <Suspense fallback={
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
             <CircularProgress />
@@ -65,6 +67,18 @@ function App() {
             {/* Public routes */}
             <Route path="/" element={<MainLayout />}>
               <Route index element={<Home />} />
+              <Route path="marketplace" element={withPageContainer(Marketplace)} />
+              <Route path="marketplace/land" element={withPageContainer(LandListings)} />
+              <Route path="marketplace/produce" element={withPageContainer(ProduceListings)} />
+              <Route path="marketplace/services" element={withPageContainer(ServiceListings)} />
+              <Route path="marketplace/listing/:id" element={withPageContainer(ListingDetails)} />
+              <Route path="community" element={withPageContainer(Community)} />
+              <Route path="community/discussions" element={withPageContainer(CommunityDiscussions)} />
+              <Route path="community/events" element={withPageContainer(CommunityEvents)} />
+              <Route path="community/qa" element={withPageContainer(CommunityQA)} />
+              <Route path="community/post/:id" element={withPageContainer(PostDetails)} />
+              <Route path="resources" element={withPageContainer(Resources)} />
+              <Route path="support-team" element={withPageContainer(SupportTeam)} />
               <Route path="*" element={withPageContainer(NotFound)} />
             </Route>
             
@@ -84,8 +98,6 @@ function App() {
                 <Route path="profile/:id" element={withPageContainer(Profile)} />
                 <Route path="profile/edit" element={withPageContainer(EditProfile)} />
                 <Route path="weather" element={withPageContainer(Weather)} />
-                <Route path="resources" element={withPageContainer(Resources)} />
-                <Route path="support-team" element={withPageContainer(SupportTeam)} />
                 <Route path="farm-management" element={withPageContainer(FarmManagement)} />
                 <Route path="livestock-management" element={withPageContainer(LivestockManagement)} />
                 <Route path="soil-crop-planner" element={withPageContainer(SoilCropPlanner)} />
@@ -96,25 +108,12 @@ function App() {
                 <Route path="analytics" element={withPageContainer(Analytics)} />
                 <Route path="investments" element={withPageContainer(Investments)} />
                 <Route path="messages" element={withPageContainer(Messages)} />
-                
-                {/* Marketplace Routes */}
-                <Route path="marketplace" element={withPageContainer(Marketplace)} />
-                <Route path="marketplace/land" element={withPageContainer(LandListings)} />
-                <Route path="marketplace/produce" element={withPageContainer(ProduceListings)} />
-                <Route path="marketplace/services" element={withPageContainer(ServiceListings)} />
-                <Route path="marketplace/listing/:id" element={withPageContainer(ListingDetails)} />
                 <Route path="marketplace/create" element={withPageContainer(CreateListing)} />
-                
-                {/* Community Routes */}
-                <Route path="community" element={withPageContainer(Community)} />
-                <Route path="community/discussions" element={withPageContainer(CommunityDiscussions)} />
-                <Route path="community/events" element={withPageContainer(CommunityEvents)} />
-                <Route path="community/qa" element={withPageContainer(CommunityQA)} />
-                <Route path="community/post/:id" element={withPageContainer(PostDetails)} />
               </Route>
             </Route>
           </Routes>
         </Suspense>
+        </ErrorBoundary>
       </AuthProvider>
     </Router>
     </ThemeContextProvider>

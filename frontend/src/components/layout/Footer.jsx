@@ -1,4 +1,5 @@
-import { Box, Container, Grid, Typography, Link, IconButton, TextField, Button, Divider, Paper, Tooltip } from '@mui/material';
+import Grid from '@mui/material/GridLegacy';
+import { Box, Container, Typography, Link, IconButton, TextField, Button, Divider, Paper, Tooltip } from '@mui/material';
 import { Facebook, Twitter, Instagram, LinkedIn, Send, Phone, Email, LocationOn } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 

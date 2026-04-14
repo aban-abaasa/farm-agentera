@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import Grid from '@mui/material/GridLegacy';
 import { 
   Card, CardContent, Typography, Box, Badge, 
   Divider, Button, Avatar, CardHeader, CardActions,
   TextField, InputAdornment, IconButton, Paper, Tabs, Tab,
-  FormControl, Select, MenuItem, InputLabel, Grid, Container,
+  FormControl, Select, MenuItem, InputLabel, Container,
   Chip, CircularProgress, Alert
 } from '@mui/material';
 import { 
