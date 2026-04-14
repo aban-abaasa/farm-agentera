@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import Grid from '@mui/material/GridLegacy';
 import {
   Alert,
   Box,
@@ -233,8 +232,8 @@ const Login = () => {
             >
               {isSubmitting ? 'Signing in...' : 'Sign In'}
             </Button>
-            <Grid container>
-              <Grid item xs>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box>
                 <Link 
                   component="button" 
                   variant="body2"
@@ -242,13 +241,13 @@ const Login = () => {
                 >
                   Forgot password?
                 </Link>
-              </Grid>
-              <Grid item>
+              </Box>
+              <Box>
                 <Link component={RouterLink} to="/register" variant="body2">
                   {"Don't have an account? Sign Up"}
                 </Link>
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
           </Box>
         </Box>
       </Paper>

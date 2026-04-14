@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import Grid from '@mui/material/GridLegacy';
 import {
   Alert,
   Box,
@@ -205,7 +204,7 @@ const Register = () => {
             <Box component="form" onSubmit={formik.handleSubmit} sx={{ mt: 1, width: '100%' }}>
               {activeStep === 0 && (
                 // Step 1: Account Information
-                <>
+                (<>
                   <TextField
                     margin="normal"
                     fullWidth
@@ -247,12 +246,12 @@ const Register = () => {
                     error={formik.touched.confirmPassword && Boolean(formik.errors.confirmPassword)}
                     helperText={formik.touched.confirmPassword && formik.errors.confirmPassword}
                   />
-                </>
+                </>)
               )}
 
               {activeStep === 1 && (
                 // Step 2: Personal Details
-                <>
+                (<>
                   <TextField
                     margin="normal"
                     fullWidth
@@ -311,12 +310,12 @@ const Register = () => {
                       </MenuItem>
                     ))}
                   </TextField>
-                </>
+                </>)
               )}
 
               {activeStep === 2 && (
                 // Step 3: Farming Profile
-                <>
+                (<>
                   <FormControl component="fieldset" margin="normal">
                     <FormLabel component="legend">I am a:</FormLabel>
                     <RadioGroup
@@ -331,7 +330,6 @@ const Register = () => {
                       <FormControlLabel value="other" control={<Radio />} label="Other" />
                     </RadioGroup>
                   </FormControl>
-
                   {formik.values.role === 'farmer' && (
                     <>
                       <TextField
@@ -367,7 +365,6 @@ const Register = () => {
                       />
                     </>
                   )}
-
                   <TextField
                     margin="normal"
                     fullWidth
@@ -385,7 +382,7 @@ const Register = () => {
                       `${formik.values.bio.length}/300 characters`
                     }
                   />
-                </>
+                </>)
               )}
 
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
@@ -408,13 +405,13 @@ const Register = () => {
               </Box>
 
               {activeStep === 0 && (
-                <Grid container justifyContent="flex-end" sx={{ mt: 2 }}>
-                  <Grid item>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                  <Box>
                     <Link component={RouterLink} to="/login" variant="body2">
                       Already have an account? Sign in
                     </Link>
-                  </Grid>
-                </Grid>
+                  </Box>
+                </Box>
               )}
             </Box>
           )}

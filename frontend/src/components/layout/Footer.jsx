@@ -1,5 +1,4 @@
-import Grid from '@mui/material/GridLegacy';
-import { Box, Container, Typography, Link, IconButton, TextField, Button, Divider, Paper, Tooltip } from '@mui/material';
+import { Box, Container, Typography, Link, IconButton, TextField, Button, Divider, Paper, Tooltip, Grid } from '@mui/material';
 import { Facebook, Twitter, Instagram, LinkedIn, Send, Phone, Email, LocationOn } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 
@@ -54,7 +53,7 @@ const Footer = () => {
 
       <Container maxWidth="xl">
         <Grid container spacing={6}>
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Box sx={{ position: 'relative', zIndex: 1 }}>
               <Typography variant="h4" fontWeight="bold" gutterBottom 
                 sx={{ 
@@ -125,7 +124,7 @@ const Footer = () => {
             </Box>
           </Grid>
           
-          <Grid item xs={12} md={3}>
+          <Grid size={{ xs: 12, md: 3 }}>
             <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: 'white' }}>
               Quick Links
             </Typography>
@@ -162,7 +161,7 @@ const Footer = () => {
             </Box>
           </Grid>
           
-          <Grid item xs={12} md={5}>
+          <Grid size={{ xs: 12, md: 5 }}>
             <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: 'white' }}>
               Stay Connected
             </Typography>

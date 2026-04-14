@@ -90,7 +90,6 @@ const ProduceListings = () => {
           <CircularProgress size={60} />
         </Box>
       )}
-      
       {/* Error State */}
       {error && (
         <Box sx={{ p: 3 }}>
@@ -99,7 +98,6 @@ const ProduceListings = () => {
           </Alert>
         </Box>
       )}
-      
       {/* Main Content - Only show when not loading */}
       {!loading && (
         <>
@@ -238,7 +236,14 @@ const ProduceListings = () => {
       {/* Listings grid */}
       <Grid container spacing={4}>
         {filteredListings.map((listing) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} key={listing.id}>
+          <Grid
+            key={listing.id}
+            size={{
+              xs: 12,
+              sm: 6,
+              md: 4,
+              lg: 3
+            }}>
             <Card 
               sx={{ 
                 height: '100%', 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import Grid from '@mui/material/GridLegacy';
+import { Grid } from '@mui/material';
 import { 
   Box, Container, Typography, Card, CardContent, 
   Avatar, Chip, Button, TextField, InputAdornment, 
@@ -276,7 +276,6 @@ const SupportTeam = () => {
           </Box>
         </Box>
       </Box>
-      
       {/* Search and Filter Section */}
       <Paper 
         elevation={3} 
@@ -288,7 +287,11 @@ const SupportTeam = () => {
       >
         <Box sx={{ p: { xs: 2, md: 4 } }}>
           <Grid container spacing={3} alignItems="center">
-            <Grid item xs={12} md={7}>
+            <Grid
+              size={{
+                xs: 12,
+                md: 7
+              }}>
               <TextField
                 fullWidth
                 placeholder="Search team members by name, role, or specialty..."
@@ -305,7 +308,11 @@ const SupportTeam = () => {
                 }}
               />
             </Grid>
-            <Grid item xs={12} md={5}>
+            <Grid
+              size={{
+                xs: 12,
+                md: 5
+              }}>
               <Typography variant="subtitle2" color="text.secondary" mb={1} fontWeight="medium">
                 Filter by specialty:
               </Typography>
@@ -328,7 +335,6 @@ const SupportTeam = () => {
           </Grid>
         </Box>
       </Paper>
-
       {/* Team Stats Overview */}
       <Box 
         sx={{ 
@@ -399,7 +405,6 @@ const SupportTeam = () => {
           <Typography variant="subtitle2" color="text.secondary">Support Access</Typography>
         </Paper>
       </Box>
-
       {/* Team Members Grid */}
       <Box sx={{ mb: 8 }}>
         <Grid 
@@ -411,18 +416,18 @@ const SupportTeam = () => {
           }}
         >
           {filteredMembers.map((member, index) => (
-            <Grid 
-              item 
-              xs={12} 
-              sm={6} 
-              md={4} 
-              lg={3} 
-              key={member.id} 
+            <Grid
+              key={member.id}
               sx={{
                 display: 'flex',
                 justifyContent: 'center',
               }}
-            >
+              size={{
+                xs: 12,
+                sm: 6,
+                md: 4,
+                lg: 3
+              }}>
               <Grow in={true} timeout={(index + 1) * 200}>
                 <Card 
                   elevation={3} 
@@ -633,7 +638,6 @@ const SupportTeam = () => {
           ))}
         </Grid>
       </Box>
-
       {/* Call to Action Section */}
       <Paper 
         elevation={3} 
@@ -676,7 +680,11 @@ const SupportTeam = () => {
         />
 
         <Grid container spacing={4} alignItems="center" position="relative" zIndex={1}>
-          <Grid item xs={12} md={7}>
+          <Grid
+            size={{
+              xs: 12,
+              md: 7
+            }}>
             <Typography 
               variant="h4" 
               component="h2" 
@@ -732,7 +740,12 @@ const SupportTeam = () => {
               </Box>
             </Box>
           </Grid>
-          <Grid item xs={12} md={5} sx={{ textAlign: 'center' }}>
+          <Grid
+            sx={{ textAlign: 'center' }}
+            size={{
+              xs: 12,
+              md: 5
+            }}>
             <Paper 
               elevation={4} 
               sx={{ 
@@ -801,7 +814,6 @@ const SupportTeam = () => {
           </Grid>
         </Grid>
       </Paper>
-      
       {/* Contact Member Modal */}
       <Dialog 
         open={contactModalOpen} 
@@ -852,13 +864,18 @@ const SupportTeam = () => {
             <DialogContent sx={{ p: 0 }}>
               <Grid container>
                 {/* Member Info Column */}
-                <Grid item xs={12} md={4} sx={{ 
-                  bgcolor: isDark ? alpha(theme.palette.background.paper, 0.05) : alpha(theme.palette.grey[50], 1), 
-                  p: 3,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center'
-                }}>
+                <Grid
+                  sx={{ 
+                    bgcolor: isDark ? alpha(theme.palette.background.paper, 0.05) : alpha(theme.palette.grey[50], 1), 
+                    p: 3,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center'
+                  }}
+                  size={{
+                    xs: 12,
+                    md: 4
+                  }}>
                   <Avatar
                     src={selectedMember.image}
                     alt={selectedMember.name}
@@ -927,7 +944,11 @@ const SupportTeam = () => {
                 </Grid>
                 
                 {/* Contact Form Column */}
-                <Grid item xs={12} md={8}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 8
+                  }}>
                   <Box 
                     component="form" 
                     onSubmit={handleContactSubmit}
@@ -941,7 +962,11 @@ const SupportTeam = () => {
                     </Typography>
                     
                     <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}>
+                      <Grid
+                        size={{
+                          xs: 12,
+                          sm: 6
+                        }}>
                         <TextField 
                           fullWidth 
                           label="Your Name" 
@@ -955,7 +980,11 @@ const SupportTeam = () => {
                           required
                         />
                       </Grid>
-                      <Grid item xs={12} sm={6}>
+                      <Grid
+                        size={{
+                          xs: 12,
+                          sm: 6
+                        }}>
                         <FormControl 
                           fullWidth 
                           variant="outlined" 
@@ -976,7 +1005,11 @@ const SupportTeam = () => {
                         </FormControl>
                       </Grid>
                       
-                      <Grid item xs={12} sm={6}>
+                      <Grid
+                        size={{
+                          xs: 12,
+                          sm: 6
+                        }}>
                         <TextField 
                           fullWidth 
                           label="Your Email" 
@@ -991,7 +1024,11 @@ const SupportTeam = () => {
                           required={contactFormData.contactMethod === 'email'}
                         />
                       </Grid>
-                      <Grid item xs={12} sm={6}>
+                      <Grid
+                        size={{
+                          xs: 12,
+                          sm: 6
+                        }}>
                         <TextField 
                           fullWidth 
                           label="Your Phone" 
@@ -1006,7 +1043,7 @@ const SupportTeam = () => {
                         />
                       </Grid>
                       
-                      <Grid item xs={12}>
+                      <Grid size={12}>
                         <TextField 
                           fullWidth 
                           label="Subject" 
@@ -1021,7 +1058,7 @@ const SupportTeam = () => {
                         />
                       </Grid>
                       
-                      <Grid item xs={12}>
+                      <Grid size={12}>
                         <TextField 
                           fullWidth 
                           label="Message" 
@@ -1075,7 +1112,6 @@ const SupportTeam = () => {
           </>
         )}
       </Dialog>
-      
       {/* Success Snackbar */}
       <Snackbar
         open={submitSuccess}

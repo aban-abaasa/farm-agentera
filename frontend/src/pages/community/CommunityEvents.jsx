@@ -218,7 +218,11 @@ const CommunityEvents = () => {
 
         {/* Search and filter */}
         <Grid container spacing={3}>
-          <Grid item xs={12} md={8}>
+          <Grid
+            size={{
+              xs: 12,
+              md: 8
+            }}>
             <Paper
               elevation={2}
               sx={{
@@ -279,7 +283,11 @@ const CommunityEvents = () => {
               </Button>
             </Paper>
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid
+            size={{
+              xs: 12,
+              md: 4
+            }}>
             <Box sx={{ display: 'flex', overflowX: 'auto', pb: 1 }}>
               {eventCategories.map(category => (
                 <Chip
@@ -295,7 +303,6 @@ const CommunityEvents = () => {
           </Grid>
         </Grid>
       </Box>
-
       {/* Results info */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <Box>
@@ -325,7 +332,6 @@ const CommunityEvents = () => {
           Submit Event
         </Button>
       </Box>
-
       {/* No results message */}
       {filteredEvents.length === 0 && (
         <Box sx={{ textAlign: 'center', py: 8 }}>
@@ -337,7 +343,6 @@ const CommunityEvents = () => {
           </Typography>
         </Box>
       )}
-
       {/* Event Grid View */}
       {viewMode === 'grid' && !isMobile && (
         <>
@@ -348,7 +353,13 @@ const CommunityEvents = () => {
           ) : filteredEvents.length > 0 ? (
             <Grid container spacing={3}>
               {filteredEvents.map(event => (
-                <Grid item xs={12} sm={6} lg={4} key={event.id}>
+                <Grid
+                  key={event.id}
+                  size={{
+                    xs: 12,
+                    sm: 6,
+                    lg: 4
+                  }}>
                   <Card sx={{ 
                     height: '100%', 
                     display: 'flex', 
@@ -469,7 +480,6 @@ const CommunityEvents = () => {
           )}
         </>
       )}
-
       {/* Event List View */}
       {(viewMode === 'list' || isMobile) && (
         <>
@@ -541,7 +551,11 @@ const CommunityEvents = () => {
                 />
                 <CardContent sx={{ pt: 0 }}>
                   <Grid container spacing={2}>
-                    <Grid item xs={12} sm={8}>
+                    <Grid
+                      size={{
+                        xs: 12,
+                        sm: 8
+                      }}>
                       <Typography variant="body2" color="text.secondary" paragraph>
                         {event.description}
                       </Typography>
@@ -563,7 +577,11 @@ const CommunityEvents = () => {
                         ))}
                       </Box>
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid
+                      size={{
+                        xs: 12,
+                        sm: 4
+                      }}>
                       <Box 
                         sx={{ 
                           height: '100%',
@@ -625,7 +643,6 @@ const CommunityEvents = () => {
           )}
         </>
       )}
-
       {/* Pagination and load more */}
       {filteredEvents.length > 0 && (
         <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
@@ -643,12 +660,15 @@ const CommunityEvents = () => {
           </Button>
         </Box>
       )}
-
       {/* Add Event Panel */}
       <Card sx={{ mt: 5, bgcolor: 'rgba(76, 175, 80, 0.05)', borderRadius: 3 }}>
         <CardContent sx={{ py: 3 }}>
           <Grid container spacing={3} alignItems="center">
-            <Grid item xs={12} md={8}>
+            <Grid
+              size={{
+                xs: 12,
+                md: 8
+              }}>
               <Typography variant="h6" component="h3" gutterBottom>
                 Organizing a farming event?
               </Typography>
@@ -656,7 +676,12 @@ const CommunityEvents = () => {
                 Share your workshops, field days, or exhibitions with the farming community across Uganda. Submit your event details to reach thousands of farmers.
               </Typography>
             </Grid>
-            <Grid item xs={12} md={4} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
+            <Grid
+              sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}
+              size={{
+                xs: 12,
+                md: 4
+              }}>
               <Button 
                 variant="contained" 
                 color="primary"
@@ -679,7 +704,6 @@ const CommunityEvents = () => {
           </Grid>
         </CardContent>
       </Card>
-
       {/* Add Event Dialog */}
       <AddEvent
         open={addEventOpen}

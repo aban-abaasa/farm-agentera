@@ -245,11 +245,16 @@ const Analytics = () => {
           Comprehensive analytics and insights across all farm operations
         </Typography>
       </Box>
-
       {/* Key Performance Indicators */}
       <Grid container spacing={3} mb={4}>
         {keyPerformanceIndicators.map((kpi, index) => (
-          <Grid item xs={12} sm={6} md={3} key={kpi.title}>
+          <Grid
+            key={kpi.title}
+            size={{
+              xs: 12,
+              sm: 6,
+              md: 3
+            }}>
             <Zoom in timeout={600 + index * 200}>
               <Card elevation={4} sx={{
                 borderRadius: 3,
@@ -296,7 +301,6 @@ const Analytics = () => {
           </Grid>
         ))}
       </Grid>
-
       {/* Main Analytics Tabs */}
       <Paper elevation={4} sx={{ borderRadius: 3, mb: 4 }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -312,7 +316,11 @@ const Analytics = () => {
           {/* Overview Tab */}
           {activeTab === 0 && (
             <Grid container spacing={3}>
-              <Grid item xs={12} md={8}>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 8
+                }}>
                 <Typography variant="h6" fontWeight="bold" mb={2}>
                   Monthly Performance Overview
                 </Typography>
@@ -365,7 +373,11 @@ const Analytics = () => {
                 </Paper>
               </Grid>
               
-              <Grid item xs={12} md={4}>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 4
+                }}>
                 <Typography variant="h6" fontWeight="bold" mb={2}>
                   Quick Analytics
                 </Typography>
@@ -411,7 +423,12 @@ const Analytics = () => {
           {activeTab === 1 && (
             <Grid container spacing={3}>
               {sectorAnalytics.map((sector, index) => (
-                <Grid item xs={12} md={6} key={sector.sector}>
+                <Grid
+                  key={sector.sector}
+                  size={{
+                    xs: 12,
+                    md: 6
+                  }}>
                   <Fade in timeout={400 + index * 100}>
                     <Card elevation={2} sx={{ borderRadius: 2, height: '100%' }}>
                       <CardContent sx={{ p: 3 }}>
@@ -431,30 +448,30 @@ const Analytics = () => {
                         
                         <Grid container spacing={2}>
                           {sector.revenue && (
-                            <Grid item xs={6}>
+                            <Grid size={6}>
                               <Typography variant="body2" color="text.secondary">Revenue</Typography>
                               <Typography variant="h6" fontWeight="bold">{sector.revenue}</Typography>
                             </Grid>
                           )}
                           {sector.cost && (
-                            <Grid item xs={6}>
+                            <Grid size={6}>
                               <Typography variant="body2" color="text.secondary">Cost</Typography>
                               <Typography variant="h6" fontWeight="bold">{sector.cost}</Typography>
                             </Grid>
                           )}
                           {sector.growth && (
-                            <Grid item xs={6}>
+                            <Grid size={6}>
                               <Typography variant="body2" color="text.secondary">Growth</Typography>
                               <Chip label={sector.growth} color="success" size="small" />
                             </Grid>
                           )}
                           {sector.savings && (
-                            <Grid item xs={6}>
+                            <Grid size={6}>
                               <Typography variant="body2" color="text.secondary">Savings</Typography>
                               <Chip label={sector.savings} color="success" size="small" />
                             </Grid>
                           )}
-                          <Grid item xs={12}>
+                          <Grid size={12}>
                             <Typography variant="body2" color="text.secondary" mb={1}>
                               Efficiency: {sector.efficiency}%
                             </Typography>
@@ -486,7 +503,11 @@ const Analytics = () => {
               </Typography>
               
               <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 6
+                  }}>
                   <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
                     <Typography variant="h6" fontWeight="bold" mb={2}>
                       Revenue vs Profit Trend
@@ -519,7 +540,11 @@ const Analytics = () => {
                   </Paper>
                 </Grid>
                 
-                <Grid item xs={12} md={6}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 6
+                  }}>
                   <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
                     <Typography variant="h6" fontWeight="bold" mb={2}>
                       Productivity Trend
@@ -569,7 +594,12 @@ const Analytics = () => {
               
               <Grid container spacing={3}>
                 {insights.map((insight, index) => (
-                  <Grid item xs={12} md={6} key={index}>
+                  <Grid
+                    key={index}
+                    size={{
+                      xs: 12,
+                      md: 6
+                    }}>
                     <Fade in timeout={400 + index * 100}>
                       <Alert 
                         severity={insight.type} 

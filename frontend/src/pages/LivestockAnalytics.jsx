@@ -104,7 +104,13 @@ export default function LivestockAnalytics() {
         {stats.map((stat, i) => {
           const trend = getTrend(stat.value, stat.prev);
           return (
-            <Grid item xs={12} sm={6} md={3} key={stat.label}>
+            <Grid
+              key={stat.label}
+              size={{
+                xs: 12,
+                sm: 6,
+                md: 3
+              }}>
               <Card elevation={4} sx={{ borderRadius: 3, textAlign: 'center', py: 3, transition: '0.2s', '&:hover': { boxShadow: 8, transform: 'scale(1.04)' } }}>
                 <CardContent>
                   <Fade in timeout={800 + i * 200}>
@@ -130,7 +136,11 @@ export default function LivestockAnalytics() {
       </Grid>
       <Grid container spacing={4}>
         {/* Price Trend Chart with toggles */}
-        <Grid item xs={12} md={8}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 8
+          }}>
           <Paper elevation={4} sx={{ p: 3, borderRadius: 4, height: '100%' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
               <Typography variant="subtitle1" fontWeight="bold" flexGrow={1}>Price Trends (UGX)</Typography>
@@ -162,7 +172,11 @@ export default function LivestockAnalytics() {
           </Paper>
         </Grid>
         {/* Animal Distribution Donut Chart */}
-        <Grid item xs={12} md={4}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 4
+          }}>
           <Paper elevation={4} sx={{ p: 3, borderRadius: 4, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <Typography variant="subtitle1" fontWeight="bold" mb={2}>Animal Type Distribution</Typography>
             <ResponsiveContainer width="100%" height={220}>
@@ -180,7 +194,11 @@ export default function LivestockAnalytics() {
       </Grid>
       {/* Breed Popularity Bar Chart */}
       <Grid container spacing={4} sx={{ mt: 2 }}>
-        <Grid item xs={12} md={6}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 6
+          }}>
           <Paper elevation={4} sx={{ p: 3, borderRadius: 4, height: '100%' }}>
             <Typography variant="subtitle1" fontWeight="bold" mb={2}>Breed Popularity</Typography>
             <ResponsiveContainer width="100%" height={220}>
@@ -195,7 +213,11 @@ export default function LivestockAnalytics() {
           </Paper>
         </Grid>
         {/* Comparison Tool */}
-        <Grid item xs={12} md={6}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 6
+          }}>
           <Paper elevation={4} sx={{ p: 3, borderRadius: 4, height: '100%' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
               <CompareArrowsIcon color="primary" sx={{ mr: 1 }} />
@@ -224,7 +246,11 @@ export default function LivestockAnalytics() {
       </Grid>
       {/* Health Over Time Chart & Health Status Pie */}
       <Grid container spacing={4} sx={{ mt: 2 }}>
-        <Grid item xs={12} md={6}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 6
+          }}>
           <Paper elevation={4} sx={{ p: 3, borderRadius: 4, height: '100%' }}>
             <Typography variant="subtitle1" fontWeight="bold" mb={2}>Health Over Time</Typography>
             <ResponsiveContainer width="100%" height={220}>
@@ -240,7 +266,11 @@ export default function LivestockAnalytics() {
             </ResponsiveContainer>
           </Paper>
         </Grid>
-        <Grid item xs={12} md={6}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 6
+          }}>
           <Paper elevation={4} sx={{ p: 3, borderRadius: 4, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <Typography variant="subtitle1" fontWeight="bold" mb={2}>Health Status Distribution</Typography>
             <ResponsiveContainer width="100%" height={220}>

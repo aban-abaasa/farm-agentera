@@ -373,7 +373,11 @@ const LivestockManagement = () => {
         Connect, learn, and share with other livestock keepers. Discuss care, join events, and ask questions.
       </Typography>
       <Grid container spacing={4}>
-        <Grid item xs={12} md={4}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 4
+          }}>
           <Card elevation={3} sx={{ borderRadius: 3 }}>
             <CardContent>
               <ForumIcon color="primary" sx={{ fontSize: 36, mb: 1 }} />
@@ -385,7 +389,11 @@ const LivestockManagement = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 4
+          }}>
           <Card elevation={3} sx={{ borderRadius: 3 }}>
             <CardContent>
               <EventIcon color="success" sx={{ fontSize: 36, mb: 1 }} />
@@ -397,7 +405,11 @@ const LivestockManagement = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 4
+          }}>
           <Card elevation={3} sx={{ borderRadius: 3 }}>
             <CardContent>
               <HelpIcon color="secondary" sx={{ fontSize: 36, mb: 1 }} />
@@ -429,7 +441,13 @@ const LivestockManagement = () => {
         </Box>
         <Grid container spacing={3}>
           {cmms.animals.map(animal => (
-            <Grid item xs={12} sm={6} md={4} key={animal.id}>
+            <Grid
+              key={animal.id}
+              size={{
+                xs: 12,
+                sm: 6,
+                md: 4
+              }}>
               <Card elevation={2} sx={{ borderRadius: 3, transition: '0.3s', '&:hover': { boxShadow: 8, transform: 'scale(1.03)' } }}>
                 <CardContent>
                   <Box sx={{ height: 120, mb: 2, background: `url(${animal.image}) center/cover`, borderRadius: 2 }} />
@@ -487,7 +505,13 @@ const LivestockManagement = () => {
         <Typography variant="subtitle1" color="text.secondary" mb={2}>Veterinary Services</Typography>
         <Grid container spacing={2} mb={3}>
           {vetList.map(vet => (
-            <Grid item xs={12} sm={6} md={4} key={vet.id}>
+            <Grid
+              key={vet.id}
+              size={{
+                xs: 12,
+                sm: 6,
+                md: 4
+              }}>
               <Card elevation={1} sx={{ borderRadius: 3 }}>
                 <CardContent>
                   <Typography variant="h6" fontWeight="bold">{vet.name}</Typography>
@@ -503,7 +527,13 @@ const LivestockManagement = () => {
         <Typography variant="subtitle1" color="text.secondary" mb={2}>Animal Health Products</Typography>
         <Grid container spacing={2}>
           {productList.map(product => (
-            <Grid item xs={12} sm={6} md={4} key={product.id}>
+            <Grid
+              key={product.id}
+              size={{
+                xs: 12,
+                sm: 6,
+                md: 4
+              }}>
               <Card elevation={1} sx={{ borderRadius: 3 }}>
                 <CardContent>
                   <Typography variant="h6" fontWeight="bold">{product.name}</Typography>
@@ -659,7 +689,13 @@ const LivestockManagement = () => {
         <Typography variant="subtitle1" color="text.secondary" mb={2}>Veterinary Services</Typography>
         <Grid container spacing={2} mb={3}>
           {vetList.map(vet => (
-            <Grid item xs={12} sm={6} md={4} key={vet.id}>
+            <Grid
+              key={vet.id}
+              size={{
+                xs: 12,
+                sm: 6,
+                md: 4
+              }}>
               <Card elevation={1} sx={{ borderRadius: 3 }}>
                 <CardContent>
                   <Typography variant="h6" fontWeight="bold">{vet.name}</Typography>
@@ -675,7 +711,13 @@ const LivestockManagement = () => {
         <Typography variant="subtitle1" color="text.secondary" mb={2}>Animal Health Products</Typography>
         <Grid container spacing={2}>
           {productList.map(product => (
-            <Grid item xs={12} sm={6} md={4} key={product.id}>
+            <Grid
+              key={product.id}
+              size={{
+                xs: 12,
+                sm: 6,
+                md: 4
+              }}>
               <Card elevation={1} sx={{ borderRadius: 3 }}>
                 <CardContent>
                   <Typography variant="h6" fontWeight="bold">{product.name}</Typography>
@@ -958,10 +1000,26 @@ const LivestockManagement = () => {
             <Typography variant="h5" fontWeight="bold" flexGrow={1}>Summary & Reporting</Typography>
           </Box>
           <Grid container spacing={2} mb={2}>
-            <Grid item xs={6} md={3}><Paper sx={{ p: 2, textAlign: 'center', borderRadius: 2 }}><Typography variant="h6">Total Animals</Typography><Typography variant="h4" color="primary.main" fontWeight="bold">{cmms.animals.length}</Typography></Paper></Grid>
-            <Grid item xs={6} md={3}><Paper sx={{ p: 2, textAlign: 'center', borderRadius: 2 }}><Typography variant="h6">Tasks Due</Typography><Typography variant="h4" color="warning.main" fontWeight="bold">{cmms.tasks.filter(t => !t.done).length}</Typography></Paper></Grid>
-            <Grid item xs={6} md={3}><Paper sx={{ p: 2, textAlign: 'center', borderRadius: 2 }}><Typography variant="h6">Treatments Logged</Typography><Typography variant="h4" color="success.main" fontWeight="bold">{cmms.treatments.length}</Typography></Paper></Grid>
-            <Grid item xs={6} md={3}><Paper sx={{ p: 2, textAlign: 'center', borderRadius: 2 }}><Typography variant="h6">Overdue Tasks</Typography><Typography variant="h4" color="error.main" fontWeight="bold">{cmms.tasks.filter(t => !t.done && t.task.toLowerCase().includes('check')).length}</Typography></Paper></Grid>
+            <Grid
+              size={{
+                xs: 6,
+                md: 3
+              }}><Paper sx={{ p: 2, textAlign: 'center', borderRadius: 2 }}><Typography variant="h6">Total Animals</Typography><Typography variant="h4" color="primary.main" fontWeight="bold">{cmms.animals.length}</Typography></Paper></Grid>
+            <Grid
+              size={{
+                xs: 6,
+                md: 3
+              }}><Paper sx={{ p: 2, textAlign: 'center', borderRadius: 2 }}><Typography variant="h6">Tasks Due</Typography><Typography variant="h4" color="warning.main" fontWeight="bold">{cmms.tasks.filter(t => !t.done).length}</Typography></Paper></Grid>
+            <Grid
+              size={{
+                xs: 6,
+                md: 3
+              }}><Paper sx={{ p: 2, textAlign: 'center', borderRadius: 2 }}><Typography variant="h6">Treatments Logged</Typography><Typography variant="h4" color="success.main" fontWeight="bold">{cmms.treatments.length}</Typography></Paper></Grid>
+            <Grid
+              size={{
+                xs: 6,
+                md: 3
+              }}><Paper sx={{ p: 2, textAlign: 'center', borderRadius: 2 }}><Typography variant="h6">Overdue Tasks</Typography><Typography variant="h4" color="error.main" fontWeight="bold">{cmms.tasks.filter(t => !t.done && t.task.toLowerCase().includes('check')).length}</Typography></Paper></Grid>
           </Grid>
           <Button variant="contained" color="primary" sx={{ mt: 2 }} onClick={() => {
             const csv = [

@@ -197,8 +197,11 @@ export async function updateUserProfile(userId, updates) {
       first_name: ['firstname', 'firstName', 'given_name', 'name_first'],
       last_name: ['lastname', 'lastName', 'family_name', 'name_last'],
       phone_number: ['phone', 'phoneNumber', 'mobile', 'telephone'],
+      location: ['address', 'region', 'district'],
+      role: ['user_role', 'account_role'],
       farmer_type: ['farm_type', 'farmType', 'farming_type'],
       farm_size: ['farmSize', 'farm_area', 'acreage'],
+      farm_location: ['farmLocation', 'farm_region', 'farm_address'],
       avatar_url: ['avatar', 'profile_image', 'photo_url'],
       cover_photo: ['coverPhoto', 'cover_image'],
       updated_at: ['updatedAt', 'modified_at']
@@ -227,17 +230,23 @@ export async function updateUserProfile(userId, updates) {
       }
     }
 
-    if (Object.keys(payload).length === 0) {
-      console.warn('No matching profile columns found for update payload; returning existing profile.');
-      return { data: [existingProfile], error: null };
+    const meaningfulFields = Object.keys(payload).filter((key) => key !== 'updated_at' && key !== 'updatedAt' && key !== 'modified_at');
+
+    if (meaningfulFields.length === 0) {
+      throw new Error('Profile schema is missing required fields (name/role/farm details). Please update your Supabase profiles table.');
     }
 
-    const { error } = await supabase
+    const { data: updatedRows, error } = await supabase
       .from('profiles')
       .update(payload)
-      .eq('id', userId);
+      .eq('id', userId)
+      .select('*');
 
     if (error) throw error;
+
+    if (!updatedRows || updatedRows.length === 0) {
+      throw new Error('Profile update did not persist to Supabase (no rows updated). Check profiles RLS policies and ensure your row exists.');
+    }
 
     const { data: refreshedProfile, error: refreshError } = await supabase
       .from('profiles')
@@ -452,25 +461,40 @@ export async function isProfileComplete(userId) {
     
     if (error) throw error;
 
-    const hasAnyColumn = (...keys) => keys.some((key) => Object.prototype.hasOwnProperty.call(data || {}, key));
-
     const firstName = data?.first_name || data?.firstname || data?.firstName || data?.given_name || '';
     const lastName = data?.last_name || data?.lastname || data?.lastName || data?.family_name || '';
     const fullName = data?.full_name || data?.name || '';
     const hasName = Boolean(firstName && lastName) || Boolean(fullName);
     const phone = data?.phone_number || data?.phone || data?.phoneNumber || '';
     const location = data?.location || data?.address || '';
-    const role = data?.role || data?.user_role || '';
+    const role = (data?.role || data?.user_role || '').toString().trim().toLowerCase();
+    const farmingType = data?.farmer_type || data?.farm_type || data?.farming_type || data?.farmType || '';
+    const farmSize = data?.farm_size || data?.farm_area || data?.farmSize || '';
+    const farmLocation = data?.farm_location || data?.farmLocation || '';
+    const profileColumns = new Set(Object.keys(data || {}));
+    const hasFarmColumnsInProfile = [
+      'farmer_type',
+      'farm_type',
+      'farming_type',
+      'farm_size',
+      'farm_area',
+      'farm_location'
+    ].some((column) => profileColumns.has(column));
 
-    const requiresLocation = hasAnyColumn('location', 'address');
-    const requiresRole = hasAnyColumn('role', 'user_role');
+    const hasLocationColumns = profileColumns.has('location') || profileColumns.has('address');
+    const hasRoleColumns = profileColumns.has('role') || profileColumns.has('user_role') || profileColumns.has('account_role');
+    const hasRole = Boolean(role);
+    const requiresFarmProfile = role === 'farmer';
+    const hasFarmProfile = Boolean(farmingType || farmSize || farmLocation);
+    const passesFarmerRequirement = !requiresFarmProfile || !hasFarmColumnsInProfile || hasFarmProfile;
     
-    // Require only fields that exist in the deployed schema.
+    // Enforce completion only for fields present in the deployed schema.
     const isComplete = Boolean(
       hasName &&
       phone &&
-      (!requiresLocation || location) &&
-      (!requiresRole || role)
+      (!hasLocationColumns || location) &&
+      (!hasRoleColumns || hasRole) &&
+      passesFarmerRequirement
     );
     
     return { isComplete, data, error: null };

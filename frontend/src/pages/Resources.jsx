@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import Grid from '@mui/material/GridLegacy';
+import { Grid } from '@mui/material';
 import {
   Box,
   Button,
@@ -231,7 +231,11 @@ const LabourResourcingSection = () => {
       </Paper>
       {/* Filters */}
       <Grid container spacing={2} mb={2}>
-        <Grid item xs={12} md={6}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 6
+          }}>
           <TextField
             label="Filter by Skill"
             value={laborSkill}
@@ -241,7 +245,11 @@ const LabourResourcingSection = () => {
             sx={{ mb: { xs: 2, md: 0 } }}
           />
         </Grid>
-        <Grid item xs={12} md={6}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 6
+          }}>
           <TextField
             label="Filter by Location"
             value={laborLocation}
@@ -269,11 +277,17 @@ const LabourResourcingSection = () => {
         </Box>
         <Grid container spacing={2}>
           {groups.length === 0 ? (
-            <Grid item xs={12}><Typography>No groups yet. Create one!</Typography></Grid>
+            <Grid size={12}><Typography>No groups yet. Create one!</Typography></Grid>
           ) : groups.map(group => {
             const leader = getLaborerById(group.leaderId);
             return (
-              <Grid item xs={12} md={6} lg={4} key={group.id}>
+              <Grid
+                key={group.id}
+                size={{
+                  xs: 12,
+                  md: 6,
+                  lg: 4
+                }}>
                 <Card sx={{ 
                   p: 2, 
                   borderRadius: 3, 
@@ -458,14 +472,20 @@ const LabourResourcingSection = () => {
       {/* Labor Cards */}
       <Grid container spacing={3}>
         {filteredLabor.length === 0 ? (
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Box sx={{ textAlign: 'center', py: 6 }}>
               <img src="https://cdn-icons-png.flaticon.com/512/4076/4076549.png" alt="No results" width={120} style={{ opacity: 0.5 }} />
               <Typography variant="h6" color="text.secondary" mt={2}>No labor sources found.</Typography>
             </Box>
           </Grid>
         ) : filteredLabor.map(labor => (
-          <Grid item xs={12} md={6} lg={4} key={labor.id}>
+          <Grid
+            key={labor.id}
+            size={{
+              xs: 12,
+              md: 6,
+              lg: 4
+            }}>
             <Card sx={{ 
               p: 3, 
               borderRadius: 3, 
@@ -865,7 +885,11 @@ const Resources = () => {
                 </Box>
                 
                 <Grid container spacing={3} alignItems="center">
-                  <Grid item xs={12} md={7}>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      md: 7
+                    }}>
                     <TextField
                       fullWidth
                       placeholder="Search by title, keyword, or description..."
@@ -887,7 +911,11 @@ const Resources = () => {
                       }}
                     />
                   </Grid>
-                  <Grid item xs={12} md={3}>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      md: 3
+                    }}>
                     <FormControl fullWidth>
                       <InputLabel id="category-select-label">Category</InputLabel>
                       <Select
@@ -910,7 +938,11 @@ const Resources = () => {
                       </Select>
                     </FormControl>
                   </Grid>
-                  <Grid item xs={12} md={2}>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      md: 2
+                    }}>
                     <FormControl fullWidth>
                       <InputLabel id="sort-select-label">Sort By</InputLabel>
                       <Select
@@ -958,7 +990,14 @@ const Resources = () => {
                 </Box>
                 <Grid container spacing={3}>
                   {resourceCategories.map((category) => (
-                    <Grid item key={category.id} xs={12} sm={6} md={4} lg={2}>
+                    <Grid
+                      key={category.id}
+                      size={{
+                        xs: 12,
+                        sm: 6,
+                        md: 4,
+                        lg: 2
+                      }}>
                       <Card 
                         elevation={selectedCategory === category.id ? 3 : 1}
                         onClick={() => setSelectedCategory(category.id)}
@@ -1080,7 +1119,13 @@ const Resources = () => {
                 </Box>
                 <Grid container spacing={3}>
                   {featuredResources.map((resource) => (
-                    <Grid item key={resource.id} xs={12} sm={6} md={3}>
+                    <Grid
+                      key={resource.id}
+                      size={{
+                        xs: 12,
+                        sm: 6,
+                        md: 3
+                      }}>
                       <Card 
                         elevation={2}
                         sx={{ 
@@ -1307,7 +1352,13 @@ const Resources = () => {
                 </Typography>
                 <Grid container spacing={3}>
                   {recentResources.map((resource) => (
-                    <Grid item key={resource.id} xs={12} sm={4} md={2}>
+                    <Grid
+                      key={resource.id}
+                      size={{
+                        xs: 12,
+                        sm: 4,
+                        md: 2
+                      }}>
                       <Card 
                         elevation={1}
                         component={Link} 
@@ -1495,7 +1546,11 @@ const Resources = () => {
                 }} />
                 
                 <Grid container spacing={4} position="relative" zIndex={1}>
-                  <Grid item xs={12} md={7}>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      md: 7
+                    }}>
                     <Box sx={{ textAlign: { xs: 'center', md: 'left' }, mb: { xs: 4, md: 0 } }}>
                       <Typography 
                         variant="h4" 
@@ -1541,7 +1596,12 @@ const Resources = () => {
                       </Button>
                     </Box>
                   </Grid>
-                  <Grid item xs={12} md={5} sx={{ display: { xs: 'none', md: 'block' } }}>
+                  <Grid
+                    sx={{ display: { xs: 'none', md: 'block' } }}
+                    size={{
+                      xs: 12,
+                      md: 5
+                    }}>
                     <Box sx={{ 
                       display: 'flex', 
                       flexDirection: 'column', 
@@ -1662,7 +1722,11 @@ const Resources = () => {
                     boxShadow: '0 4px 20px rgba(0,0,0,0.05)'
                   }}>
                     <Grid container spacing={2} alignItems="center">
-                      <Grid item xs={12} md={7}>
+                      <Grid
+                        size={{
+                          xs: 12,
+                          md: 7
+                        }}>
                         <TextField
                           fullWidth
                           placeholder="Your email address"
@@ -1683,7 +1747,11 @@ const Resources = () => {
                           }}
                         />
                       </Grid>
-                      <Grid item xs={12} md={3}>
+                      <Grid
+                        size={{
+                          xs: 12,
+                          md: 3
+                        }}>
                         <FormControl fullWidth variant="outlined" sx={{ borderRadius: 2 }}>
                           <Select
                             value="farmer"
@@ -1703,7 +1771,11 @@ const Resources = () => {
                           </Select>
                         </FormControl>
                       </Grid>
-                      <Grid item xs={12} md={2}>
+                      <Grid
+                        size={{
+                          xs: 12,
+                          md: 2
+                        }}>
                         <Button 
                           variant="contained" 
                           color="primary"

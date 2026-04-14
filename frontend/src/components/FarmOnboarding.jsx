@@ -307,7 +307,7 @@ const FarmOnboarding = ({ onComplete, userId }) => {
       label: 'Basic Information',
       content: (
         <Grid container spacing={3}>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <TextField
               fullWidth
               label="Farm Name"
@@ -319,7 +319,11 @@ const FarmOnboarding = ({ onComplete, userId }) => {
             />
           </Grid>
           
-          <Grid item xs={12} sm={6}>
+          <Grid
+            size={{
+              xs: 12,
+              sm: 6
+            }}>
             <Autocomplete
               options={UGANDA_DISTRICTS}
               value={formData.location}
@@ -336,7 +340,11 @@ const FarmOnboarding = ({ onComplete, userId }) => {
             />
           </Grid>
           
-          <Grid item xs={12} sm={6}>
+          <Grid
+            size={{
+              xs: 12,
+              sm: 6
+            }}>
             <TextField
               fullWidth
               label="Farm Size (hectares)"
@@ -349,7 +357,7 @@ const FarmOnboarding = ({ onComplete, userId }) => {
             />
           </Grid>
           
-          <Grid item xs={12}>
+          <Grid size={12}>
             <TextField
               fullWidth
               label="Address (Optional)"
@@ -361,7 +369,11 @@ const FarmOnboarding = ({ onComplete, userId }) => {
             />
           </Grid>
           
-          <Grid item xs={12} sm={6}>
+          <Grid
+            size={{
+              xs: 12,
+              sm: 6
+            }}>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
               <DatePicker
                 label="Farm Established"
@@ -373,7 +385,11 @@ const FarmOnboarding = ({ onComplete, userId }) => {
             </LocalizationProvider>
           </Grid>
           
-          <Grid item xs={12} sm={6}>
+          <Grid
+            size={{
+              xs: 12,
+              sm: 6
+            }}>
             <FormControl fullWidth error={!!errors.farmType}>
               <InputLabel>Farm Type</InputLabel>
               <Select
@@ -400,7 +416,7 @@ const FarmOnboarding = ({ onComplete, userId }) => {
       label: 'Farm Details',
       content: (
         <Grid container spacing={3}>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <TextField
               fullWidth
               label="Farm Description"
@@ -421,7 +437,7 @@ const FarmOnboarding = ({ onComplete, userId }) => {
       content: (
         <Grid container spacing={3}>
           {(formData.farmType === 'crops' || formData.farmType === 'mixed' || formData.farmType === 'horticulture') && (
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Typography variant="h6" gutterBottom>Primary Crops</Typography>
               <Autocomplete
                 multiple
@@ -447,7 +463,7 @@ const FarmOnboarding = ({ onComplete, userId }) => {
           )}
           
           {(formData.farmType === 'livestock' || formData.farmType === 'mixed' || formData.farmType === 'dairy' || formData.farmType === 'poultry') && (
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Typography variant="h6" gutterBottom>Livestock</Typography>
               <Autocomplete
                 multiple
@@ -473,7 +489,7 @@ const FarmOnboarding = ({ onComplete, userId }) => {
           )}
           
           {errors.mixed && (
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Alert severity="error">{errors.mixed}</Alert>
             </Grid>
           )}
@@ -484,7 +500,7 @@ const FarmOnboarding = ({ onComplete, userId }) => {
       label: 'Goals & Experience',
       content: (
         <Grid container spacing={3}>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Typography variant="h6" gutterBottom>Farm Goals</Typography>
             <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
               What do you want to achieve with your farm? (Select all that apply)
@@ -511,7 +527,11 @@ const FarmOnboarding = ({ onComplete, userId }) => {
             />
           </Grid>
           
-          <Grid item xs={12} sm={4}>
+          <Grid
+            size={{
+              xs: 12,
+              sm: 4
+            }}>
             <FormControl fullWidth>
               <InputLabel>Experience Level</InputLabel>
               <Select
@@ -526,7 +546,11 @@ const FarmOnboarding = ({ onComplete, userId }) => {
             </FormControl>
           </Grid>
           
-          <Grid item xs={12} sm={4}>
+          <Grid
+            size={{
+              xs: 12,
+              sm: 4
+            }}>
             <FormControl fullWidth>
               <InputLabel>Budget Range</InputLabel>
               <Select
@@ -541,7 +565,11 @@ const FarmOnboarding = ({ onComplete, userId }) => {
             </FormControl>
           </Grid>
           
-          <Grid item xs={12} sm={4}>
+          <Grid
+            size={{
+              xs: 12,
+              sm: 4
+            }}>
             <FormControl fullWidth>
               <InputLabel>Technology Level</InputLabel>
               <Select
@@ -562,7 +590,11 @@ const FarmOnboarding = ({ onComplete, userId }) => {
       label: 'Contact & Preferences',
       content: (
         <Grid container spacing={3}>
-          <Grid item xs={12} sm={6}>
+          <Grid
+            size={{
+              xs: 12,
+              sm: 6
+            }}>
             <TextField
               fullWidth
               label="Phone Number"
@@ -572,7 +604,11 @@ const FarmOnboarding = ({ onComplete, userId }) => {
             />
           </Grid>
           
-          <Grid item xs={12} sm={6}>
+          <Grid
+            size={{
+              xs: 12,
+              sm: 6
+            }}>
             <TextField
               fullWidth
               label="Email Address"
@@ -584,12 +620,16 @@ const FarmOnboarding = ({ onComplete, userId }) => {
           </Grid>
           
           {errors.contact && (
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Alert severity="error">{errors.contact}</Alert>
             </Grid>
           )}
           
-          <Grid item xs={12} sm={6}>
+          <Grid
+            size={{
+              xs: 12,
+              sm: 6
+            }}>
             <FormControl fullWidth>
               <InputLabel>Measurement System</InputLabel>
               <Select
@@ -603,7 +643,11 @@ const FarmOnboarding = ({ onComplete, userId }) => {
             </FormControl>
           </Grid>
           
-          <Grid item xs={12} sm={6}>
+          <Grid
+            size={{
+              xs: 12,
+              sm: 6
+            }}>
             <FormControl fullWidth>
               <InputLabel>Currency</InputLabel>
               <Select
@@ -624,23 +668,31 @@ const FarmOnboarding = ({ onComplete, userId }) => {
       label: 'Review & Complete',
       content: (
         <Grid container spacing={3}>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Typography variant="h6" gutterBottom>Review Your Farm Information</Typography>
           </Grid>
           
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Card variant="outlined">
               <CardContent>
                 <Typography variant="h6" color="primary" gutterBottom>
                   {formData.farmName}
                 </Typography>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      sm: 6
+                    }}>
                     <Typography variant="body2"><strong>Location:</strong> {formData.location}</Typography>
                     <Typography variant="body2"><strong>Size:</strong> {formData.totalArea} hectares</Typography>
                     <Typography variant="body2"><strong>Type:</strong> {FARM_TYPES.find(t => t.value === formData.farmType)?.label}</Typography>
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      sm: 6
+                    }}>
                     <Typography variant="body2"><strong>Established:</strong> {formData.establishedDate ? dayjs(formData.establishedDate).format('YYYY') : 'Not specified'}</Typography>
                     <Typography variant="body2"><strong>Experience:</strong> {formData.experience}</Typography>
                     <Typography variant="body2"><strong>Currency:</strong> {formData.currency}</Typography>
@@ -684,7 +736,7 @@ const FarmOnboarding = ({ onComplete, userId }) => {
           </Grid>
           
           {errors.submit && (
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Alert severity="error">{errors.submit}</Alert>
             </Grid>
           )}

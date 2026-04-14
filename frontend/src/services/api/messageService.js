@@ -1,6 +1,11 @@
 import { supabase } from '../../lib/supabase/client';
 import { getCurrentUser } from './authService';
 
+let canUseConversationSummariesView = true;
+let canUseConversationsTable = true;
+let canUseConversationParticipantsTable = true;
+let canUseUnreadMessageCountsView = true;
+
 /**
  * Get conversations for the current user
  * @param {Object} options - Query options
@@ -12,14 +17,54 @@ export const getConversations = async (options = {}) => {
   try {
     const { limit = 20, offset = 0 } = options;
 
-    // Get conversations from the conversation_summaries view
-    const { data: conversations, error: conversationsError } = await supabase
-      .from('conversation_summaries')
-      .select('*')
-      .order('last_message_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+    let conversations = [];
 
-    if (conversationsError) throw conversationsError;
+    if (canUseConversationSummariesView) {
+      const { data: summaryRows, error: summaryError } = await supabase
+        .from('conversation_summaries')
+        .select('*')
+        .order('last_message_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (summaryError) {
+        if (summaryError.code === '42P01') {
+          canUseConversationSummariesView = false;
+        } else {
+          throw summaryError;
+        }
+      } else {
+        conversations = summaryRows || [];
+      }
+    }
+
+    if (!canUseConversationSummariesView) {
+      if (!canUseConversationsTable) {
+        return { data: [], error: null };
+      }
+
+      const { data: fallbackRows, error: fallbackError } = await supabase
+        .from('conversations')
+        .select('id, title, is_group, updated_at, created_at')
+        .order('updated_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (fallbackError) {
+        if (fallbackError.code === '42P01') {
+          canUseConversationsTable = false;
+          return { data: [], error: null };
+        }
+        throw fallbackError;
+      }
+
+      conversations = (fallbackRows || []).map((row) => ({
+        conversation_id: row.id,
+        title: row.title,
+        is_group: row.is_group,
+        last_message: null,
+        last_message_at: row.updated_at || row.created_at,
+        created_at: row.created_at
+      }));
+    }
 
     if (!conversations || conversations.length === 0) {
       return { data: [], error: null };
@@ -29,37 +74,59 @@ export const getConversations = async (options = {}) => {
     const conversationIds = conversations.map(c => c.conversation_id);
 
     // Get participants for these conversations
-    const { data: participants, error: participantsError } = await supabase
-      .from('conversation_participants')
-      .select(`
-        conversation_id,
-        user_id,
-        is_admin,
-        joined_at,
-        last_read_at,
-        profiles:user_id (
-          id,
-          first_name,
-          last_name,
-          avatar_url
-        )
-      `)
-      .in('conversation_id', conversationIds)
-      .eq('is_deleted', false);
+    let safeParticipants = [];
+    if (canUseConversationParticipantsTable) {
+      const { data: participants, error: participantsError } = await supabase
+        .from('conversation_participants')
+        .select(`
+          conversation_id,
+          user_id,
+          is_admin,
+          joined_at,
+          last_read_at,
+          profiles:user_id (
+            id,
+            first_name,
+            last_name,
+            avatar_url
+          )
+        `)
+        .in('conversation_id', conversationIds)
+        .eq('is_deleted', false);
 
-    if (participantsError) throw participantsError;
+      if (participantsError) {
+        if (participantsError.code === '42P01') {
+          canUseConversationParticipantsTable = false;
+        } else {
+          throw participantsError;
+        }
+      } else {
+        safeParticipants = participants || [];
+      }
+    }
 
     // Get unread counts for each conversation
-    const { data: unreadData, error: unreadError } = await supabase
-      .from('unread_message_counts')
-      .select('conversation_id, unread_count');
+    let safeUnreadData = [];
+    if (canUseUnreadMessageCountsView) {
+      const { data: unreadData, error: unreadError } = await supabase
+        .from('unread_message_counts')
+        .select('conversation_id, unread_count');
 
-    if (unreadError) throw unreadError;
+      if (unreadError) {
+        if (unreadError.code === '42P01') {
+          canUseUnreadMessageCountsView = false;
+        } else {
+          throw unreadError;
+        }
+      } else {
+        safeUnreadData = unreadData || [];
+      }
+    }
 
     // Combine the data
     const conversationsWithData = conversations.map(conversation => {
-      const conversationParticipants = participants.filter(p => p.conversation_id === conversation.conversation_id);
-      const unreadInfo = unreadData.find(u => u.conversation_id === conversation.conversation_id) || { unread_count: 0 };
+      const conversationParticipants = safeParticipants.filter(p => p.conversation_id === conversation.conversation_id);
+      const unreadInfo = safeUnreadData.find(u => u.conversation_id === conversation.conversation_id) || { unread_count: 0 };
       
       return {
         ...conversation,
@@ -281,12 +348,22 @@ export const getUnreadMessageCount = async () => {
     
     const user = data.user;
 
+    if (!canUseUnreadMessageCountsView) {
+      return { count: 0, error: null };
+    }
+
     const { data: unreadData, error } = await supabase
       .from('unread_message_counts')
       .select('unread_count')
       .eq('user_id', user.id);
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === '42P01') {
+        canUseUnreadMessageCountsView = false;
+        return { count: 0, error: null };
+      }
+      throw error;
+    }
 
     // Sum up all unread counts
     const totalUnread = unreadData.reduce((sum, item) => sum + parseInt(item.unread_count || 0), 0);

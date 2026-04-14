@@ -161,11 +161,9 @@ const CompleteProfile = () => {
       // Force update the fields if they're empty and we have Google data
       if (!formik.values.firstName && googleMetadata.first_name) {
         formik.setFieldValue('firstName', googleMetadata.first_name);
-        console.log('Setting firstName to:', googleMetadata.first_name);
       }
       if (!formik.values.lastName && googleMetadata.last_name) {
         formik.setFieldValue('lastName', googleMetadata.last_name);
-        console.log('Setting lastName to:', googleMetadata.last_name);
       }
       
       // Also try to reset form values entirely if both fields are empty
@@ -177,7 +175,6 @@ const CompleteProfile = () => {
             lastName: googleMetadata.last_name || ''
           }
         });
-        console.log('Reset form with Google data');
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -186,20 +183,6 @@ const CompleteProfile = () => {
   const handleBack = () => {
     setActiveStep(activeStep - 1);
   };
-
-  // Debug: Log when Google metadata is available
-  useEffect(() => {
-    console.log('CompleteProfile - Google metadata:', googleMetadata);
-    console.log('CompleteProfile - User data:', user);
-    console.log('CompleteProfile - Current form values:', formik.values);
-    
-    // Show what we expect vs what we got
-    if (googleMetadata) {
-      console.log('Expected first_name:', googleMetadata.first_name);
-      console.log('Expected last_name:', googleMetadata.last_name);
-      console.log('Expected avatar_url:', googleMetadata.avatar_url);
-    }
-  }, [googleMetadata, user, formik.values]);
 
   // Show loading indicator while checking authentication
   if (loading || profileStatus.isChecking) {
@@ -238,11 +221,13 @@ const CompleteProfile = () => {
           <Typography component="h1" variant="h5" fontWeight="bold" gutterBottom>
             Complete Your Profile
           </Typography>
-          <Typography variant="body2" color="text.secondary" mb={4} textAlign="center">
-            Please provide some additional information to complete your profile
+          <Box sx={{ mb: 4, textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              Please provide some additional information to complete your profile
+            </Typography>
             {googleMetadata && (
               <Box sx={{ mt: 2, p: 2, bgcolor: 'success.light', borderRadius: 1, color: 'success.dark' }}>
-                <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                <Typography variant="body2" component="div" sx={{ fontWeight: 'medium' }}>
                   ✓ Welcome! We've pre-filled your name from your Google account.
                 </Typography>
                 <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
@@ -250,7 +235,7 @@ const CompleteProfile = () => {
                 </Typography>
               </Box>
             )}
-          </Typography>
+          </Box>
 
           <Stepper activeStep={activeStep} alternativeLabel sx={{ width: '100%', mb: 4 }}>
             {steps.map((label) => (
@@ -274,7 +259,7 @@ const CompleteProfile = () => {
             <Box component="form" onSubmit={formik.handleSubmit} sx={{ mt: 1, width: '100%' }}>
               {activeStep === 0 && (
                 // Step 1: Personal Details
-                <>
+                (<>
                   <TextField
                     margin="normal"
                     fullWidth
@@ -349,12 +334,12 @@ const CompleteProfile = () => {
                       </MenuItem>
                     ))}
                   </TextField>
-                </>
+                </>)
               )}
 
               {activeStep === 1 && (
                 // Step 2: Farming Profile
-                <>
+                (<>
                   <FormControl component="fieldset" margin="normal">
                     <FormLabel component="legend">I am a:</FormLabel>
                     <RadioGroup
@@ -369,7 +354,6 @@ const CompleteProfile = () => {
                       <FormControlLabel value="other" control={<Radio />} label="Other" />
                     </RadioGroup>
                   </FormControl>
-
                   {formik.values.role === 'farmer' && (
                     <>
                       <TextField
@@ -405,7 +389,6 @@ const CompleteProfile = () => {
                       />
                     </>
                   )}
-
                   <TextField
                     margin="normal"
                     fullWidth
@@ -423,7 +406,7 @@ const CompleteProfile = () => {
                       `${formik.values.bio.length}/300 characters`
                     }
                   />
-                </>
+                </>)
               )}
 
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>

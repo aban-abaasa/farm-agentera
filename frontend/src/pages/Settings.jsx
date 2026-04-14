@@ -343,7 +343,6 @@ const Settings = () => {
           </Typography>
         </Box>
       </Paper>
-
       {/* Settings Tabs and Content */}
       <Box sx={{ width: '100%' }}>
         {/* Tabs for different setting categories - Now horizontal */}
@@ -434,7 +433,11 @@ const Settings = () => {
               
               {/* Theme Selection */}
               <Grid container spacing={3}>
-                <Grid item xs={12} sm={6}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    sm: 6
+                  }}>
                   <Typography variant="subtitle1" fontWeight="medium" gutterBottom>
                     {t('settings.appearance.themeMode')}
                   </Typography>
@@ -461,7 +464,11 @@ const Settings = () => {
                   </Paper>
                 </Grid>
                 
-                <Grid item xs={12} sm={6}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    sm: 6
+                  }}>
                   <Typography variant="subtitle1" fontWeight="medium" gutterBottom>
                     {t('settings.appearance.colorScheme')}
                   </Typography>
@@ -499,16 +506,16 @@ const Settings = () => {
                 </Grid>
                 
                 {/* Font Size */}
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <Typography variant="subtitle1" fontWeight="medium" gutterBottom>
                     {t('settings.appearance.fontSize')}
                   </Typography>
                   <Paper variant="outlined" sx={{ p: 3, borderRadius: 2 }}>
                     <Grid container spacing={2} alignItems="center">
-                      <Grid item>
+                      <Grid>
                         <FormatSizeIcon fontSize="small" />
                       </Grid>
-                      <Grid item xs>
+                      <Grid size="grow">
                         <Slider
                           value={fontSize}
                           onChange={(e, newValue) => handleSettingChange('fontSize', newValue)}
@@ -520,7 +527,7 @@ const Settings = () => {
                           valueLabelFormat={(value) => `${value}%`}
                         />
                       </Grid>
-                      <Grid item>
+                      <Grid>
                         <FormatSizeIcon fontSize="large" />
                       </Grid>
                     </Grid>
@@ -551,7 +558,11 @@ const Settings = () => {
               
               <Grid container spacing={3}>
                 {/* Language Selection */}
-                <Grid item xs={12} sm={6}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    sm: 6
+                  }}>
                   <FormControl fullWidth variant="outlined">
                     <InputLabel>{t('settings.language.displayLanguage')}</InputLabel>
                     <Select
@@ -574,7 +585,11 @@ const Settings = () => {
                 </Grid>
                 
                 {/* Date Format */}
-                <Grid item xs={12} sm={6}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    sm: 6
+                  }}>
                   <FormControl fullWidth variant="outlined">
                     <InputLabel>{t('settings.language.dateFormat')}</InputLabel>
                     <Select
@@ -590,7 +605,11 @@ const Settings = () => {
                 </Grid>
                 
                 {/* Time Format */}
-                <Grid item xs={12} sm={6}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    sm: 6
+                  }}>
                   <FormControl fullWidth variant="outlined">
                     <InputLabel>{t('settings.language.timeFormat')}</InputLabel>
                     <Select
@@ -605,7 +624,7 @@ const Settings = () => {
                 </Grid>
                 
                 {/* Preview */}
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <Paper 
                     variant="outlined" 
                     sx={{ p: 3, borderRadius: 2, bgcolor: 'background.default' }}
@@ -778,7 +797,11 @@ const Settings = () => {
               
               <Grid container spacing={3}>
                 {/* Profile Visibility */}
-                <Grid item xs={12} sm={6}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    sm: 6
+                  }}>
                   <Typography variant="subtitle1" fontWeight="medium" gutterBottom>
                     {t('settings.privacy.profileVisibility')}
                   </Typography>
@@ -813,7 +836,11 @@ const Settings = () => {
                 </Grid>
                 
                 {/* Contact Info Visibility */}
-                <Grid item xs={12} sm={6}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    sm: 6
+                  }}>
                   <Typography variant="subtitle1" fontWeight="medium" gutterBottom>
                     {t('settings.privacy.contactVisibility')}
                   </Typography>
@@ -848,7 +875,7 @@ const Settings = () => {
                 </Grid>
                 
                 {/* Activity Tracking */}
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, mt: 2 }}>
                     <FormControlLabel
                       control={
@@ -972,7 +999,7 @@ const Settings = () => {
               
               <Grid container spacing={3}>
                 {/* Reduced Motion */}
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <Paper variant="outlined" sx={{ p: 3, borderRadius: 2 }}>
                     <FormControlLabel
                       control={
@@ -998,7 +1025,7 @@ const Settings = () => {
                 </Grid>
                 
                 {/* Text Size already covered in Appearance tab */}
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <Alert 
                     severity="success" 
                     icon={<AccessibilityIcon />}
@@ -1017,7 +1044,6 @@ const Settings = () => {
           )}
         </Paper>
       </Box>
-
       {/* Snackbar for notifications */}
       <Snackbar
         open={snackbar.open}

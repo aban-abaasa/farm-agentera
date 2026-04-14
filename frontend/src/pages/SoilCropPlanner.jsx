@@ -469,7 +469,13 @@ export default function SoilCropPlanner() {
               { name: 'Irrigation', icon: '💧', color: '#00bcd4', count: 3 },
               { name: 'Organic Inputs', icon: '🌾', color: '#795548', count: 5 }
             ].map(category => (
-              <Grid item xs={6} sm={4} md={2} key={category.name}>
+              <Grid
+                key={category.name}
+                size={{
+                  xs: 6,
+                  sm: 4,
+                  md: 2
+                }}>
                 <Card elevation={2} sx={{ 
                   borderRadius: 3, 
                   textAlign: 'center', 
@@ -497,7 +503,14 @@ export default function SoilCropPlanner() {
         </Typography>
         <Grid container spacing={3}>
           {(showAllSuppliers ? inputSuppliers : filteredSuppliers).map(supplier => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={supplier.name}>
+            <Grid
+              key={supplier.name}
+              size={{
+                xs: 12,
+                sm: 6,
+                md: 4,
+                lg: 3
+              }}>
               <Card elevation={4} sx={{ 
                 borderRadius: 3, 
                 height: '100%', 
@@ -653,7 +666,6 @@ export default function SoilCropPlanner() {
         </Box>
       </Modal>
       <Snackbar open={suggestSuccess} autoHideDuration={3000} onClose={() => setSuggestSuccess(false)} message="Supplier suggestion submitted!" />
-      
       {/* Supplier Details Modal */}
       <Modal open={supplierModalOpen} onClose={() => setSupplierModalOpen(false)}>
         <Box sx={{ 
@@ -750,7 +762,6 @@ export default function SoilCropPlanner() {
           )}
         </Box>
       </Modal>
-
       {/* Review Modal */}
       <Modal open={reviewModalOpen} onClose={() => setReviewModalOpen(false)}>
         <Box sx={{ 
@@ -823,7 +834,13 @@ export default function SoilCropPlanner() {
         {/* Soil Analysis Tab */}
         <Grid container spacing={3} mb={4}>
           {soilStats.map(stat => (
-            <Grid item xs={12} sm={6} md={3} key={stat.label}>
+            <Grid
+              key={stat.label}
+              size={{
+                xs: 12,
+                sm: 6,
+                md: 3
+              }}>
               <Card elevation={3} sx={{ borderRadius: 3, textAlign: 'center', py: 3 }}>
                 <CardContent>
                   {stat.icon}
@@ -898,7 +915,12 @@ export default function SoilCropPlanner() {
           <Typography variant="h5" fontWeight="bold" color="primary.main" mb={2}>AI-Powered Crop Recommendations</Typography>
           <Grid container spacing={3}>
             {recommendations.map(rec => (
-              <Grid item xs={12} md={4} key={rec.crop}>
+              <Grid
+                key={rec.crop}
+                size={{
+                  xs: 12,
+                  md: 4
+                }}>
                 <Card elevation={3} sx={{ borderRadius: 3, textAlign: 'center', py: 3 }}>
                   <CardContent>
                     <AgricultureIcon color="success" sx={{ fontSize: 36, mb: 1 }} />
@@ -938,7 +960,12 @@ export default function SoilCropPlanner() {
           </Box>
           <Grid container spacing={3}>
             {communityPosts.map(post => (
-              <Grid item xs={12} md={4} key={post.id}>
+              <Grid
+                key={post.id}
+                size={{
+                  xs: 12,
+                  md: 4
+                }}>
                 <Card elevation={2} sx={{ borderRadius: 3, height: '100%', display: 'flex', flexDirection: 'column', transition: '0.3s', '&:hover': { boxShadow: 8, transform: 'scale(1.03)' } }}>
                   <CardContent>
                     <Typography variant="subtitle1" fontWeight="bold">{post.user}</Typography>

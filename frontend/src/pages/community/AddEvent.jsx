@@ -239,7 +239,7 @@ const AddEvent = ({ open, onClose, onEventCreated }) => {
       case 0:
         return (
           <Grid container spacing={3}>
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 label="Event Title"
                 fullWidth
@@ -256,8 +256,7 @@ const AddEvent = ({ open, onClose, onEventCreated }) => {
                 }}
               />
             </Grid>
-
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 label="Event Description"
                 fullWidth
@@ -276,8 +275,11 @@ const AddEvent = ({ open, onClose, onEventCreated }) => {
                 }}
               />
             </Grid>
-
-            <Grid item xs={12} sm={6}>
+            <Grid
+              size={{
+                xs: 12,
+                sm: 6
+              }}>
               <FormControl fullWidth disabled={loading || success}>
                 <InputLabel>Event Type</InputLabel>
                 <Select
@@ -299,8 +301,11 @@ const AddEvent = ({ open, onClose, onEventCreated }) => {
                 </Select>
               </FormControl>
             </Grid>
-
-            <Grid item xs={12} sm={6}>
+            <Grid
+              size={{
+                xs: 12,
+                sm: 6
+              }}>
               <TextField
                 label="Image URL (Optional)"
                 fullWidth
@@ -328,7 +333,7 @@ const AddEvent = ({ open, onClose, onEventCreated }) => {
       case 1:
         return (
           <Grid container spacing={3}>
-            <Grid item xs={12}>
+            <Grid size={12}>
               <FormControlLabel
                 control={
                   <Switch
@@ -347,8 +352,11 @@ const AddEvent = ({ open, onClose, onEventCreated }) => {
                 }
               />
             </Grid>
-
-            <Grid item xs={12} sm={6}>
+            <Grid
+              size={{
+                xs: 12,
+                sm: 6
+              }}>
               <TextField
                 label="Start Date & Time"
                 type="datetime-local"
@@ -366,8 +374,11 @@ const AddEvent = ({ open, onClose, onEventCreated }) => {
                 }}
               />
             </Grid>
-
-            <Grid item xs={12} sm={6}>
+            <Grid
+              size={{
+                xs: 12,
+                sm: 6
+              }}>
               <TextField
                 label="End Date & Time"
                 type="datetime-local"
@@ -385,9 +396,8 @@ const AddEvent = ({ open, onClose, onEventCreated }) => {
                 }}
               />
             </Grid>
-
             {!formData.is_virtual ? (
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <Autocomplete
                   options={ugandanDistricts}
                   value={formData.location}
@@ -417,7 +427,7 @@ const AddEvent = ({ open, onClose, onEventCreated }) => {
                 />
               </Grid>
             ) : (
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <TextField
                   label="Virtual Meeting Link"
                   fullWidth
@@ -440,8 +450,7 @@ const AddEvent = ({ open, onClose, onEventCreated }) => {
                 />
               </Grid>
             )}
-
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 label="Requirements/Prerequisites (Optional)"
                 fullWidth
@@ -464,7 +473,11 @@ const AddEvent = ({ open, onClose, onEventCreated }) => {
       case 2:
         return (
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
+            <Grid
+              size={{
+                xs: 12,
+                sm: 6
+              }}>
               <TextField
                 label="Maximum Participants (Optional)"
                 type="number"
@@ -487,8 +500,11 @@ const AddEvent = ({ open, onClose, onEventCreated }) => {
                 }}
               />
             </Grid>
-
-            <Grid item xs={12} sm={6}>
+            <Grid
+              size={{
+                xs: 12,
+                sm: 6
+              }}>
               <FormControlLabel
                 control={
                   <Switch
@@ -500,10 +516,13 @@ const AddEvent = ({ open, onClose, onEventCreated }) => {
                 label="Free Event"
               />
             </Grid>
-
             {!formData.is_free && (
               <>
-                <Grid item xs={12} sm={6}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    sm: 6
+                  }}>
                   <TextField
                     label="Event Price"
                     type="number"
@@ -526,7 +545,11 @@ const AddEvent = ({ open, onClose, onEventCreated }) => {
                   />
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    sm: 6
+                  }}>
                   <FormControl fullWidth disabled={loading || success}>
                     <InputLabel>Currency</InputLabel>
                     <Select
@@ -543,8 +566,7 @@ const AddEvent = ({ open, onClose, onEventCreated }) => {
                 </Grid>
               </>
             )}
-
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 label="Contact Information"
                 fullWidth

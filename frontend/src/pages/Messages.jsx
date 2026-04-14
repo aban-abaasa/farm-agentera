@@ -159,7 +159,11 @@ const Messages = () => {
             
             {/* Quick Stats */}
             <Grid container spacing={2} sx={{ mt: 2 }}>
-              <Grid item xs={6} sm={3}>
+              <Grid
+                size={{
+                  xs: 6,
+                  sm: 3
+                }}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Avatar sx={{ bgcolor: alpha(theme.palette.success.main, 0.1), mr: 1.5, width: 40, height: 40 }}>
                     <ChatIcon sx={{ color: theme.palette.success.main, fontSize: 20 }} />
@@ -174,7 +178,11 @@ const Messages = () => {
                   </Box>
                 </Box>
               </Grid>
-              <Grid item xs={6} sm={3}>
+              <Grid
+                size={{
+                  xs: 6,
+                  sm: 3
+                }}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Avatar sx={{ bgcolor: alpha(theme.palette.warning.main, 0.1), mr: 1.5, width: 40, height: 40 }}>
                     <CircleIcon sx={{ color: theme.palette.warning.main, fontSize: 12 }} />
@@ -189,7 +197,11 @@ const Messages = () => {
                   </Box>
                 </Box>
               </Grid>
-              <Grid item xs={6} sm={3}>
+              <Grid
+                size={{
+                  xs: 6,
+                  sm: 3
+                }}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Avatar sx={{ bgcolor: alpha(theme.palette.info.main, 0.1), mr: 1.5, width: 40, height: 40 }}>
                     <AgricultureIcon sx={{ color: theme.palette.info.main, fontSize: 20 }} />
@@ -204,7 +216,11 @@ const Messages = () => {
                   </Box>
                 </Box>
               </Grid>
-              <Grid item xs={6} sm={3}>
+              <Grid
+                size={{
+                  xs: 6,
+                  sm: 3
+                }}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Avatar sx={{ bgcolor: alpha(theme.palette.secondary.main, 0.1), mr: 1.5, width: 40, height: 40 }}>
                     <ScienceIcon sx={{ color: theme.palette.secondary.main, fontSize: 20 }} />
@@ -223,10 +239,13 @@ const Messages = () => {
           </CardContent>
         </Card>
       </Fade>
-      
       <Grid container spacing={3}>
         {/* Conversations List */}
-        <Grid item xs={12} lg={5}>
+        <Grid
+          size={{
+            xs: 12,
+            lg: 5
+          }}>
           <Slide direction="right" in timeout={800}>
             <Card 
               sx={{ 
@@ -500,7 +519,11 @@ const Messages = () => {
         </Grid>
         
         {/* Message Detail View */}
-        <Grid item xs={12} lg={7}>
+        <Grid
+          size={{
+            xs: 12,
+            lg: 7
+          }}>
           <Slide direction="left" in timeout={1000}>
             <Card 
               sx={{ 

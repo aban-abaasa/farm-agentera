@@ -430,23 +430,20 @@ const EditProfile = () => {
           </Button>
         </Box>
       </Box>
-
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
       )}
-
       {success && (
         <Alert severity="success" sx={{ mb: 3 }}>
           Profile updated successfully!
         </Alert>
       )}
-
       <form onSubmit={formik.handleSubmit}>
         <Grid container spacing={3}>
           {/* Profile Pictures Section */}
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Card elevation={1} sx={{ mb: 3, overflow: 'visible' }}>
               <CardContent sx={{ p: 3 }}>
                 <Typography variant="h6" fontWeight="bold" gutterBottom color="primary">
@@ -455,7 +452,11 @@ const EditProfile = () => {
                 <Divider sx={{ mb: 3 }} />
                 
                 <Grid container spacing={4} alignItems="center">
-                  <Grid item xs={12} md={6}>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      md: 6
+                    }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                       <Typography variant="subtitle1" gutterBottom fontWeight="medium">
                         Profile Picture
@@ -508,7 +509,11 @@ const EditProfile = () => {
                       </Typography>
                     </Box>
                   </Grid>
-                  <Grid item xs={12} md={6}>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      md: 6
+                    }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                       <Typography variant="subtitle1" gutterBottom fontWeight="medium">
                         Cover Photo
@@ -570,7 +575,7 @@ const EditProfile = () => {
           </Grid>
 
           {/* Basic Information */}
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Card elevation={1} sx={{ mb: 3 }}>
               <CardContent sx={{ p: 3 }}>
                 <Typography variant="h6" fontWeight="bold" gutterBottom color="primary">
@@ -579,7 +584,11 @@ const EditProfile = () => {
                 <Divider sx={{ mb: 3 }} />
                 
                 <Grid container spacing={3}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      sm: 6
+                    }}>
                     <TextField
                       fullWidth
                       id="firstName"
@@ -596,7 +605,11 @@ const EditProfile = () => {
                       }}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      sm: 6
+                    }}>
                     <TextField
                       fullWidth
                       id="lastName"
@@ -613,7 +626,11 @@ const EditProfile = () => {
                       }}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      sm: 6
+                    }}>
                     <TextField
                       fullWidth
                       id="email"
@@ -630,7 +647,11 @@ const EditProfile = () => {
                       }}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      sm: 6
+                    }}>
                     <TextField
                       fullWidth
                       id="phone"
@@ -647,7 +668,11 @@ const EditProfile = () => {
                       }}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      sm: 6
+                    }}>
                     <TextField
                       fullWidth
                       id="location"
@@ -664,7 +689,7 @@ const EditProfile = () => {
                       }}
                     />
                   </Grid>
-                  <Grid item xs={12}>
+                  <Grid size={12}>
                     <TextField
                       fullWidth
                       id="bio"
@@ -692,7 +717,7 @@ const EditProfile = () => {
           </Grid>
 
           {/* Farming Details */}
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Card elevation={1} sx={{ mb: 3 }}>
               <CardContent sx={{ p: 3 }}>
                 <Typography variant="h6" fontWeight="bold" gutterBottom color="primary">
@@ -701,7 +726,11 @@ const EditProfile = () => {
                 <Divider sx={{ mb: 3 }} />
                 
                 <Grid container spacing={3}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      sm: 6
+                    }}>
                     <FormControl fullWidth variant="outlined">
                       <InputLabel id="role-label">Role</InputLabel>
                       <Select
@@ -727,7 +756,11 @@ const EditProfile = () => {
                       )}
                     </FormControl>
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      sm: 6
+                    }}>
                     <TextField
                       fullWidth
                       id="farmSize"
@@ -745,7 +778,11 @@ const EditProfile = () => {
                       }}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      sm: 6
+                    }}>
                     <FormControl fullWidth variant="outlined">
                       <InputLabel id="farmerType-label">Farmer Type</InputLabel>
                       <Select
@@ -771,7 +808,11 @@ const EditProfile = () => {
                       )}
                     </FormControl>
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      sm: 6
+                    }}>
                     <TextField
                       fullWidth
                       id="specialty"
@@ -789,7 +830,11 @@ const EditProfile = () => {
                       }}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      sm: 6
+                    }}>
                     <Box>
                       <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
                         <TextField
@@ -854,7 +899,7 @@ const EditProfile = () => {
           </Grid>
 
           {/* Social Media */}
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Card elevation={1} sx={{ mb: 3 }}>
               <CardContent sx={{ p: 3 }}>
                 <Typography variant="h6" fontWeight="bold" gutterBottom color="primary">
@@ -863,7 +908,11 @@ const EditProfile = () => {
                 <Divider sx={{ mb: 3 }} />
                 
                 <Grid container spacing={3}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      sm: 6
+                    }}>
                     <TextField
                       fullWidth
                       id="facebookUrl"
@@ -883,7 +932,11 @@ const EditProfile = () => {
                       }}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid
+                    size={{
+                      xs: 12,
+                      sm: 6
+                    }}>
                     <TextField
                       fullWidth
                       id="twitterUrl"
@@ -909,7 +962,7 @@ const EditProfile = () => {
           </Grid>
 
           {/* Delete Account Section */}
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Card elevation={1} sx={{ mb: 3, borderColor: 'error.light', borderWidth: 1, borderStyle: 'solid' }}>
               <CardContent sx={{ p: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -938,7 +991,7 @@ const EditProfile = () => {
           </Grid>
 
           {/* Action Buttons - Bottom */}
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
               <Button
                 variant="outlined"
@@ -964,7 +1017,6 @@ const EditProfile = () => {
           </Grid>
         </Grid>
       </form>
-
       {/* Delete Account Dialog */}
       <Dialog
         open={deleteDialogOpen}
@@ -1032,7 +1084,6 @@ const EditProfile = () => {
           )}
         </DialogActions>
       </Dialog>
-
       {/* Confirmation Dialog */}
       <Dialog
         open={confirmDeleteDialogOpen}

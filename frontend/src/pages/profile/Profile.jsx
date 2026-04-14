@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getUserProfile } from '../../services/api/authService';
 import { getUserListings, changeListingStatus } from '../../services/api/marketplaceService';
-import Grid from '@mui/material/GridLegacy';
+import { Grid } from '@mui/material';
 import { 
   Box, 
   Container, 
@@ -350,10 +350,14 @@ const Profile = () => {
           <Skeleton variant="rectangular" height={280} sx={{ borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }} />
         </Box>
         <Grid container spacing={4}>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Paper elevation={2} sx={{ p: 3, mt: { xs: 0, md: -8 }, position: 'relative', zIndex: 1, borderRadius: 2, mb: 4 }}>
               <Grid container spacing={3}>
-                <Grid item xs={12} lg={4}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    lg: 4
+                  }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', py: 2, mb: { xs: 3, lg: 0 }, height: '100%' }}>
                     {[1, 2, 3].map((item) => (
                       <Box key={item} sx={{ textAlign: 'center', width: '30%' }}>
@@ -364,7 +368,12 @@ const Profile = () => {
                   </Box>
                 </Grid>
                 
-                <Grid item xs={12} md={6} lg={4}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 6,
+                    lg: 4
+                  }}>
                   <Box sx={{ mb: 3 }}>
                     <Skeleton variant="text" width="40%" height={24} sx={{ mb: 1 }} />
                     <Skeleton variant="rounded" height={80} sx={{ borderRadius: 2 }} />
@@ -376,7 +385,12 @@ const Profile = () => {
                   </Box>
                 </Grid>
                 
-                <Grid item xs={12} md={6} lg={4}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 6,
+                    lg: 4
+                  }}>
                   <Box sx={{ mb: 3 }}>
                     <Skeleton variant="text" width="50%" height={24} sx={{ mb: 1 }} />
                     <Skeleton variant="rounded" height={120} sx={{ borderRadius: 2 }} />
@@ -395,7 +409,7 @@ const Profile = () => {
             </Paper>
           </Grid>
           
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Paper elevation={2} sx={{ borderRadius: 2, mb: 3, overflow: 'hidden' }}>
               <Box sx={{ display: 'flex' }}>
                 {[1, 2, 3].map((item) => (
@@ -411,7 +425,14 @@ const Profile = () => {
             
             <Grid container spacing={3}>
               {[1, 2, 3, 4].map((item) => (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={item}>
+                <Grid
+                  key={item}
+                  size={{
+                    xs: 12,
+                    sm: 6,
+                    md: 4,
+                    lg: 3
+                  }}>
                   <Skeleton 
                     variant="rounded" 
                     height={300} 
@@ -451,7 +472,6 @@ const Profile = () => {
     <>
       {/* Scroll progress indicator */}
       <ScrollProgressIndicator />
-      
       <Container maxWidth="lg" sx={{ py: 4 }}>
         {/* Cover photo with parallax effect and overlay gradient */}
         <MotionBox 
@@ -766,7 +786,7 @@ const Profile = () => {
         {/* Profile info and content */}
         <Grid container spacing={4}>
           {/* Left sidebar - Profile info */}
-          <Grid item xs={12}>
+          <Grid size={12}>
             <MotionPaper 
               ref={profileCardRef}
               initial={{ y: 30, opacity: 0 }}
@@ -792,7 +812,11 @@ const Profile = () => {
             >
               <Grid container spacing={3}>
                 {/* Profile stats and quick info */}
-                <Grid item xs={12} lg={4}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    lg: 4
+                  }}>
                   <MotionBox
                     variants={CONTAINER_VARIANTS}
                     initial="hidden"
@@ -945,7 +969,12 @@ const Profile = () => {
                 </Grid>
                 
                 {/* About and Contact section */}
-                <Grid item xs={12} md={6} lg={4}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 6,
+                    lg: 4
+                  }}>
                   <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                     {profileData.bio && (
                       <MotionBox 
@@ -1093,7 +1122,12 @@ const Profile = () => {
                 </Grid>
                 
                 {/* Farming details and social media */}
-                <Grid item xs={12} md={6} lg={4}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 6,
+                    lg: 4
+                  }}>
                   <MotionBox 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -1416,7 +1450,7 @@ const Profile = () => {
           </Grid>
           
           {/* Right content area with tabs and listings */}
-          <Grid item xs={12}>
+          <Grid size={12}>
             {/* Tabs */}
             <MotionPaper 
               initial={{ opacity: 0, y: 20 }}
@@ -1633,7 +1667,14 @@ const Profile = () => {
                 {listingsLoading ? (
                   <Grid container spacing={3}>
                     {Array(4).fill(0).map((_, index) => (
-                      <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
+                      <Grid
+                        key={index}
+                        size={{
+                          xs: 12,
+                          sm: 6,
+                          md: 4,
+                          lg: 3
+                        }}>
                         <Card 
                           elevation={2} 
                           sx={{ 

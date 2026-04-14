@@ -101,7 +101,6 @@ const LandListings = () => {
           <CircularProgress size={60} />
         </Box>
       )}
-      
       {/* Error State */}
       {error && (
         <Box sx={{ p: 3 }}>
@@ -110,7 +109,6 @@ const LandListings = () => {
           </Alert>
         </Box>
       )}
-      
       {/* Main Content - Only show when not loading */}
       {!loading && (
         <>
@@ -165,7 +163,11 @@ const LandListings = () => {
               }}
             />
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid
+            size={{
+              xs: 12,
+              md: 3
+            }}>
             <FormControl fullWidth variant="outlined">
               <InputLabel id="type-label">Property Type</InputLabel>
               <Select
@@ -181,7 +183,11 @@ const LandListings = () => {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid
+            size={{
+              xs: 12,
+              md: 3
+            }}>
             <FormControl fullWidth variant="outlined">
               <InputLabel id="sort-label">Sort By</InputLabel>
               <Select
@@ -199,7 +205,11 @@ const LandListings = () => {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={1}>
+          <Grid
+            size={{
+              xs: 12,
+              md: 1
+            }}>
             <Button 
               variant="contained" 
               color="primary"
@@ -251,7 +261,13 @@ const LandListings = () => {
       {/* Listings grid */}
       <Grid container spacing={4}>
         {filteredListings.map((listing) => (
-          <Grid item xs={12} sm={6} lg={4} key={listing.id}>
+          <Grid
+            key={listing.id}
+            size={{
+              xs: 12,
+              sm: 6,
+              lg: 4
+            }}>
             <Card 
               sx={{ 
                 height: '100%', 

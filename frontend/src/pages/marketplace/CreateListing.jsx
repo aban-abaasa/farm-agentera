@@ -604,7 +604,6 @@ const CreateListing = () => {
           Complete the form below to showcase your agricultural offerings to potential buyers and partners.
         </Typography>
       </MotionBox>
-      
       {/* Progress Indicator */}
       <MotionBox 
         variants={itemVariants}
@@ -705,7 +704,6 @@ const CreateListing = () => {
           )}
         </Paper>
       </MotionBox>
-      
       {/* Listing Type Tabs */}
       <MotionBox 
         variants={itemVariants}
@@ -779,7 +777,6 @@ const CreateListing = () => {
           </Tabs>
         </Paper>
       </MotionBox>
-      
       <form onSubmit={openConfirmDialog}>
         <AnimatePresence mode="wait">
           <MotionBox
@@ -792,7 +789,7 @@ const CreateListing = () => {
             {/* Step content based on activeStep */}
             {activeStep === 0 && (
               <MotionGrid container spacing={3}>
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <MotionCard 
                     elevation={3} 
                     sx={{ 
@@ -829,7 +826,11 @@ const CreateListing = () => {
                       </Typography>
                       
                       <Grid container spacing={3} sx={{ mt: 2 }}>
-                        <Grid item xs={12} md={4}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 4
+                          }}>
                           <Paper 
                             elevation={activeTab === 'land' ? 3 : 1}
                             onClick={() => setActiveTab('land')}
@@ -882,7 +883,11 @@ const CreateListing = () => {
                           </Paper>
                         </Grid>
                         
-                        <Grid item xs={12} md={4}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 4
+                          }}>
                           <Paper 
                             elevation={activeTab === 'produce' ? 3 : 1}
                             onClick={() => setActiveTab('produce')}
@@ -935,7 +940,11 @@ const CreateListing = () => {
                           </Paper>
                         </Grid>
                         
-                        <Grid item xs={12} md={4}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 4
+                          }}>
                           <Paper 
                             elevation={activeTab === 'service' ? 3 : 1}
                             onClick={() => setActiveTab('service')}
@@ -996,7 +1005,7 @@ const CreateListing = () => {
 
             {activeStep === 1 && (
               <MotionGrid container spacing={3}>
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <MotionCard 
                     elevation={3} 
                     sx={{ 
@@ -1020,7 +1029,7 @@ const CreateListing = () => {
                     </Box>
                     <CardContent sx={{ p: 4 }}>
                       <Grid container spacing={4}>
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                           <TextField
                             fullWidth
                             label="Title *"
@@ -1042,7 +1051,11 @@ const CreateListing = () => {
                           />
                         </Grid>
                         
-                        <Grid item xs={12} sm={6}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            sm: 6
+                          }}>
                           <TextField
                             fullWidth
                             label="Price *"
@@ -1064,7 +1077,11 @@ const CreateListing = () => {
                           />
                         </Grid>
                         
-                        <Grid item xs={12} sm={6}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            sm: 6
+                          }}>
                           <TextField
                             fullWidth
                             label="Location *"
@@ -1086,7 +1103,7 @@ const CreateListing = () => {
                           />
                         </Grid>
                         
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                           <TextField
                             fullWidth
                             label="Description *"
@@ -1110,7 +1127,7 @@ const CreateListing = () => {
                           />
                         </Grid>
                         
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                           <TextField
                             fullWidth
                             label="Features"
@@ -1141,7 +1158,7 @@ const CreateListing = () => {
 
             {activeStep === 2 && activeTab === 'land' && (
               <MotionGrid container spacing={3}>
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <MotionCard 
                     elevation={3} 
                     sx={{ 
@@ -1165,7 +1182,11 @@ const CreateListing = () => {
                     </Box>
                     <CardContent sx={{ p: 4 }}>
                       <Grid container spacing={4}>
-                        <Grid item xs={12} sm={6}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            sm: 6
+                          }}>
                           <TextField
                             fullWidth
                             label="Land Size *"
@@ -1187,7 +1208,11 @@ const CreateListing = () => {
                           />
                         </Grid>
                         
-                        <Grid item xs={12} sm={6}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            sm: 6
+                          }}>
                           <FormControl fullWidth variant="outlined">
                             <InputLabel>Listing Type</InputLabel>
                             <Select
@@ -1208,7 +1233,11 @@ const CreateListing = () => {
                           </FormControl>
                         </Grid>
                         
-                        <Grid item xs={12} sm={6}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            sm: 6
+                          }}>
                           <TextField
                             fullWidth
                             label="Soil Type"
@@ -1228,7 +1257,11 @@ const CreateListing = () => {
                           />
                         </Grid>
                         
-                        <Grid item xs={12} sm={6}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            sm: 6
+                          }}>
                           <TextField
                             fullWidth
                             label="Terrain"
@@ -1248,7 +1281,7 @@ const CreateListing = () => {
                           />
                         </Grid>
                         
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                           <TextField
                             fullWidth
                             label="Water Source"
@@ -1268,7 +1301,7 @@ const CreateListing = () => {
                           />
                         </Grid>
                         
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                           <TextField
                             fullWidth
                             label="Previous Crops"
@@ -1288,7 +1321,11 @@ const CreateListing = () => {
                           />
                         </Grid>
                         
-                        <Grid item xs={12} sm={6}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            sm: 6
+                          }}>
                           <TextField
                             fullWidth
                             label="Access Roads"
@@ -1308,7 +1345,11 @@ const CreateListing = () => {
                           />
                         </Grid>
                         
-                        <Grid item xs={12} sm={6}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            sm: 6
+                          }}>
                           <TextField
                             fullWidth
                             label="Nearby Markets"
@@ -1328,7 +1369,7 @@ const CreateListing = () => {
                           />
                         </Grid>
                         
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                           <TextField
                             fullWidth
                             label="Lease Terms (if applicable)"
@@ -1358,7 +1399,7 @@ const CreateListing = () => {
             
             {activeStep === 3 && (
               <MotionGrid container spacing={3}>
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <MotionCard 
                     elevation={3} 
                     sx={{ 
@@ -1382,7 +1423,7 @@ const CreateListing = () => {
                     </Box>
                     <CardContent sx={{ p: 4 }}>
                       <Grid container spacing={3}>
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                           <Box sx={{ mb: 3 }}>
                             <Typography variant="body1" paragraph>
                               High-quality images can make your listing more attractive to potential buyers.
@@ -1480,14 +1521,20 @@ const CreateListing = () => {
                         </Grid>
                         
                         {previewImages.length > 0 && (
-                          <Grid item xs={12}>
+                          <Grid size={12}>
                             <Box sx={{ mt: 3 }}>
                               <Typography variant="h6" fontWeight="medium" gutterBottom color="primary.dark">
                                 Preview Images ({previewImages.length}/5)
                               </Typography>
                               <Grid container spacing={3} sx={{ mt: 1 }}>
                                 {previewImages.map((image, index) => (
-                                  <Grid item xs={12} sm={6} md={4} key={index}>
+                                  <Grid
+                                    key={index}
+                                    size={{
+                                      xs: 12,
+                                      sm: 6,
+                                      md: 4
+                                    }}>
                                     <MotionBox 
                                       initial={{ opacity: 0, scale: 0.8 }}
                                       animate={{ opacity: 1, scale: 1 }}
@@ -1570,7 +1617,12 @@ const CreateListing = () => {
                                 ))}
                                 
                                 {previewImages.length < 5 && (
-                                  <Grid item xs={12} sm={6} md={4}>
+                                  <Grid
+                                    size={{
+                                      xs: 12,
+                                      sm: 6,
+                                      md: 4
+                                    }}>
                                     <Paper
                                       variant="outlined"
                                       component="label"
@@ -1627,7 +1679,7 @@ const CreateListing = () => {
             )}
 
             {activeTab === 'produce' && activeStep === 2 && (
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <MotionCard 
                   elevation={2} 
                   sx={{ borderRadius: 2, mb: 3 }}
@@ -1642,7 +1694,11 @@ const CreateListing = () => {
                     <Divider sx={{ mb: 3 }} />
                     
                     <Grid container spacing={3}>
-                      <Grid item xs={12} sm={4}>
+                      <Grid
+                        size={{
+                          xs: 12,
+                          sm: 4
+                        }}>
                         <FormControl fullWidth variant="outlined" error={Boolean(errors.category)}>
                           <InputLabel>Category *</InputLabel>
                           <Select
@@ -1666,7 +1722,11 @@ const CreateListing = () => {
                         </FormControl>
                       </Grid>
                       
-                      <Grid item xs={12} sm={4}>
+                      <Grid
+                        size={{
+                          xs: 12,
+                          sm: 4
+                        }}>
                         <TextField
                           fullWidth
                           label="Quantity *"
@@ -1681,7 +1741,11 @@ const CreateListing = () => {
                         />
                       </Grid>
                       
-                      <Grid item xs={12} sm={4}>
+                      <Grid
+                        size={{
+                          xs: 12,
+                          sm: 4
+                        }}>
                         <FormControl fullWidth variant="outlined">
                           <InputLabel>Quality</InputLabel>
                           <Select
@@ -1699,7 +1763,11 @@ const CreateListing = () => {
                         </FormControl>
                       </Grid>
                       
-                      <Grid item xs={12} sm={6}>
+                      <Grid
+                        size={{
+                          xs: 12,
+                          sm: 6
+                        }}>
                         <TextField
                           fullWidth
                           label="Variety/Breed"
@@ -1712,7 +1780,11 @@ const CreateListing = () => {
                         />
                       </Grid>
                       
-                      <Grid item xs={12} sm={6}>
+                      <Grid
+                        size={{
+                          xs: 12,
+                          sm: 6
+                        }}>
                         <TextField
                           fullWidth
                           label="Harvest Date"
@@ -1726,7 +1798,7 @@ const CreateListing = () => {
                         />
                       </Grid>
                       
-                      <Grid item xs={12}>
+                      <Grid size={12}>
                         <TextField
                           fullWidth
                           label="Processing Method"
@@ -1739,7 +1811,11 @@ const CreateListing = () => {
                         />
                       </Grid>
                       
-                      <Grid item xs={12} sm={6}>
+                      <Grid
+                        size={{
+                          xs: 12,
+                          sm: 6
+                        }}>
                         <TextField
                           fullWidth
                           label="Grade/Classification"
@@ -1752,7 +1828,11 @@ const CreateListing = () => {
                         />
                       </Grid>
                       
-                      <Grid item xs={12} sm={6}>
+                      <Grid
+                        size={{
+                          xs: 12,
+                          sm: 6
+                        }}>
                         <TextField
                           fullWidth
                           label="Certification"
@@ -1765,7 +1845,7 @@ const CreateListing = () => {
                         />
                       </Grid>
                       
-                      <Grid item xs={12}>
+                      <Grid size={12}>
                         <TextField
                           fullWidth
                           label="Packaging"
@@ -1784,7 +1864,7 @@ const CreateListing = () => {
             )}
 
             {activeTab === 'service' && activeStep === 2 && (
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <MotionCard 
                   elevation={2} 
                   sx={{ borderRadius: 2, mb: 3 }}
@@ -1799,7 +1879,11 @@ const CreateListing = () => {
                     <Divider sx={{ mb: 3 }} />
                     
                     <Grid container spacing={3}>
-                      <Grid item xs={12} sm={6}>
+                      <Grid
+                        size={{
+                          xs: 12,
+                          sm: 6
+                        }}>
                         <FormControl fullWidth variant="outlined" error={Boolean(errors.serviceCategory)}>
                           <InputLabel>Service Category *</InputLabel>
                           <Select
@@ -1823,7 +1907,11 @@ const CreateListing = () => {
                         </FormControl>
                       </Grid>
                       
-                      <Grid item xs={12} sm={6}>
+                      <Grid
+                        size={{
+                          xs: 12,
+                          sm: 6
+                        }}>
                         <TextField
                           fullWidth
                           label="Availability *"
@@ -1838,7 +1926,11 @@ const CreateListing = () => {
                         />
                       </Grid>
                       
-                      <Grid item xs={12} sm={6}>
+                      <Grid
+                        size={{
+                          xs: 12,
+                          sm: 6
+                        }}>
                         <TextField
                           fullWidth
                           label="Equipment Type (if applicable)"
@@ -1851,7 +1943,11 @@ const CreateListing = () => {
                         />
                       </Grid>
                       
-                      <Grid item xs={12} sm={6}>
+                      <Grid
+                        size={{
+                          xs: 12,
+                          sm: 6
+                        }}>
                         <TextField
                           fullWidth
                           label="Years of Experience"
@@ -1865,7 +1961,7 @@ const CreateListing = () => {
                         />
                       </Grid>
                       
-                      <Grid item xs={12}>
+                      <Grid size={12}>
                         <TextField
                           fullWidth
                           label="Services Offered"
@@ -1880,7 +1976,7 @@ const CreateListing = () => {
                         />
                       </Grid>
                       
-                      <Grid item xs={12}>
+                      <Grid size={12}>
                         <TextField
                           fullWidth
                           label="Coverage Area"
@@ -1893,7 +1989,7 @@ const CreateListing = () => {
                         />
                       </Grid>
                       
-                      <Grid item xs={12}>
+                      <Grid size={12}>
                         <TextField
                           fullWidth
                           label="Price Details"
@@ -1908,7 +2004,7 @@ const CreateListing = () => {
                         />
                       </Grid>
                       
-                      <Grid item xs={12}>
+                      <Grid size={12}>
                         <TextField
                           fullWidth
                           label="Booking Process"
@@ -1930,7 +2026,7 @@ const CreateListing = () => {
 
             {activeStep === 4 && (
               <MotionGrid container spacing={3}>
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <MotionCard 
                     elevation={3} 
                     sx={{ 
@@ -1969,7 +2065,7 @@ const CreateListing = () => {
                       
                       <Grid container spacing={4}>
                         {/* Basic Information Summary */}
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                           <Paper elevation={1} sx={{ p: 3, borderRadius: 2, bgcolor: 'background.paper' }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                               <ListAlt color="primary" sx={{ mr: 1.5 }} />
@@ -1978,24 +2074,32 @@ const CreateListing = () => {
                             <Divider sx={{ mb: 2 }} />
                             
                             <Grid container spacing={2}>
-                              <Grid item xs={12} md={6}>
+                              <Grid
+                                size={{
+                                  xs: 12,
+                                  md: 6
+                                }}>
                                 <Typography variant="subtitle2" color="text.secondary">Title</Typography>
                                 <Typography variant="body1" fontWeight="medium">{formData.title}</Typography>
                               </Grid>
-                              <Grid item xs={12} md={6}>
+                              <Grid
+                                size={{
+                                  xs: 12,
+                                  md: 6
+                                }}>
                                 <Typography variant="subtitle2" color="text.secondary">Price</Typography>
                                 <Typography variant="body1" fontWeight="medium">{formData.price}</Typography>
                               </Grid>
-                              <Grid item xs={12}>
+                              <Grid size={12}>
                                 <Typography variant="subtitle2" color="text.secondary">Location</Typography>
                                 <Typography variant="body1" fontWeight="medium">{formData.location}</Typography>
                               </Grid>
-                              <Grid item xs={12}>
+                              <Grid size={12}>
                                 <Typography variant="subtitle2" color="text.secondary">Description</Typography>
                                 <Typography variant="body1">{formData.description}</Typography>
                               </Grid>
                               {formData.features && (
-                                <Grid item xs={12}>
+                                <Grid size={12}>
                                   <Typography variant="subtitle2" color="text.secondary">Features</Typography>
                                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 0.5 }}>
                                     {formData.features.split(',').map((feature, index) => (
@@ -2017,7 +2121,7 @@ const CreateListing = () => {
                         </Grid>
                         
                         {/* Listing Type Specific Information */}
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                           <Paper elevation={1} sx={{ p: 3, borderRadius: 2, bgcolor: 'background.paper' }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                               {activeTab === 'land' ? (
@@ -2035,40 +2139,78 @@ const CreateListing = () => {
                             
                             {activeTab === 'land' && (
                               <Grid container spacing={2}>
-                                <Grid item xs={12} sm={6} md={4}>
+                                <Grid
+                                  size={{
+                                    xs: 12,
+                                    sm: 6,
+                                    md: 4
+                                  }}>
                                   <Typography variant="subtitle2" color="text.secondary">Size</Typography>
                                   <Typography variant="body1" fontWeight="medium">{formData.size}</Typography>
                                 </Grid>
-                                <Grid item xs={12} sm={6} md={4}>
+                                <Grid
+                                  size={{
+                                    xs: 12,
+                                    sm: 6,
+                                    md: 4
+                                  }}>
                                   <Typography variant="subtitle2" color="text.secondary">Listing Type</Typography>
                                   <Typography variant="body1" fontWeight="medium">{formData.listingType}</Typography>
                                 </Grid>
-                                <Grid item xs={12} sm={6} md={4}>
+                                <Grid
+                                  size={{
+                                    xs: 12,
+                                    sm: 6,
+                                    md: 4
+                                  }}>
                                   <Typography variant="subtitle2" color="text.secondary">Soil Type</Typography>
                                   <Typography variant="body1">{formData.soilType || 'Not specified'}</Typography>
                                 </Grid>
-                                <Grid item xs={12} sm={6} md={4}>
+                                <Grid
+                                  size={{
+                                    xs: 12,
+                                    sm: 6,
+                                    md: 4
+                                  }}>
                                   <Typography variant="subtitle2" color="text.secondary">Terrain</Typography>
                                   <Typography variant="body1">{formData.terrain || 'Not specified'}</Typography>
                                 </Grid>
-                                <Grid item xs={12} sm={6} md={4}>
+                                <Grid
+                                  size={{
+                                    xs: 12,
+                                    sm: 6,
+                                    md: 4
+                                  }}>
                                   <Typography variant="subtitle2" color="text.secondary">Water Source</Typography>
                                   <Typography variant="body1">{formData.waterSource || 'Not specified'}</Typography>
                                 </Grid>
-                                <Grid item xs={12} sm={6} md={4}>
+                                <Grid
+                                  size={{
+                                    xs: 12,
+                                    sm: 6,
+                                    md: 4
+                                  }}>
                                   <Typography variant="subtitle2" color="text.secondary">Previous Crops</Typography>
                                   <Typography variant="body1">{formData.previousCrops || 'Not specified'}</Typography>
                                 </Grid>
-                                <Grid item xs={12} sm={6}>
+                                <Grid
+                                  size={{
+                                    xs: 12,
+                                    sm: 6
+                                  }}>
                                   <Typography variant="subtitle2" color="text.secondary">Access Roads</Typography>
                                   <Typography variant="body1">{formData.accessRoads || 'Not specified'}</Typography>
                                 </Grid>
-                                <Grid item xs={12} sm={6}>
+                                <Grid
+                                  size={{
+                                    xs: 12,
+                                    sm: 6
+                                  }}>
                                   <Typography variant="subtitle2" color="text.secondary">Nearby Markets</Typography>
                                   <Typography variant="body1">{formData.nearbyMarkets || 'Not specified'}</Typography>
                                 </Grid>
                                 {formData.leaseTerms && (
-                                  <Grid item xs={12}>
+                                  <Grid size={12}>
                                     <Typography variant="subtitle2" color="text.secondary">Lease Terms</Typography>
                                     <Typography variant="body1">{formData.leaseTerms}</Typography>
                                   </Grid>
@@ -2079,7 +2221,7 @@ const CreateListing = () => {
                         </Grid>
                         
                         {/* Images Preview */}
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                           <Paper elevation={1} sx={{ p: 3, borderRadius: 2, bgcolor: 'background.paper' }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                               <PhotoCamera color="primary" sx={{ mr: 1.5 }} />
@@ -2090,7 +2232,14 @@ const CreateListing = () => {
                             {previewImages.length > 0 ? (
                               <Grid container spacing={2}>
                                 {previewImages.map((image, index) => (
-                                  <Grid item xs={6} sm={4} md={3} lg={2.4} key={index}>
+                                  <Grid
+                                    key={index}
+                                    size={{
+                                      xs: 6,
+                                      sm: 4,
+                                      md: 3,
+                                      lg: 2.4
+                                    }}>
                                     <Box
                                       sx={{ 
                                         borderRadius: 2,
@@ -2221,7 +2370,6 @@ const CreateListing = () => {
           )}
         </MotionBox>
       </form>
-
       {/* Snackbar for success/error messages */}
       <Snackbar
         open={snackbar.open}
@@ -2238,7 +2386,6 @@ const CreateListing = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-
       {/* Confirmation Dialog */}
       <Dialog
         open={confirmDialogOpen}
@@ -2306,7 +2453,6 @@ const CreateListing = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      
       {/* Loading Backdrop */}
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}

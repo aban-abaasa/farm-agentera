@@ -316,7 +316,13 @@ function LandOwnersSection({ opportunities, setOpportunities }) {
       ) : (
       <Grid container spacing={3}>
         {opportunities.filter(o => o.role === 'Land Owner' || o.type === 'Land Lease').map(o => (
-          <Grid item xs={12} sm={6} md={4} key={o.id}>
+          <Grid
+            key={o.id}
+            size={{
+              xs: 12,
+              sm: 6,
+              md: 4
+            }}>
             <Fade in timeout={500}>
               <Card elevation={6} sx={{ borderRadius: 3, height: '100%', display: 'flex', flexDirection: 'column', transition: '0.3s', '&:hover': { boxShadow: 12, transform: 'scale(1.04)' }, position: 'relative', overflow: 'hidden', background: 'linear-gradient(120deg, #f3e5f5 0%, #e8f5e9 100%)' }}>
                 <Box sx={{ position: 'relative', height: 140 }}>
@@ -346,7 +352,6 @@ function LandOwnersSection({ opportunities, setOpportunities }) {
         ))}
       </Grid>
       )}
-
       {/* Add/Edit Opportunity Modal */}
       <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>{editId ? 'Edit Opportunity' : 'Post Land/Opportunity'}</DialogTitle>
@@ -376,7 +381,6 @@ function LandOwnersSection({ opportunities, setOpportunities }) {
           </DialogContent>
         </form>
       </Dialog>
-
       {/* Contact Modal */}
       <Dialog open={contactOpen} onClose={() => setContactOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Contact via Support Team</DialogTitle>
@@ -398,7 +402,6 @@ function LandOwnersSection({ opportunities, setOpportunities }) {
           </DialogActions>
         </form>
       </Dialog>
-
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="xs">
         <DialogTitle>Delete Opportunity?</DialogTitle>
@@ -410,7 +413,6 @@ function LandOwnersSection({ opportunities, setOpportunities }) {
           <Button onClick={handleDelete} color="error" variant="contained">Delete</Button>
         </DialogActions>
       </Dialog>
-
       {/* Details Modal */}
       <Dialog open={detailsOpen} onClose={() => setDetailsOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Land Opportunity Details</DialogTitle>
@@ -450,7 +452,6 @@ function LandOwnersSection({ opportunities, setOpportunities }) {
           <Button onClick={() => setDetailsOpen(false)} color="primary">Close</Button>
         </DialogActions>
       </Dialog>
-
       {/* Snackbar Feedback */}
       <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
         <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%' }}>
@@ -563,7 +564,13 @@ function InvestorsSection({ opportunities, setOpportunities }) {
       ) : (
       <Grid container spacing={3}>
         {opportunities.filter(o => o.role === 'Investor' || o.type === 'Agri-Project').map(o => (
-          <Grid item xs={12} sm={6} md={4} key={o.id}>
+          <Grid
+            key={o.id}
+            size={{
+              xs: 12,
+              sm: 6,
+              md: 4
+            }}>
             <Fade in timeout={500}>
               <Card elevation={6} sx={{ borderRadius: 3, height: '100%', display: 'flex', flexDirection: 'column', transition: '0.3s', '&:hover': { boxShadow: 12, transform: 'scale(1.04)' }, position: 'relative', overflow: 'hidden', background: 'linear-gradient(120deg, #e3f2fd 0%, #fce4ec 100%)' }}>
                 <Box sx={{ position: 'relative', height: 140 }}>
@@ -593,7 +600,6 @@ function InvestorsSection({ opportunities, setOpportunities }) {
         ))}
       </Grid>
       )}
-
       {/* Add/Edit Opportunity Modal */}
       <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>{editId ? 'Edit Opportunity' : 'Post Investment/Project'}</DialogTitle>
@@ -617,7 +623,6 @@ function InvestorsSection({ opportunities, setOpportunities }) {
           </DialogContent>
         </form>
       </Dialog>
-
       {/* Contact Modal */}
       <Dialog open={contactOpen} onClose={() => setContactOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Contact via Support Team</DialogTitle>
@@ -639,7 +644,6 @@ function InvestorsSection({ opportunities, setOpportunities }) {
           </DialogActions>
         </form>
       </Dialog>
-
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="xs">
         <DialogTitle>Delete Opportunity?</DialogTitle>
@@ -651,7 +655,6 @@ function InvestorsSection({ opportunities, setOpportunities }) {
           <Button onClick={handleDelete} color="error" variant="contained">Delete</Button>
         </DialogActions>
       </Dialog>
-
       {/* Details Modal */}
       <Dialog open={detailsOpen} onClose={() => setDetailsOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Investment Opportunity Details</DialogTitle>
@@ -690,7 +693,6 @@ function InvestorsSection({ opportunities, setOpportunities }) {
           <Button onClick={() => setDetailsOpen(false)} color="primary">Close</Button>
         </DialogActions>
       </Dialog>
-
       {/* Snackbar Feedback */}
       <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
         <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%' }}>
@@ -803,7 +805,13 @@ function SupportersSection({ opportunities, setOpportunities }) {
       ) : (
       <Grid container spacing={3}>
         {opportunities.filter(o => o.role === 'Supporter' || o.type === 'Support Request').map(o => (
-          <Grid item xs={12} sm={6} md={4} key={o.id}>
+          <Grid
+            key={o.id}
+            size={{
+              xs: 12,
+              sm: 6,
+              md: 4
+            }}>
             <Fade in timeout={500}>
               <Card elevation={6} sx={{ borderRadius: 3, height: '100%', display: 'flex', flexDirection: 'column', transition: '0.3s', '&:hover': { boxShadow: 12, transform: 'scale(1.04)' }, position: 'relative', overflow: 'hidden', background: 'linear-gradient(120deg, #fce4ec 0%, #e3f2fd 100%)' }}>
                 <Box sx={{ position: 'relative', height: 140 }}>
@@ -833,7 +841,6 @@ function SupportersSection({ opportunities, setOpportunities }) {
         ))}
       </Grid>
       )}
-
       {/* Add/Edit Opportunity Modal */}
       <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>{editId ? 'Edit Opportunity' : 'Post Support/Request'}</DialogTitle>
@@ -863,7 +870,6 @@ function SupportersSection({ opportunities, setOpportunities }) {
           </DialogContent>
         </form>
       </Dialog>
-
       {/* Contact Modal */}
       <Dialog open={contactOpen} onClose={() => setContactOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Contact via Support Team</DialogTitle>
@@ -885,7 +891,6 @@ function SupportersSection({ opportunities, setOpportunities }) {
           </DialogActions>
         </form>
       </Dialog>
-
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="xs">
         <DialogTitle>Delete Opportunity?</DialogTitle>
@@ -897,7 +902,6 @@ function SupportersSection({ opportunities, setOpportunities }) {
           <Button onClick={handleDelete} color="error" variant="contained">Delete</Button>
         </DialogActions>
       </Dialog>
-
       {/* Details Modal */}
       <Dialog open={detailsOpen} onClose={() => setDetailsOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Support Opportunity Details</DialogTitle>
@@ -936,7 +940,6 @@ function SupportersSection({ opportunities, setOpportunities }) {
           <Button onClick={() => setDetailsOpen(false)} color="primary">Close</Button>
         </DialogActions>
       </Dialog>
-
       {/* Snackbar Feedback */}
       <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
         <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%' }}>
@@ -1018,14 +1021,20 @@ function BanksSection() {
       </Box>
       <Grid container spacing={3}>
         {filteredBanks.length === 0 ? (
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Box sx={{ textAlign: 'center', py: 6 }}>
               <img src="https://www.svgrepo.com/show/331984/empty-box.svg" alt="No services" style={{ width: 120, opacity: 0.5 }} />
               <Typography variant="body1" color="text.secondary" mt={2}>No services found. Try another filter or search.</Typography>
             </Box>
           </Grid>
         ) : filteredBanks.map(bank => (
-          <Grid item xs={12} sm={6} md={4} key={bank.id}>
+          <Grid
+            key={bank.id}
+            size={{
+              xs: 12,
+              sm: 6,
+              md: 4
+            }}>
             <Fade in timeout={600}>
               <Card elevation={8} sx={{ borderRadius: 4, height: '100%', display: 'flex', flexDirection: 'column', transition: '0.3s', '&:hover': { boxShadow: 16, transform: 'scale(1.035)' }, position: 'relative', overflow: 'hidden', background: 'linear-gradient(120deg, #e3f2fd 0%, #fffde7 100%)' }}>
                 {bank.featured && <Chip label="Featured" color="success" size="small" sx={{ position: 'absolute', top: 12, right: 12, fontWeight: 'bold', zIndex: 2 }} />}
@@ -1312,28 +1321,44 @@ const Investments = () => {
       <Box sx={{ px: { xs: 2, md: 8 }, mt: 8, mb: 6 }}>
         <Typography variant="h4" fontWeight="bold" color="secondary.main" mb={3}>How It Works</Typography>
         <Grid container spacing={4}>
-          <Grid item xs={12} md={3}>
+          <Grid
+            size={{
+              xs: 12,
+              md: 3
+            }}>
             <Paper elevation={2} sx={{ p: 3, borderRadius: 3, textAlign: 'center' }}>
               <Typography variant="h5" fontWeight="bold" color="primary.main">1</Typography>
               <Typography variant="subtitle1" fontWeight="bold">Choose Your Role</Typography>
               <Typography variant="body2" color="text.secondary">Land owner, investor, or supporter? Select your path.</Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid
+            size={{
+              xs: 12,
+              md: 3
+            }}>
             <Paper elevation={2} sx={{ p: 3, borderRadius: 3, textAlign: 'center' }}>
               <Typography variant="h5" fontWeight="bold" color="primary.main">2</Typography>
               <Typography variant="subtitle1" fontWeight="bold">Connect with Partners</Typography>
               <Typography variant="body2" color="text.secondary">Find the right match for your needs and goals.</Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid
+            size={{
+              xs: 12,
+              md: 3
+            }}>
             <Paper elevation={2} sx={{ p: 3, borderRadius: 3, textAlign: 'center' }}>
               <Typography variant="h5" fontWeight="bold" color="primary.main">3</Typography>
               <Typography variant="subtitle1" fontWeight="bold">Invest, Lease, or Support</Typography>
               <Typography variant="body2" color="text.secondary">Take action: invest, lease land, or offer support.</Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid
+            size={{
+              xs: 12,
+              md: 3
+            }}>
             <Paper elevation={2} sx={{ p: 3, borderRadius: 3, textAlign: 'center' }}>
               <Typography variant="h5" fontWeight="bold" color="primary.main">4</Typography>
               <Typography variant="subtitle1" fontWeight="bold">Track Your Impact</Typography>
@@ -1347,7 +1372,12 @@ const Investments = () => {
         <Typography variant="h4" fontWeight="bold" color="primary.main" mb={3}>Success Stories</Typography>
         <Grid container spacing={4}>
           {mockStories.map((story, idx) => (
-            <Grid item xs={12} md={4} key={idx}>
+            <Grid
+              key={idx}
+              size={{
+                xs: 12,
+                md: 4
+              }}>
               <Paper elevation={3} sx={{ p: 4, borderRadius: 3, textAlign: 'center', height: '100%' }}>
                 <Avatar src={story.avatar} sx={{ width: 64, height: 64, mx: 'auto', mb: 2, bgcolor: 'secondary.main', fontSize: 32 }}>
                   {story.avatar ? '' : story.name[0]}

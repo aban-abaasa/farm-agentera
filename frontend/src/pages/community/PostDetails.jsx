@@ -251,7 +251,6 @@ const PostDetails = () => {
           Back to Community
         </Link>
       </Box>
-
       {/* Main post card */}
       <Paper 
         elevation={2} 
@@ -353,7 +352,13 @@ const PostDetails = () => {
           {post.images && post.images.length > 0 && (
             <Grid container spacing={2} sx={{ mt: 2 }}>
               {post.images.map((image, index) => (
-                <Grid item xs={12} sm={6} md={4} key={index}>
+                <Grid
+                  key={index}
+                  size={{
+                    xs: 12,
+                    sm: 6,
+                    md: 4
+                  }}>
                   <Box
                     component="img"
                     src={image}
@@ -458,12 +463,10 @@ const PostDetails = () => {
           </Box>
         </Box>
       </Paper>
-
       {/* Comments section */}
       <Typography variant="h5" fontWeight="bold" sx={{ mb: 3 }}>
         Comments ({comments.length})
       </Typography>
-      
       {/* Add comment form */}
       {user && (
         <Box component="form" onSubmit={handleCommentSubmit} sx={{ mb: 5 }}>
@@ -499,7 +502,6 @@ const PostDetails = () => {
           </Box>
         </Box>
       )}
-      
       {/* Comments list */}
       {comments.length > 0 ? (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -581,7 +583,12 @@ const PostDetails = () => {
                 {comment.images && comment.images.length > 0 && (
                   <Grid container spacing={1} sx={{ mt: 2 }}>
                     {comment.images.map((image, index) => (
-                      <Grid item xs={6} sm={4} key={index}>
+                      <Grid
+                        key={index}
+                        size={{
+                          xs: 6,
+                          sm: 4
+                        }}>
                         <Box
                           component="img"
                           src={image}

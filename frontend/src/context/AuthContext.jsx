@@ -25,6 +25,46 @@ const STORAGE_KEYS = {
   REMEMBER_ME: 'farm_agent_remember_me'
 };
 
+const evaluateProfileCompletion = (profile) => {
+  if (!profile) return false;
+
+  const firstName = profile.first_name || profile.firstname || profile.firstName || profile.given_name || '';
+  const lastName = profile.last_name || profile.lastname || profile.lastName || profile.family_name || '';
+  const fullName = profile.full_name || profile.name || '';
+  const hasName = Boolean((firstName && lastName) || fullName);
+
+  const phone = profile.phone_number || profile.phone || profile.phoneNumber || '';
+  const location = profile.location || profile.address || '';
+  const role = (profile.role || profile.user_role || '').toString().trim().toLowerCase();
+  const hasRole = Boolean(role);
+
+  const farmingType = profile.farmer_type || profile.farm_type || profile.farming_type || profile.farmType || '';
+  const farmSize = profile.farm_size || profile.farm_area || profile.farmSize || '';
+  const farmLocation = profile.farm_location || profile.farmLocation || '';
+  const profileColumns = new Set(Object.keys(profile || {}));
+  const hasLocationColumns = profileColumns.has('location') || profileColumns.has('address');
+  const hasRoleColumns = profileColumns.has('role') || profileColumns.has('user_role') || profileColumns.has('account_role');
+  const hasFarmColumnsInProfile = [
+    'farmer_type',
+    'farm_type',
+    'farming_type',
+    'farm_size',
+    'farm_area',
+    'farm_location'
+  ].some((column) => profileColumns.has(column));
+  const requiresFarmProfile = role === 'farmer';
+  const hasFarmProfile = Boolean(farmingType || farmSize || farmLocation);
+  const passesFarmerRequirement = !requiresFarmProfile || !hasFarmColumnsInProfile || hasFarmProfile;
+
+  return Boolean(
+    hasName &&
+    phone &&
+    (!hasLocationColumns || location) &&
+    (!hasRoleColumns || hasRole) &&
+    passesFarmerRequirement
+  );
+};
+
 // Session check interval (30 minutes - increased from 5 minutes)
 const SESSION_CHECK_INTERVAL = 30 * 60 * 1000;
 
@@ -202,8 +242,12 @@ export const AuthProvider = ({ children }) => {
       storage.set(STORAGE_KEYS.USER, profile);
       
       // Check if profile is complete
-      const { isComplete } = await isProfileComplete(userId);
-      const profileStatusData = { isComplete, isChecking: false };
+      const completionResult = await isProfileComplete(userId);
+      const localCompletion = evaluateProfileCompletion(profile);
+      const isComplete = completionResult?.error
+        ? localCompletion
+        : Boolean(completionResult?.isComplete || localCompletion);
+      const profileStatusData = { isComplete: Boolean(isComplete), isChecking: false };
       setProfileStatus(profileStatusData);
       // Cache profile status
       storage.set(STORAGE_KEYS.PROFILE_STATUS, profileStatusData);
@@ -328,14 +372,21 @@ export const AuthProvider = ({ children }) => {
           setUser(cachedUser);
           if (cachedProfileStatus) {
             setProfileStatus(cachedProfileStatus);
+          } else {
+            setProfileStatus({ isComplete: true, isChecking: true });
           }
           if (cachedGoogleMetadata) {
             setGoogleMetadata(cachedGoogleMetadata);
           }
           setLoading(false);
 
-          // Optionally validate with server in background if it's been a while
-          if (shouldCheckWithServer()) {
+          // If cached profile status is incomplete (or missing), always re-check with server.
+          // This prevents stale cache from trapping users on /complete-profile after refresh.
+          if (!cachedProfileStatus || cachedProfileStatus.isComplete === false) {
+            setProfileStatus((prev) => ({ ...prev, isChecking: true }));
+            fetchUserData(cachedUser.id);
+          } else if (shouldCheckWithServer()) {
+            // Optionally validate with server in background if it's been a while
             validateSessionInBackground();
           }
           return;
@@ -384,10 +435,8 @@ export const AuthProvider = ({ children }) => {
     let unsubscribe;
     if (!DEV_MODE) {
       unsubscribe = onAuthStateChange((event, session) => {
-        console.log('🔄 Auth state changed:', event);
         
         if (event === 'SIGNED_IN' && session) {
-          console.log('✅ User signed in successfully');
           // Cache the new session
           storage.set(STORAGE_KEYS.SESSION, session);
           storage.set(STORAGE_KEYS.LAST_CHECK, Date.now());
@@ -429,23 +478,14 @@ export const AuthProvider = ({ children }) => {
           fetchUserData(session.user.id);
           
         } else if (event === 'SIGNED_OUT') {
-          console.log('👋 User signed out');
           handleSignOut();
           
         } else if (event === 'TOKEN_REFRESHED' && session) {
-          console.log('🔄 Token refreshed successfully');
           // Update cached session with new tokens
           storage.set(STORAGE_KEYS.SESSION, session);
           storage.set(STORAGE_KEYS.LAST_CHECK, Date.now());
-          
-          // Don't fetch user data again, just update the session
-          console.log('✅ Session tokens updated');
-          
-        } else if (event === 'PASSWORD_RECOVERY') {
-          console.log('🔑 Password recovery initiated');
-          
-        } else {
-          console.log('🔄 Other auth event:', event);
+        } else if (event === 'INITIAL_SESSION' || event === 'PASSWORD_RECOVERY') {
+          // No-op: initial session is handled by initializeAuth/checkAuthStatus.
         }
       });
     }
@@ -606,18 +646,19 @@ export const AuthProvider = ({ children }) => {
       
       if (error) throw error;
       
-      const updatedUser = {...user, ...data[0]};
+      const updatedUser = { ...user, ...data[0], ...updatedData };
       setUser(updatedUser);
       // Update cached user
       storage.set(STORAGE_KEYS.USER, updatedUser);
       
-      // Check if profile is now complete
-      if (!profileStatus.isComplete) {
-        const { isComplete } = await isProfileComplete(user.id);
-        const profileStatusData = { isComplete, isChecking: false };
-        setProfileStatus(profileStatusData);
-        storage.set(STORAGE_KEYS.PROFILE_STATUS, profileStatusData);
-      }
+      const completionResult = await isProfileComplete(user.id);
+      const localCompletion = evaluateProfileCompletion(updatedUser);
+      const isComplete = completionResult?.error
+        ? localCompletion
+        : Boolean(completionResult?.isComplete || localCompletion);
+      const profileStatusData = { isComplete: Boolean(isComplete), isChecking: false };
+      setProfileStatus(profileStatusData);
+      storage.set(STORAGE_KEYS.PROFILE_STATUS, profileStatusData);
       
       return data[0];
     } catch (error) {

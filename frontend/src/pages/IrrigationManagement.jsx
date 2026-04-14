@@ -108,7 +108,6 @@ const IrrigationManagement = () => {
           </Typography>
         </Box>
       </Fade>
-
       {/* Water Usage Overview */}
       <Grid container spacing={3} mb={4}>
         {[
@@ -117,7 +116,13 @@ const IrrigationManagement = () => {
           { title: 'Active Systems', value: '3/4', change: '0', trend: 'stable', color: 'warning' },
           { title: 'Water Savings', value: '15%', change: '+3%', trend: 'up', color: 'primary' }
         ].map((stat, index) => (
-          <Grid item xs={12} sm={6} md={3} key={stat.title}>
+          <Grid
+            key={stat.title}
+            size={{
+              xs: 12,
+              sm: 6,
+              md: 3
+            }}>
             <Fade in timeout={600 + index * 200}>
               <Card elevation={4} sx={{ 
                 borderRadius: 3, 
@@ -152,21 +157,24 @@ const IrrigationManagement = () => {
           </Grid>
         ))}
       </Grid>
-
       {/* Weather Alert */}
       <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }} icon={<FilterDramaIcon />}>
         <strong>Weather Update:</strong> Light rain expected in 2 hours. Automatic irrigation adjusted accordingly.
       </Alert>
-
       {/* Irrigation Systems */}
       <Typography variant="h5" fontWeight="bold" mb={3} sx={{ display: 'flex', alignItems: 'center' }}>
         <OpacityIcon sx={{ mr: 1 }} />
         Irrigation Systems
       </Typography>
-
       <Grid container spacing={3} mb={4}>
         {systems.map((system, index) => (
-          <Grid item xs={12} md={6} lg={4} key={system.id}>
+          <Grid
+            key={system.id}
+            size={{
+              xs: 12,
+              md: 6,
+              lg: 4
+            }}>
             <Fade in timeout={400 + index * 100}>
               <Card 
                 elevation={3}
@@ -274,7 +282,6 @@ const IrrigationManagement = () => {
           </Grid>
         ))}
       </Grid>
-
       {/* Smart Controls */}
       <Paper elevation={4} sx={{ p: 3, borderRadius: 3, mb: 4 }}>
         <Typography variant="h6" fontWeight="bold" mb={3}>
@@ -288,7 +295,12 @@ const IrrigationManagement = () => {
             { label: 'Energy-Efficient Mode', enabled: false, description: 'Optimize irrigation timing for lower energy costs' },
             { label: 'Mobile Notifications', enabled: true, description: 'Get alerts for system status and maintenance' }
           ].map((control, index) => (
-            <Grid item xs={12} sm={6} key={control.label}>
+            <Grid
+              key={control.label}
+              size={{
+                xs: 12,
+                sm: 6
+              }}>
               <Box sx={{ 
                 p: 2, 
                 border: `1px solid ${theme.palette.divider}`, 
@@ -311,7 +323,6 @@ const IrrigationManagement = () => {
           ))}
         </Grid>
       </Paper>
-
       {/* Quick Actions */}
       <Paper elevation={4} sx={{ p: 3, borderRadius: 3 }}>
         <Typography variant="h6" fontWeight="bold" mb={3}>
@@ -325,7 +336,13 @@ const IrrigationManagement = () => {
             { label: 'Schedule Maintenance', icon: <SettingsIcon />, color: 'warning' },
             { label: 'View Analytics', icon: <TrendingUpIcon />, color: 'info' }
           ].map((action) => (
-            <Grid item xs={12} sm={6} md={3} key={action.label}>
+            <Grid
+              key={action.label}
+              size={{
+                xs: 12,
+                sm: 6,
+                md: 3
+              }}>
               <Button
                 variant="outlined"
                 color={action.color}

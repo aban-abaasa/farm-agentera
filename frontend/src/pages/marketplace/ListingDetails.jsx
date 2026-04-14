@@ -392,7 +392,6 @@ const ListingDetails = () => {
           </Box>
         </Box>
       </Box>
-
       {/* Main content */}
       <Box sx={{ maxWidth: '7xl', mx: 'auto', px: 4, py: 8 }}>
         <Grid container spacing={4}>
@@ -791,18 +790,18 @@ const ListingDetails = () => {
               }}
             >
               {/* Owner/Seller card */}
-              <Grid 
-                item 
-                xs={12} 
-                sm={6}
-                lg={4} 
-                xl={4} 
+              <Grid
                 sx={{ 
                   width: { sm: '50%', lg: '33.33%', xl: '33.33%' },
                   flexGrow: 1,
                   flexBasis: { xs: '100%', sm: '50%', lg: '33.33%', xl: 0 }
                 }}
-              >
+                size={{
+                  xs: 12,
+                  sm: 6,
+                  lg: 4,
+                  xl: 4
+                }}>
                 <Paper 
                   elevation={3}
                   sx={{
@@ -1013,18 +1012,18 @@ const ListingDetails = () => {
               </Grid>
               
               {/* Similar listings */}
-              <Grid 
-                item 
-                xs={12} 
-                sm={6}
-                lg={4} 
-                xl={4} 
+              <Grid
                 sx={{ 
                   width: { sm: '50%', lg: '33.33%', xl: '33.33%' },
                   flexGrow: 1,
                   flexBasis: { xs: '100%', sm: '50%', lg: '33.33%', xl: 0 }
                 }}
-              >
+                size={{
+                  xs: 12,
+                  sm: 6,
+                  lg: 4,
+                  xl: 4
+                }}>
                 <Paper 
                   elevation={3}
                   sx={{
@@ -1173,18 +1172,18 @@ const ListingDetails = () => {
               </Grid>
               
               {/* Listing Information */}
-              <Grid 
-                item 
-                xs={12} 
-                sm={12}
-                lg={4} 
-                xl={4} 
+              <Grid
                 sx={{ 
                   width: { sm: '100%', lg: '33.33%', xl: '33.33%' },
                   flexGrow: 1,
                   flexBasis: { xs: '100%', sm: '100%', lg: '33.33%', xl: 0 }
                 }}
-              >
+                size={{
+                  xs: 12,
+                  sm: 12,
+                  lg: 4,
+                  xl: 4
+                }}>
                 <Paper 
                   elevation={3}
                   sx={{
@@ -1337,7 +1336,6 @@ const ListingDetails = () => {
           </Grid>
         </Grid>
       </Box>
-
       {/* Contact modal */}
       <Dialog 
         open={contactModalOpen} 
@@ -1388,7 +1386,11 @@ const ListingDetails = () => {
             }}
           >
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={4}>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 4
+                }}>
                 <Typography variant="body2" color="text.secondary" fontWeight="medium">
                   Listing:
                 </Typography>
@@ -1396,7 +1398,11 @@ const ListingDetails = () => {
                   {listing.title}
                 </Typography>
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 4
+                }}>
                 <Typography variant="body2" color="text.secondary" fontWeight="medium">
                   Price:
                 </Typography>
@@ -1404,7 +1410,11 @@ const ListingDetails = () => {
                   {formatPrice(listing)}
                 </Typography>
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 4
+                }}>
                 <Typography variant="body2" color="text.secondary" fontWeight="medium">
                   Location:
                 </Typography>

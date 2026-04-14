@@ -157,11 +157,16 @@ const Finance = () => {
           Comprehensive financial overview, investment tracking, and business analytics
         </Typography>
       </Box>
-
       {/* Key Metrics */}
       <Grid container spacing={3} mb={4}>
         {keyMetrics.map((metric, index) => (
-          <Grid item xs={12} sm={6} md={3} key={metric.title}>
+          <Grid
+            key={metric.title}
+            size={{
+              xs: 12,
+              sm: 6,
+              md: 3
+            }}>
             <Zoom in timeout={600 + index * 200}>
               <Card elevation={4} sx={{
                 borderRadius: 3,
@@ -200,7 +205,6 @@ const Finance = () => {
           </Grid>
         ))}
       </Grid>
-
       {/* Main Content Tabs */}
       <Paper elevation={4} sx={{ borderRadius: 3, mb: 4 }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -216,7 +220,11 @@ const Finance = () => {
           {/* Overview Tab */}
           {activeTab === 0 && (
             <Grid container spacing={3}>
-              <Grid item xs={12} md={8}>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 8
+                }}>
                 <Typography variant="h6" fontWeight="bold" mb={2}>
                   Monthly Financial Trends
                 </Typography>
@@ -258,7 +266,11 @@ const Finance = () => {
                 </Paper>
               </Grid>
               
-              <Grid item xs={12} md={4}>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 4
+                }}>
                 <Typography variant="h6" fontWeight="bold" mb={2}>
                   Quick Actions
                 </Typography>
@@ -348,7 +360,12 @@ const Finance = () => {
               
               <Grid container spacing={3}>
                 {investments.map((investment, index) => (
-                  <Grid item xs={12} md={6} key={investment.name}>
+                  <Grid
+                    key={investment.name}
+                    size={{
+                      xs: 12,
+                      md: 6
+                    }}>
                     <Fade in timeout={400 + index * 100}>
                       <Card elevation={2} sx={{ borderRadius: 2 }}>
                         <CardContent>
@@ -399,7 +416,11 @@ const Finance = () => {
               </Typography>
               
               <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 6
+                  }}>
                   <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
                     <Typography variant="h6" fontWeight="bold" mb={2}>
                       Profit Margin Trend
@@ -428,7 +449,11 @@ const Finance = () => {
                   </Paper>
                 </Grid>
                 
-                <Grid item xs={12} md={6}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 6
+                  }}>
                   <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
                     <Typography variant="h6" fontWeight="bold" mb={2}>
                       Investment Performance
@@ -456,7 +481,7 @@ const Finance = () => {
                   </Paper>
                 </Grid>
                 
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <Alert severity="info" sx={{ borderRadius: 2 }}>
                     <Typography variant="h6" fontWeight="bold" mb={1}>
                       Financial Insights

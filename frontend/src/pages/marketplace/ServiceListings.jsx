@@ -192,7 +192,6 @@ const ServiceListings = () => {
           <CircularProgress size={60} />
         </Box>
       )}
-      
       {/* Error State */}
       {error && (
         <Box sx={{ p: 3 }}>
@@ -201,7 +200,6 @@ const ServiceListings = () => {
           </Alert>
         </Box>
       )}
-      
       {/* Main Content - Only show when not loading */}
       {!loading && (
         <>
@@ -227,7 +225,11 @@ const ServiceListings = () => {
         }}
       >
         <Grid container spacing={3} alignItems="center">
-          <Grid item xs={12} md={5}>
+          <Grid
+            size={{
+              xs: 12,
+              md: 5
+            }}>
             <TextField
               fullWidth
               placeholder="Search services..."
@@ -256,7 +258,11 @@ const ServiceListings = () => {
               }}
             />
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid
+            size={{
+              xs: 12,
+              md: 3
+            }}>
             <FormControl fullWidth variant="outlined">
               <InputLabel id="category-label">Category</InputLabel>
               <Select
@@ -272,7 +278,11 @@ const ServiceListings = () => {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid
+            size={{
+              xs: 12,
+              md: 3
+            }}>
             <FormControl fullWidth variant="outlined">
               <InputLabel id="sort-label">Sort By</InputLabel>
               <Select
@@ -288,7 +298,11 @@ const ServiceListings = () => {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={1}>
+          <Grid
+            size={{
+              xs: 12,
+              md: 1
+            }}>
             <Button
               variant="contained"
               color="primary"
@@ -340,7 +354,7 @@ const ServiceListings = () => {
       {/* Listings grid */}
       <Grid container spacing={4}>
         {filteredListings.length === 0 ? (
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 3, color: 'text.secondary' }}>
               <Typography variant="h6" fontWeight={600} mb={2}>No services found</Typography>
               <Typography variant="body2">Try adjusting your search or filter criteria.</Typography>
@@ -350,7 +364,13 @@ const ServiceListings = () => {
           const isExpanded = expandedId === listing.id;
           const availability = getAvailability(listing.provider);
           return (
-            <Grid item xs={12} sm={6} lg={4} key={listing.id}>
+            <Grid
+              key={listing.id}
+              size={{
+                xs: 12,
+                sm: 6,
+                lg: 4
+              }}>
               <Card
                 sx={{
                   height: '100%',

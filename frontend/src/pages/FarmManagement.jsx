@@ -180,25 +180,25 @@ const FarmManagement = () => {
   const loadFarmData = async () => {
     try {
       setIsLoading(true);
-      
-      // Check if user has completed farm setup
-      const { data: setupProgress } = await farmService.getFarmSetupProgress();
-      if (!setupProgress?.setup_completed) {
-        setNeedsOnboarding(true);
-        setIsLoading(false);
-        return;
-      }
 
-      // Check if user has a farm
+      // First check if user already has farm records.
       const { data: farms } = await farmService.getFarms();
-      if (!farms || farms.length === 0) {
+
+      if (farms && farms.length > 0) {
+        setFarmData(farms[0]); // Use the first farm
+        setNeedsOnboarding(false);
+      } else {
+        // No farms yet: use setup progress as onboarding signal.
+        const { data: setupProgress } = await farmService.getFarmSetupProgress();
+        if (!setupProgress?.setup_completed) {
+          setNeedsOnboarding(true);
+          setIsLoading(false);
+          return;
+        }
         setNeedsOnboarding(true);
         setIsLoading(false);
         return;
       }
-
-      setFarmData(farms[0]); // Use the first farm
-      setNeedsOnboarding(false);
 
       // Load other farm data (mock for now since other services might not exist)
       try {
@@ -313,7 +313,11 @@ const FarmManagement = () => {
           overflow: 'hidden'
         }}>
           <Grid container spacing={3} alignItems="center">
-            <Grid item xs={12} md={8}>
+            <Grid
+              size={{
+                xs: 12,
+                md: 8
+              }}>
               <Typography variant="h3" fontWeight="bold" color="primary.main" gutterBottom>
                 <AgricultureIcon sx={{ fontSize: 48, mr: 2, verticalAlign: 'middle' }} />
                 Farm Management Hub
@@ -332,7 +336,11 @@ const FarmManagement = () => {
                 <Chip label={farmData.total_area ? `${farmData.total_area} hectares` : 'Size not set'} icon={<NatureIcon />} variant="outlined" />
               </Box>
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid
+              size={{
+                xs: 12,
+                md: 4
+              }}>
               <Box sx={{ textAlign: 'center' }}>
                 <img 
                   src="https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&w=500&q=80" 
@@ -351,7 +359,6 @@ const FarmManagement = () => {
           </Grid>
         </Box>
       </Fade>
-
       {/* Farm Statistics */}
       <Grid container spacing={3} mb={4}>
         {[
@@ -384,7 +391,13 @@ const FarmManagement = () => {
             icon: <AssessmentIcon /> 
           }
         ].map((stat, index) => (
-          <Grid item xs={12} sm={6} md={3} key={stat.title}>
+          <Grid
+            key={stat.title}
+            size={{
+              xs: 12,
+              sm: 6,
+              md: 3
+            }}>
             <Zoom in timeout={600 + index * 200}>
               <Card elevation={4} sx={{ 
                 borderRadius: 3, 
@@ -427,7 +440,6 @@ const FarmManagement = () => {
           </Grid>
         ))}
       </Grid>
-
       {/* Main Content Tabs */}
       <Paper elevation={4} sx={{ borderRadius: 3, mb: 4 }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -447,7 +459,13 @@ const FarmManagement = () => {
           {activeTab === 0 && (
             <Grid container spacing={3}>
               {farmModules.map((module, index) => (
-                <Grid item xs={12} md={6} lg={4} key={module.id}>
+                <Grid
+                  key={module.id}
+                  size={{
+                    xs: 12,
+                    md: 6,
+                    lg: 4
+                  }}>
                   <Fade in timeout={400 + index * 100}>
                     <Card 
                       elevation={3}
@@ -581,7 +599,13 @@ const FarmManagement = () => {
                     change: analyticsData?.overall_metrics?.efficiency_change || '0%' 
                   }
                 ].map((metric, index) => (
-                  <Grid item xs={12} sm={6} md={3} key={metric.title}>
+                  <Grid
+                    key={metric.title}
+                    size={{
+                      xs: 12,
+                      sm: 6,
+                      md: 3
+                    }}>
                     <Zoom in timeout={300 + index * 100}>
                       <Card elevation={3} sx={{ 
                         borderRadius: 3,
@@ -628,7 +652,11 @@ const FarmManagement = () => {
               {/* Main Analytics Content */}
               <Grid container spacing={3} mb={4}>
                 {/* Monthly Performance Trends */}
-                <Grid item xs={12} md={8}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 8
+                  }}>
                   <Typography variant="h6" fontWeight="bold" mb={2}>
                     Monthly Performance Overview
                   </Typography>
@@ -688,7 +716,11 @@ const FarmManagement = () => {
                 </Grid>
 
                 {/* Sector Performance */}
-                <Grid item xs={12} md={4}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 4
+                  }}>
                   <Typography variant="h6" fontWeight="bold" mb={2}>
                     Sector Performance Analysis
                   </Typography>
@@ -767,13 +799,22 @@ const FarmManagement = () => {
               {/* Analytics Insights and Actions */}
               <Grid container spacing={3}>
                 {/* Key Insights */}
-                <Grid item xs={12} md={8}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 8
+                  }}>
                   <Typography variant="h6" fontWeight="bold" mb={2}>
                     AI-Powered Insights & Recommendations
                   </Typography>
                   <Grid container spacing={2}>
                     {analyticsData?.insights?.length ? analyticsData.insights.map((insight, index) => (
-                      <Grid item xs={12} md={6} key={index}>
+                      <Grid
+                        key={index}
+                        size={{
+                          xs: 12,
+                          md: 6
+                        }}>
                         <Fade in timeout={300 + index * 100}>
                           <Alert 
                             severity={insight.type} 
@@ -805,7 +846,7 @@ const FarmManagement = () => {
                         </Fade>
                       </Grid>
                     )) : (
-                      <Grid item xs={12}>
+                      <Grid size={12}>
                         <Alert severity="info" sx={{ borderRadius: 2 }}>
                           <Typography variant="subtitle2" fontWeight="bold" mb={1}>
                             No Insights Available
@@ -820,7 +861,11 @@ const FarmManagement = () => {
                 </Grid>
 
                 {/* Quick Analytics Actions */}
-                <Grid item xs={12} md={4}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 4
+                  }}>
                   <Typography variant="h6" fontWeight="bold" mb={2}>
                     Detailed Analytics
                   </Typography>
@@ -930,7 +975,13 @@ const FarmManagement = () => {
                     description: 'Return on investment' 
                   }
                 ].map((metric, index) => (
-                  <Grid item xs={12} sm={6} md={3} key={metric.title}>
+                  <Grid
+                    key={metric.title}
+                    size={{
+                      xs: 12,
+                      sm: 6,
+                      md: 3
+                    }}>
                     <Zoom in timeout={300 + index * 100}>
                       <Card elevation={3} sx={{ 
                         borderRadius: 3,
@@ -977,7 +1028,11 @@ const FarmManagement = () => {
               {/* Financial Analysis Content */}
               <Grid container spacing={3} mb={4}>
                 {/* Monthly Revenue Trends */}
-                <Grid item xs={12} md={8}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 8
+                  }}>
                   <Typography variant="h6" fontWeight="bold" mb={2}>
                     Monthly Financial Performance
                   </Typography>
@@ -1030,7 +1085,11 @@ const FarmManagement = () => {
                 </Grid>
 
                 {/* Financial Categories Breakdown */}
-                <Grid item xs={12} md={4}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 4
+                  }}>
                   <Typography variant="h6" fontWeight="bold" mb={2}>
                     Expense Categories
                   </Typography>
@@ -1078,7 +1137,11 @@ const FarmManagement = () => {
 
               {/* Financial Actions and Recommendations */}
               <Grid container spacing={3}>
-                <Grid item xs={12} md={8}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 8
+                  }}>
                   <Typography variant="h6" fontWeight="bold" mb={2}>
                     Financial Insights & Recommendations
                   </Typography>
@@ -1100,7 +1163,12 @@ const FarmManagement = () => {
                         message: 'Equipment maintenance costs exceeded budget by 15%. Schedule regular maintenance to avoid costly repairs.' 
                       }
                     ].map((insight, index) => (
-                      <Grid item xs={12} md={6} key={index}>
+                      <Grid
+                        key={index}
+                        size={{
+                          xs: 12,
+                          md: 6
+                        }}>
                         <Fade in timeout={300 + index * 100}>
                           <Alert 
                             severity={insight.type} 
@@ -1131,7 +1199,11 @@ const FarmManagement = () => {
                   </Grid>
                 </Grid>
 
-                <Grid item xs={12} md={4}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 4
+                  }}>
                   <Typography variant="h6" fontWeight="bold" mb={2}>
                     Financial Actions
                   </Typography>
@@ -1197,7 +1269,13 @@ const FarmManagement = () => {
               
               <Grid container spacing={3}>
                 {quickActions.map((action, index) => (
-                  <Grid item xs={12} sm={6} md={4} key={action.title}>
+                  <Grid
+                    key={action.title}
+                    size={{
+                      xs: 12,
+                      sm: 6,
+                      md: 4
+                    }}>
                     <Zoom in timeout={300 + index * 100}>
                       <Card 
                         elevation={3}
@@ -1279,7 +1357,11 @@ const FarmManagement = () => {
           {/* Alerts & Tasks Tab */}
           {activeTab === 4 && (
             <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 6
+                }}>
                 <Typography variant="h6" fontWeight="bold" mb={2} sx={{ display: 'flex', alignItems: 'center' }}>
                   <NotificationsIcon sx={{ mr: 1 }} />
                   Active Alerts
@@ -1308,7 +1390,11 @@ const FarmManagement = () => {
                 )}
               </Grid>
               
-              <Grid item xs={12} md={6}>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 6
+                }}>
                 <Typography variant="h6" fontWeight="bold" mb={2} sx={{ display: 'flex', alignItems: 'center' }}>
                   <CalendarTodayIcon sx={{ mr: 1 }} />
                   Today's Tasks
@@ -1384,7 +1470,12 @@ const FarmManagement = () => {
                     color: 'secondary'
                   }
                 ].map((item, index) => (
-                  <Grid item xs={12} sm={6} key={item.title}>
+                  <Grid
+                    key={item.title}
+                    size={{
+                      xs: 12,
+                      sm: 6
+                    }}>
                     <Fade in timeout={300 + index * 100}>
                       <Card 
                         elevation={2}
@@ -1420,7 +1511,6 @@ const FarmManagement = () => {
           )}
         </Box>
       </Paper>
-
       {/* Call to Action */}
       <Fade in timeout={1200}>
         <Paper 

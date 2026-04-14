@@ -176,7 +176,6 @@ const InventoryManagement = () => {
           </Typography>
         </Box>
       </Fade>
-
       {/* Critical Alerts */}
       {(criticalItems > 0 || lowStockItems > 0) && (
         <Alert 
@@ -192,7 +191,6 @@ const InventoryManagement = () => {
           </Button>
         </Alert>
       )}
-
       {/* Inventory Overview */}
       <Grid container spacing={3} mb={4}>
         {[
@@ -229,7 +227,13 @@ const InventoryManagement = () => {
             icon: <WarningIcon />
           }
         ].map((stat, index) => (
-          <Grid item xs={12} sm={6} md={3} key={stat.title}>
+          <Grid
+            key={stat.title}
+            size={{
+              xs: 12,
+              sm: 6,
+              md: 3
+            }}>
             <Fade in timeout={600 + index * 200}>
               <Card elevation={4} sx={{ 
                 borderRadius: 3, 
@@ -273,20 +277,24 @@ const InventoryManagement = () => {
           </Grid>
         ))}
       </Grid>
-
       {/* Inventory Categories */}
       <Typography variant="h5" fontWeight="bold" mb={3} sx={{ display: 'flex', alignItems: 'center' }}>
         <InventoryIcon sx={{ mr: 1 }} />
         Inventory by Category
       </Typography>
-
       <Grid container spacing={3} mb={4}>
         {['Feed', 'Seeds', 'Fertilizer', 'Fuel', 'Equipment'].map((category, index) => {
           const categoryItems = inventoryData.filter(item => item.category === category);
           const categoryValue = categoryItems.reduce((sum, item) => sum + (item.cost * item.currentStock), 0);
           
           return (
-            <Grid item xs={12} sm={6} md={2.4} key={category}>
+            <Grid
+              key={category}
+              size={{
+                xs: 12,
+                sm: 6,
+                md: 2.4
+              }}>
               <Fade in timeout={400 + index * 100}>
                 <Card 
                   elevation={2}
@@ -321,7 +329,6 @@ const InventoryManagement = () => {
           );
         })}
       </Grid>
-
       {/* Detailed Inventory Table */}
       <Paper elevation={4} sx={{ borderRadius: 3, overflow: 'hidden' }}>
         <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

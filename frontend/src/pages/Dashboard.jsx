@@ -429,7 +429,13 @@ const Dashboard = () => {
             }}
           >
             {statsArray.map((stat, index) => (
-              <Grid item xs={12} sm={6} md={3} key={index}>
+              <Grid
+                key={index}
+                size={{
+                  xs: 12,
+                  sm: 6,
+                  md: 3
+                }}>
                 <Card 
                   sx={{ 
                     height: '100%',
@@ -688,7 +694,11 @@ const Dashboard = () => {
 
         <Grid container spacing={4}>
           {/* Main Content */}
-          <Grid item xs={12} lg={8}>
+          <Grid
+            size={{
+              xs: 12,
+              lg: 8
+            }}>
             {/* My Listings */}
             <Paper 
               sx={{ 
@@ -747,7 +757,11 @@ const Dashboard = () => {
                       }}
                     >
                       <Grid container alignItems="center" spacing={2}>
-                        <Grid item xs={12} sm={7}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            sm: 7
+                          }}>
                           <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <Avatar
                               sx={{ 
@@ -782,7 +796,11 @@ const Dashboard = () => {
                           </Box>
                         </Grid>
                         
-                        <Grid item xs={6} sm={3}>
+                        <Grid
+                          size={{
+                            xs: 6,
+                            sm: 3
+                          }}>
                           <Stack direction="row" spacing={2} justifyContent={{ xs: 'flex-start', sm: 'center' }}>
                             <Tooltip title="Views">
                               <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -803,7 +821,12 @@ const Dashboard = () => {
                           </Stack>
                         </Grid>
                         
-                        <Grid item xs={6} sm={2} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <Grid
+                          sx={{ display: 'flex', justifyContent: 'flex-end' }}
+                          size={{
+                            xs: 6,
+                            sm: 2
+                          }}>
                           <Button
                             variant="outlined"
                             size="small"
@@ -895,7 +918,11 @@ const Dashboard = () => {
               </Box>
               
               <Grid container sx={{ p: 3 }}>
-                <Grid item xs={12} sm={7}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    sm: 7
+                  }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <Box 
                       sx={{ 
@@ -926,7 +953,11 @@ const Dashboard = () => {
                   </Typography>
                 </Grid>
                 
-                <Grid item xs={12} sm={5}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    sm: 5
+                  }}>
                   <Box 
                     sx={{ 
                       bgcolor: 'background.default',
@@ -1098,7 +1129,11 @@ const Dashboard = () => {
           </Grid>
 
           {/* Sidebar */}
-          <Grid item xs={12} lg={4}>
+          <Grid
+            size={{
+              xs: 12,
+              lg: 4
+            }}>
             {/* Messages */}
             <Paper 
               sx={{ 
@@ -1281,7 +1316,7 @@ const Dashboard = () => {
               <Box sx={{ p: 3 }}>
                 <Grid container spacing={2}>
                   {communityStatsArray.map((stat, index) => (
-                    <Grid item xs={6} key={index}>
+                    <Grid key={index} size={6}>
                       <Box
                         sx={{
                           display: 'flex',

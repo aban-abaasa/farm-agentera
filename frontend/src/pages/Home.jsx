@@ -180,7 +180,11 @@ const Home = () => {
         {/* Use Container for consistent width in the hero content */}
         <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 2 }}>
           <Grid container spacing={3} alignItems="center">
-            <Grid item xs={12} md={6}>
+            <Grid
+              size={{
+                xs: 12,
+                md: 6
+              }}>
               <Box>
                 {/* Subtitle */}
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -355,7 +359,10 @@ const Home = () => {
             </Grid>
             
             {!isSmallScreen && (
-              <Grid item md={6}>
+              <Grid
+                size={{
+                  md: 6
+                }}>
                 <Box 
                   sx={{ 
                     display: 'flex',
@@ -442,7 +449,6 @@ const Home = () => {
           </Box>
         </Container>
       </Box>
-
       {/* Wrap the rest of the content in PageContainer for consistent layout */}
       <PageContainer>
         {/* Features Section */}

@@ -99,20 +99,22 @@ const MainLayout = () => {
       text: t('header.marketplace'), 
       path: '/marketplace', 
       icon: <MarketplaceIcon />, 
-      category: 'main' 
+      category: 'main',
+      requireAuth: false 
     },
     { 
-      text: t('header.myFarm'), 
+      text: t('header.myFarm', 'My Farm'), 
       path: '/farm-management', 
       icon: <AgricultureIcon />, 
       category: 'main',
-      requireAuth: true 
+      requireAuth: false 
     },
     { 
       text: t('header.community'), 
       path: '/community', 
       icon: <CommunityIcon />, 
-      category: 'main' 
+      category: 'main',
+      requireAuth: false 
     },
     { 
       text: t('header.resources'), 
@@ -134,7 +136,7 @@ const MainLayout = () => {
       text: t('header.weather'), 
       path: '/weather', 
       icon: <WeatherIcon />, 
-      requireAuth: true 
+      requireAuth: false 
     },
   ];
 

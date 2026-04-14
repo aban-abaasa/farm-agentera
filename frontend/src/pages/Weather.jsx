@@ -171,7 +171,11 @@ const Weather = () => {
       </Typography>
       <Grid container spacing={4}>
         {/* Current Weather */}
-        <Grid item xs={12} md={4}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 4
+          }}>
           <Card elevation={3} sx={{ borderRadius: 3, mb: 2 }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -186,10 +190,10 @@ const Weather = () => {
                 {regionWeather.current.condition}
               </Typography>
               <Grid container spacing={1}>
-                <Grid item xs={6}><Typography variant="body2">Humidity: {regionWeather.current.humidity}%</Typography></Grid>
-                <Grid item xs={6}><Typography variant="body2">Wind: {regionWeather.current.windSpeed} km/h {regionWeather.current.windDirection}</Typography></Grid>
-                <Grid item xs={6}><Typography variant="body2">Precipitation: {regionWeather.current.precipitation} mm</Typography></Grid>
-                <Grid item xs={6}><Typography variant="body2">UV Index: {regionWeather.current.uvIndex}</Typography></Grid>
+                <Grid size={6}><Typography variant="body2">Humidity: {regionWeather.current.humidity}%</Typography></Grid>
+                <Grid size={6}><Typography variant="body2">Wind: {regionWeather.current.windSpeed} km/h {regionWeather.current.windDirection}</Typography></Grid>
+                <Grid size={6}><Typography variant="body2">Precipitation: {regionWeather.current.precipitation} mm</Typography></Grid>
+                <Grid size={6}><Typography variant="body2">UV Index: {regionWeather.current.uvIndex}</Typography></Grid>
               </Grid>
             </CardContent>
           </Card>
@@ -218,7 +222,11 @@ const Weather = () => {
           </Paper>
         </Grid>
         {/* 7-Day Forecast & Rainfall */}
-        <Grid item xs={12} md={5}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 5
+          }}>
           <Card elevation={3} sx={{ borderRadius: 3, mb: 2 }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -227,7 +235,12 @@ const Weather = () => {
               </Box>
               <Grid container spacing={1}>
                 {regionWeather.forecast.map((day, idx) => (
-                  <Grid item xs={6} sm={4} key={idx}>
+                  <Grid
+                    key={idx}
+                    size={{
+                      xs: 6,
+                      sm: 4
+                    }}>
                     <Paper elevation={1} sx={{ 
                       p: 1, 
                       borderRadius: 2, 
@@ -264,7 +277,11 @@ const Weather = () => {
           </Paper>
         </Grid>
         {/* Alerts & Tips */}
-        <Grid item xs={12} md={3}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 3
+          }}>
           <Card elevation={3} sx={{ borderRadius: 3, mb: 2 }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>

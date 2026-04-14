@@ -25,6 +25,13 @@ const COMMUNITY_BADGES_TABLE = 'community_badges';
 const POST_BOOKMARKS_TABLE = 'post_bookmarks';
 const NOTIFICATIONS_TABLE = 'community_notifications';
 
+let canUseCommunityPostProfileJoin = true;
+let canUseCommunityEventProfileJoin = true;
+let canUseCommunityRecentActivityProfileJoin = true;
+let canUseTrendingTopicsView = true;
+let canUseUserReputationTable = true;
+let canUseCommunityNotificationsTable = true;
+
 /**
  * Fetch all discussion posts with optional filtering
  * @param {Object} options - Query options
@@ -87,17 +94,20 @@ export async function getPosts(options = {}) {
       }));
     };
 
-    const { data, error } = await buildPrimaryQuery();
+    if (canUseCommunityPostProfileJoin) {
+      const { data, error } = await buildPrimaryQuery();
 
-    if (!error) {
-      return { data: formatPosts(data), error: null };
+      if (!error) {
+        return { data: formatPosts(data), error: null };
+      }
+
+      if (error.code !== 'PGRST200') {
+        throw error;
+      }
+
+      canUseCommunityPostProfileJoin = false;
+      console.warn('PostgREST relationship metadata missing for community_posts -> profiles. Using manual profile lookup.');
     }
-
-    if (error.code !== 'PGRST200') {
-      throw error;
-    }
-
-    console.warn('PostgREST relationship metadata missing for community_posts -> profiles. Falling back to manual profile lookup.');
 
     const { data: fallbackPosts, error: fallbackError } = await buildFallbackQuery();
 
@@ -111,14 +121,20 @@ export async function getPosts(options = {}) {
     if (userIds.length > 0) {
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name, avatar_url')
+        .select('*')
         .in('id', userIds);
 
       if (profilesError) {
         console.warn('Could not fetch profiles for community posts fallback:', profilesError);
       } else {
         for (const profile of profilesData || []) {
-          profileMap.set(profile.id, profile);
+          const normalizedProfile = {
+            ...profile,
+            first_name: profile.first_name || profile.firstName || profile.firstname || profile.given_name || '',
+            last_name: profile.last_name || profile.lastName || profile.lastname || profile.family_name || '',
+            avatar_url: profile.avatar_url || profile.avatar || null
+          };
+          profileMap.set(profile.id, normalizedProfile);
         }
       }
     }
@@ -612,20 +628,55 @@ export async function getUpcomingEvents(limit = 5) {
   try {
     const { supabase } = await import('../../lib/supabase/client');
     
-    const { data, error } = await supabase
-      .from(EVENTS_TABLE)
-      .select(`
-        *,
-        organizer:profiles(id, first_name, last_name, avatar_url),
-        category:${CATEGORIES_TABLE}(id, name, color_hex),
-        participants_count:${EVENT_PARTICIPANTS_TABLE}(count)
-      `)
-      .eq('status', 'upcoming')
-      .gte('start_datetime', new Date().toISOString())
-      .order('start_datetime', { ascending: true })
-      .limit(limit);
-    
-    if (error) throw error;
+    let data;
+    if (canUseCommunityEventProfileJoin) {
+      const { data: joinedData, error } = await supabase
+        .from(EVENTS_TABLE)
+        .select(`
+          *,
+          organizer:profiles(id, first_name, last_name, avatar_url),
+          category:${CATEGORIES_TABLE}(id, name, color_hex),
+          participants_count:${EVENT_PARTICIPANTS_TABLE}(count)
+        `)
+        .eq('status', 'upcoming')
+        .gte('start_datetime', new Date().toISOString())
+        .order('start_datetime', { ascending: true })
+        .limit(limit);
+
+      if (error) {
+        if (error.code === 'PGRST200') {
+          canUseCommunityEventProfileJoin = false;
+        } else {
+          throw error;
+        }
+      } else {
+        data = joinedData;
+      }
+    }
+
+    if (!canUseCommunityEventProfileJoin) {
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from(EVENTS_TABLE)
+        .select('*')
+        .eq('status', 'upcoming')
+        .gte('start_datetime', new Date().toISOString())
+        .order('start_datetime', { ascending: true })
+        .limit(limit);
+
+      if (fallbackError) {
+        if (fallbackError.code === '42P01') {
+          return { data: [], error: null };
+        }
+        throw fallbackError;
+      }
+
+      data = (fallbackData || []).map((event) => ({
+        ...event,
+        organizer: null,
+        category: null,
+        participants_count: []
+      }));
+    }
     
     return { 
       data: data?.map(event => ({
@@ -669,18 +720,44 @@ export async function getUserCommunityStats(userId) {
       .eq('user_id', userId);
     
     // Get user reputation
-    const { data: reputation } = await supabase
-      .from(USER_REPUTATION_TABLE)
-      .select('total_points, expert_level, badges')
-      .eq('user_id', userId)
-      .single();
+    let reputation = null;
+    if (canUseUserReputationTable) {
+      const { data: repData, error: repError } = await supabase
+        .from(USER_REPUTATION_TABLE)
+        .select('total_points, expert_level, badges')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (repError) {
+        if (repError.code === '42P01') {
+          canUseUserReputationTable = false;
+        } else {
+          throw repError;
+        }
+      } else {
+        reputation = repData;
+      }
+    }
     
     // Get unread notifications count
-    const { count: notificationsCount } = await supabase
-      .from(NOTIFICATIONS_TABLE)
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('is_read', false);
+    let notificationsCount = 0;
+    if (canUseCommunityNotificationsTable) {
+      const { count, error: notificationsError } = await supabase
+        .from(NOTIFICATIONS_TABLE)
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('is_read', false);
+
+      if (notificationsError) {
+        if (notificationsError.code === '42P01') {
+          canUseCommunityNotificationsTable = false;
+        } else {
+          throw notificationsError;
+        }
+      } else {
+        notificationsCount = count || 0;
+      }
+    }
     
     return {
       data: {
@@ -709,31 +786,78 @@ export async function getRecentCommunityActivity(limit = 10) {
   try {
     const { supabase } = await import('../../lib/supabase/client');
     
-    // Get recent posts
-    const { data: recentPosts } = await supabase
-      .from(POSTS_TABLE)
-      .select(`
-        id, title, content, created_at, post_type, likes, views,
-        user:profiles(id, first_name, last_name, avatar_url),
-        category:${CATEGORIES_TABLE}(name, color_hex),
-        comments_count:${COMMENTS_TABLE}(count),
-        likes_count:${POST_LIKES_TABLE}(count)
-      `)
-      .eq('status', 'published')
-      .order('created_at', { ascending: false })
-      .limit(Math.ceil(limit / 2));
-    
-    // Get recent questions
-    const { data: recentQuestions } = await supabase
-      .from(QUESTIONS_TABLE)
-      .select(`
-        id, title, content, created_at, status, views,
-        user:profiles(id, first_name, last_name, avatar_url),
-        category:${CATEGORIES_TABLE}(name, color_hex),
-        answers_count:${ANSWERS_TABLE}(count)
-      `)
-      .order('created_at', { ascending: false })
-      .limit(Math.ceil(limit / 2));
+    let recentPosts = [];
+    let recentQuestions = [];
+
+    if (canUseCommunityRecentActivityProfileJoin) {
+      const [{ data: postsData, error: postsError }, { data: questionsData, error: questionsError }] = await Promise.all([
+        supabase
+          .from(POSTS_TABLE)
+          .select(`
+            id, title, content, created_at, post_type, likes, views,
+            user:profiles(id, first_name, last_name, avatar_url),
+            category:${CATEGORIES_TABLE}(name, color_hex),
+            comments_count:${COMMENTS_TABLE}(count),
+            likes_count:${POST_LIKES_TABLE}(count)
+          `)
+          .eq('status', 'published')
+          .order('created_at', { ascending: false })
+          .limit(Math.ceil(limit / 2)),
+        supabase
+          .from(QUESTIONS_TABLE)
+          .select(`
+            id, title, content, created_at, status, views,
+            user:profiles(id, first_name, last_name, avatar_url),
+            category:${CATEGORIES_TABLE}(name, color_hex),
+            answers_count:${ANSWERS_TABLE}(count)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(Math.ceil(limit / 2))
+      ]);
+
+      const joinMissing = postsError?.code === 'PGRST200' || questionsError?.code === 'PGRST200';
+      if (joinMissing) {
+        canUseCommunityRecentActivityProfileJoin = false;
+      } else {
+        if (postsError) throw postsError;
+        if (questionsError) throw questionsError;
+        recentPosts = postsData || [];
+        recentQuestions = questionsData || [];
+      }
+    }
+
+    if (!canUseCommunityRecentActivityProfileJoin) {
+      const [{ data: postsFallback, error: postsFallbackError }, { data: questionsFallback, error: questionsFallbackError }] = await Promise.all([
+        supabase
+          .from(POSTS_TABLE)
+          .select('id, title, content, created_at, post_type, likes, views, user_id')
+          .eq('status', 'published')
+          .order('created_at', { ascending: false })
+          .limit(Math.ceil(limit / 2)),
+        supabase
+          .from(QUESTIONS_TABLE)
+          .select('id, title, content, created_at, status, views, user_id')
+          .order('created_at', { ascending: false })
+          .limit(Math.ceil(limit / 2))
+      ]);
+
+      if (postsFallbackError && postsFallbackError.code !== '42P01') throw postsFallbackError;
+      if (questionsFallbackError && questionsFallbackError.code !== '42P01') throw questionsFallbackError;
+
+      recentPosts = (postsFallback || []).map((post) => ({
+        ...post,
+        user: null,
+        category: null,
+        comments_count: [],
+        likes_count: []
+      }));
+      recentQuestions = (questionsFallback || []).map((question) => ({
+        ...question,
+        user: null,
+        category: null,
+        answers_count: []
+      }));
+    }
     
     // Combine and sort by date
     const allActivity = [
@@ -768,23 +892,37 @@ export async function getTrendingTopics(limit = 10) {
   try {
     const { supabase } = await import('../../lib/supabase/client');
     
-    const { data, error } = await supabase
-      .from('v_trending_topics') // Using the view we created
-      .select('*')
-      .limit(limit);
-    
-    if (error) {
-      // Fallback to regular tags if view doesn't exist
-      const { data: fallbackData } = await supabase
-        .from(TAGS_TABLE)
+    if (canUseTrendingTopicsView) {
+      const { data, error } = await supabase
+        .from('v_trending_topics')
         .select('*')
-        .order('usage_count', { ascending: false })
         .limit(limit);
-      
-      return { data: fallbackData || [], error: null };
+
+      if (!error) {
+        return { data: data || [], error: null };
+      }
+
+      if (error.code === '42P01') {
+        canUseTrendingTopicsView = false;
+      } else {
+        throw error;
+      }
     }
-    
-    return { data: data || [], error: null };
+
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from(TAGS_TABLE)
+      .select('*')
+      .order('usage_count', { ascending: false })
+      .limit(limit);
+
+    if (fallbackError) {
+      if (fallbackError.code === '42P01') {
+        return { data: [], error: null };
+      }
+      throw fallbackError;
+    }
+
+    return { data: fallbackData || [], error: null };
   } catch (error) {
     console.error('Error fetching trending topics:', error);
     return { data: [], error };
@@ -881,6 +1019,10 @@ export async function getUserBookmarks(userId, limit = 20) {
 export async function getUserNotifications(userId, limit = 20) {
   try {
     const { supabase } = await import('../../lib/supabase/client');
+
+    if (!canUseCommunityNotificationsTable) {
+      return { data: [], error: null };
+    }
     
     const { data, error } = await supabase
       .from(NOTIFICATIONS_TABLE)
@@ -888,8 +1030,14 @@ export async function getUserNotifications(userId, limit = 20) {
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(limit);
-    
-    if (error) throw error;
+
+    if (error) {
+      if (error.code === '42P01') {
+        canUseCommunityNotificationsTable = false;
+        return { data: [], error: null };
+      }
+      throw error;
+    }
     
     return { data: data || [], error: null };
   } catch (error) {

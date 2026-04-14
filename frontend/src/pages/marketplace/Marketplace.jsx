@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import Grid from '@mui/material/GridLegacy';
+import { Grid } from '@mui/material';
 import { 
   Card, CardContent, Typography, Box, Badge, 
   Divider, Button, Avatar, CardHeader, CardActions,
@@ -212,7 +212,6 @@ const Marketplace = () => {
           <CircularProgress size={60} />
         </Box>
       )}
-      
       {/* Error State */}
       {error && (
         <Box sx={{ p: 3 }}>
@@ -221,7 +220,6 @@ const Marketplace = () => {
           </Alert>
         </Box>
       )}
-      
       {/* Main Content - Only show when not loading */}
       {!loading && (
         <>
@@ -559,7 +557,11 @@ const Marketplace = () => {
           </Typography>
           
           <Grid container spacing={3} alignItems="center">
-            <Grid item xs={12} md={4}>
+            <Grid
+              size={{
+                xs: 12,
+                md: 4
+              }}>
               <Box sx={{ 
                 border: '1px solid rgba(0, 0, 0, 0.12)', 
                 borderRadius: 1, 
@@ -637,7 +639,11 @@ const Marketplace = () => {
                 </Box>
               </Box>
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid
+              size={{
+                xs: 12,
+                md: 4
+              }}>
               <Box sx={{ 
                 border: '1px solid rgba(0, 0, 0, 0.12)', 
                 borderRadius: 1, 
@@ -715,7 +721,11 @@ const Marketplace = () => {
                 </Box>
               </Box>
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid
+              size={{
+                xs: 12,
+                md: 4
+              }}>
               <Box sx={{ 
                 border: '1px solid rgba(0, 0, 0, 0.12)', 
                 borderRadius: 1, 
@@ -782,7 +792,12 @@ const Marketplace = () => {
               </Box>
             </Grid>
             {user && (
-              <Grid item xs={12} md={12} sx={{ display: { xs: 'block', md: 'none' } }}>
+              <Grid
+                sx={{ display: { xs: 'block', md: 'none' } }}
+                size={{
+                  xs: 12,
+                  md: 12
+                }}>
                 <Button 
                   variant="contained" 
                   color="primary"
@@ -875,7 +890,12 @@ const Marketplace = () => {
         </Typography>
         <Grid container spacing={3}>
           {marketplaceCategories.map((category) => (
-            <Grid item xs={12} md={4} key={category.id}>
+            <Grid
+              key={category.id}
+              size={{
+                xs: 12,
+                md: 4
+              }}>
               <Link to={category.link} style={{ textDecoration: 'none' }}>
                 <Paper 
                   elevation={2} 
@@ -1082,14 +1102,20 @@ const Marketplace = () => {
         </Typography>
         <Grid container spacing={3}>
           {filteredLandListings.length === 0 ? (
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Typography variant="body1" color="text.secondary" align="center" sx={{ py: 4 }}>
                 No land listings found for {selectedCrop} in {selectedRegion}.
               </Typography>
             </Grid>
           ) : (
             filteredLandListings.map(listing => (
-              <Grid item xs={12} md={6} lg={4} key={listing.id}>
+              <Grid
+                key={listing.id}
+                size={{
+                  xs: 12,
+                  md: 6,
+                  lg: 4
+                }}>
                 <Paper elevation={2} sx={{ borderRadius: 3, overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column', transition: 'all 0.3s', '&:hover': { boxShadow: 6, transform: 'scale(1.03)' } }}>
                   <Box sx={{ position: 'relative', height: 180 }}>
                     <img src={getImageUrl(listing)} alt={listing.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -1113,14 +1139,20 @@ const Marketplace = () => {
         </Typography>
         <Grid container spacing={3}>
           {filteredProduceListings.length === 0 ? (
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Typography variant="body1" color="text.secondary" align="center" sx={{ py: 4 }}>
                 No produce listings found for {selectedCrop} in {selectedRegion}.
               </Typography>
             </Grid>
           ) : (
             filteredProduceListings.map(listing => (
-              <Grid item xs={12} md={6} lg={4} key={listing.id}>
+              <Grid
+                key={listing.id}
+                size={{
+                  xs: 12,
+                  md: 6,
+                  lg: 4
+                }}>
                 <Paper elevation={2} sx={{ borderRadius: 3, overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column', transition: 'all 0.3s', '&:hover': { boxShadow: 6, transform: 'scale(1.03)' } }}>
                   <Box sx={{ position: 'relative', height: 180 }}>
                     <img src={getImageUrl(listing)} alt={listing.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -1144,14 +1176,20 @@ const Marketplace = () => {
         </Typography>
         <Grid container spacing={3}>
           {filteredServiceListings.length === 0 ? (
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Typography variant="body1" color="text.secondary" align="center" sx={{ py: 4 }}>
                 No service listings found for {selectedCrop} in {selectedRegion}.
               </Typography>
             </Grid>
           ) : (
             filteredServiceListings.map(listing => (
-              <Grid item xs={12} md={6} lg={4} key={listing.id}>
+              <Grid
+                key={listing.id}
+                size={{
+                  xs: 12,
+                  md: 6,
+                  lg: 4
+                }}>
                 <Paper elevation={2} sx={{ borderRadius: 3, overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column', transition: 'all 0.3s', '&:hover': { boxShadow: 6, transform: 'scale(1.03)' } }}>
                   <Box sx={{ position: 'relative', height: 180 }}>
                     <img src={getImageUrl(listing)} alt={listing.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -1178,7 +1216,13 @@ const Marketplace = () => {
           {suppliers
             .filter(s => (selectedRegion ? s.region === selectedRegion : true) && (selectedCrop ? s.crops.includes(selectedCrop) : true))
             .map(supplier => (
-              <Grid item xs={12} md={6} lg={3} key={supplier.name}>
+              <Grid
+                key={supplier.name}
+                size={{
+                  xs: 12,
+                  md: 6,
+                  lg: 3
+                }}>
                 <Card elevation={4} sx={{ borderRadius: 3, height: '100%', display: 'flex', flexDirection: 'column', transition: '0.3s', '&:hover': { boxShadow: 8, transform: 'scale(1.03)' } }}>
                   <Box sx={{ position: 'relative', height: 160 }}>
                     <img src={supplier.image} alt={supplier.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderTopLeftRadius: 12, borderTopRightRadius: 12 }} />

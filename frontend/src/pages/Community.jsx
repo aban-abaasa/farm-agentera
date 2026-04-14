@@ -13,7 +13,11 @@ const Community = () => (
       Connect with other farmers and investors. Join discussions, attend events, and ask questions.
     </Typography>
     <Grid container spacing={4}>
-      <Grid item xs={12} md={4}>
+      <Grid
+        size={{
+          xs: 12,
+          md: 4
+        }}>
         <Card elevation={3} sx={{ borderRadius: 3 }}>
           <CardContent>
             <ForumIcon color="primary" sx={{ fontSize: 36, mb: 1 }} />
@@ -25,7 +29,11 @@ const Community = () => (
           </CardContent>
         </Card>
       </Grid>
-      <Grid item xs={12} md={4}>
+      <Grid
+        size={{
+          xs: 12,
+          md: 4
+        }}>
         <Card elevation={3} sx={{ borderRadius: 3 }}>
           <CardContent>
             <EventIcon color="success" sx={{ fontSize: 36, mb: 1 }} />
@@ -37,7 +45,11 @@ const Community = () => (
           </CardContent>
         </Card>
       </Grid>
-      <Grid item xs={12} md={4}>
+      <Grid
+        size={{
+          xs: 12,
+          md: 4
+        }}>
         <Card elevation={3} sx={{ borderRadius: 3 }}>
           <CardContent>
             <HelpIcon color="secondary" sx={{ fontSize: 36, mb: 1 }} />
