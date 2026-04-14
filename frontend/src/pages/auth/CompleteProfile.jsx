@@ -54,6 +54,10 @@ const CompleteProfile = () => {
   const [success, setSuccess] = useState(false);
   const { user, updateProfile, loading, profileStatus, googleMetadata } = useAuth();
   const navigate = useNavigate();
+
+  const userFullName = user?.full_name || user?.name || '';
+  const [fallbackFirstName = '', ...fallbackLastNameParts] = userFullName.trim().split(' ');
+  const fallbackLastName = fallbackLastNameParts.join(' ');
   
   // Redirect if user is not logged in or if profile is already complete
   useEffect(() => {
@@ -99,13 +103,13 @@ const CompleteProfile = () => {
 
   const formik = useFormik({
     initialValues: {
-      firstName: user?.first_name || googleMetadata?.first_name || '',
-      lastName: user?.last_name || googleMetadata?.last_name || '',
-      phone: user?.phone_number || '',
-      location: user?.location || '',
-      role: user?.role || 'farmer',
-      farmingType: user?.farmer_type || '',
-      farmSize: user?.farm_size || '',
+      firstName: user?.first_name || user?.firstName || googleMetadata?.first_name || fallbackFirstName || '',
+      lastName: user?.last_name || user?.lastName || googleMetadata?.last_name || fallbackLastName || '',
+      phone: user?.phone_number || user?.phone || user?.phoneNumber || '',
+      location: user?.location || user?.address || '',
+      role: user?.role || user?.user_role || 'farmer',
+      farmingType: user?.farmer_type || user?.farming_type || user?.farmType || '',
+      farmSize: user?.farm_size || user?.farmSize || user?.farm_area || '',
       bio: user?.bio || ''
     },
     enableReinitialize: true, // This allows the form to reinitialize when initial values change

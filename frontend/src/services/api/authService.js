@@ -181,56 +181,65 @@ export async function getUserProfile(userId) {
  * @returns {Promise} - Updated profile
  */
 export async function updateUserProfile(userId, updates) {
-  const extractMissingColumn = (error) => {
-    const message = error?.message || '';
-    const match = message.match(/Could not find the '([^']+)' column/);
-    return match ? match[1] : null;
-  };
-
-  const buildSafePayload = (payload, blockedColumns = new Set()) => {
-    return Object.fromEntries(
-      Object.entries(payload).filter(([key, value]) => {
-        if (value === undefined) return false;
-        if (blockedColumns.has(key)) return false;
-        return true;
-      })
-    );
-  };
-
   try {
-    const blockedColumns = new Set();
-    const basePayload = {
-      ...updates,
-      updated_at: new Date().toISOString()
+    const { data: existingProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (profileError) throw profileError;
+
+    const existingColumns = new Set(Object.keys(existingProfile || {}));
+    const nowIso = new Date().toISOString();
+
+    const aliasMap = {
+      first_name: ['firstname', 'firstName', 'given_name', 'name_first'],
+      last_name: ['lastname', 'lastName', 'family_name', 'name_last'],
+      phone_number: ['phone', 'phoneNumber', 'mobile', 'telephone'],
+      farmer_type: ['farm_type', 'farmType', 'farming_type'],
+      farm_size: ['farmSize', 'farm_area', 'acreage'],
+      avatar_url: ['avatar', 'profile_image', 'photo_url'],
+      cover_photo: ['coverPhoto', 'cover_image'],
+      updated_at: ['updatedAt', 'modified_at']
     };
 
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      const safePayload = buildSafePayload(basePayload, blockedColumns);
+    const payloadSource = {
+      ...updates,
+      updated_at: nowIso
+    };
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .update(safePayload)
-        .eq('id', userId)
-        .select();
+    const payload = {};
 
-      if (!error) {
-        return { data, error: null };
+    for (const [key, value] of Object.entries(payloadSource)) {
+      if (value === undefined) continue;
+
+      if (existingColumns.has(key)) {
+        payload[key] = value;
+        continue;
       }
 
-      if (error.code !== 'PGRST204') {
-        throw error;
-      }
+      const aliases = aliasMap[key] || [];
+      const matchedAlias = aliases.find((alias) => existingColumns.has(alias));
 
-      const missingColumn = extractMissingColumn(error);
-      if (!missingColumn || blockedColumns.has(missingColumn)) {
-        throw error;
+      if (matchedAlias) {
+        payload[matchedAlias] = value;
       }
-
-      blockedColumns.add(missingColumn);
-      console.warn(`Skipping unknown profiles column '${missingColumn}' and retrying update.`);
     }
 
-    throw new Error('Profile update failed due to incompatible profile schema.');
+    if (Object.keys(payload).length === 0) {
+      console.warn('No matching profile columns found for update payload; returning existing profile.');
+      return { data: [existingProfile], error: null };
+    }
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(payload)
+      .eq('id', userId)
+      .select();
+
+    if (error) throw error;
+    return { data, error: null };
   } catch (error) {
     console.error('Error updating user profile:', error);
     return { data: null, error };
@@ -432,20 +441,25 @@ export async function isProfileComplete(userId) {
     
     if (error) throw error;
 
+    const hasAnyColumn = (...keys) => keys.some((key) => Object.prototype.hasOwnProperty.call(data || {}, key));
+
     const firstName = data?.first_name || data?.firstname || data?.firstName || data?.given_name || '';
     const lastName = data?.last_name || data?.lastname || data?.lastName || data?.family_name || '';
     const fullName = data?.full_name || data?.name || '';
     const hasName = Boolean(firstName && lastName) || Boolean(fullName);
     const phone = data?.phone_number || data?.phone || data?.phoneNumber || '';
     const location = data?.location || data?.address || '';
-    const role = data?.role || data?.user_role || 'user';
+    const role = data?.role || data?.user_role || '';
+
+    const requiresLocation = hasAnyColumn('location', 'address');
+    const requiresRole = hasAnyColumn('role', 'user_role');
     
-    // Check if essential fields are filled
+    // Require only fields that exist in the deployed schema.
     const isComplete = Boolean(
       hasName &&
       phone &&
-      location &&
-      role
+      (!requiresLocation || location) &&
+      (!requiresRole || role)
     );
     
     return { isComplete, data, error: null };
