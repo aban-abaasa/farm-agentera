@@ -37,6 +37,7 @@ import Analytics from './pages/Analytics'
 import Finance from './pages/Finance'
 import Investments from './pages/Investments'
 import Messages from './pages/Messages'
+import ICANWallet from './pages/ICANWallet'
 import { Suspense } from 'react'
 import { CircularProgress, Box } from '@mui/material'
 import PageContainer from './components/layout/PageContainer'
@@ -109,6 +110,7 @@ function App() {
                 <Route path="investments" element={withPageContainer(Investments)} />
                 <Route path="messages" element={withPageContainer(Messages)} />
                 <Route path="marketplace/create" element={withPageContainer(CreateListing)} />
+                <Route path="ican-wallet" element={withPageContainer(ICANWallet)} />
               </Route>
             </Route>
           </Routes>

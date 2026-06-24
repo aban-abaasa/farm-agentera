@@ -457,16 +457,47 @@ export const incrementListingView = async (id) => {
  */
 export const changeListingStatus = async (id, status) => {
   try {
+    // Fetch listing details before updating (need price + owner_id for ICAN credit)
+    const { data: listing } = await supabase
+      .from('marketplace_listings')
+      .select('id, title, price, user_id, type')
+      .eq('id', id)
+      .single();
+
     const { error } = await supabase
       .from('marketplace_listings')
-      .update({ 
+      .update({
         status,
         updated_at: new Date().toISOString()
       })
       .eq('id', id);
-    
+
     if (error) throw error;
-    
+
+    // ── Credit ICAN to lister when a listing is marked as sold ──
+    if (status === 'sold' && listing?.user_id && listing?.price) {
+      try {
+        const { earnFromProduceSale, earnFromLandLease, earnFromService } = await import('../icanWalletService');
+        const ugxAmount = listing.price;
+        const saleId = id;
+
+        // All listing types go through the unified farm_credit_listing_sale DB function
+        if (['produce', 'land', 'service'].includes(listing.type)) {
+          const { earnFromProduceSale, earnFromLandLease, earnFromService } = await import('../icanWalletService');
+          if (listing.type === 'produce') {
+            await earnFromProduceSale({ userId: listing.user_id, ugxSaleAmount: ugxAmount, saleId, produceTitle: listing.title });
+          } else if (listing.type === 'land') {
+            await earnFromLandLease({ userId: listing.user_id, ugxLeaseAmount: ugxAmount, leaseId: saleId, landTitle: listing.title });
+          } else {
+            await earnFromService({ userId: listing.user_id, ugxServiceAmount: ugxAmount, serviceId: saleId, serviceTitle: listing.title });
+          }
+        }
+      } catch (_e) {
+        // Non-critical: ICAN credit failure should not block the status update
+        console.warn('ICAN credit failed (non-critical):', _e?.message);
+      }
+    }
+
     return { success: true, error: null };
   } catch (error) {
     console.error('Error changing listing status:', error);
