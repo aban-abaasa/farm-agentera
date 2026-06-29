@@ -45,6 +45,7 @@ import {
   Star as StarIcon
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase/client';
 import { getUserListings, getListings } from '../services/api/marketplaceService';
 import { getUserProfile } from '../services/api/authService';
 import { getConversations, getUnreadMessageCount } from '../services/api/messageService';
@@ -78,6 +79,7 @@ const Dashboard = () => {
   });
 
   // Community data state
+  const [icanBalance, setIcanBalance] = useState(null);
   const [communityActivity, setCommunityActivity] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [trendingTopics, setTrendingTopics] = useState([]);
@@ -216,6 +218,16 @@ const Dashboard = () => {
     };
     
     fetchUserData();
+
+    // Fetch ICAN balance
+    if (user?.id) {
+      supabase
+        .from('ican_user_wallets')
+        .select('ican_balance')
+        .eq('user_id', user.id)
+        .single()
+        .then(({ data }) => setIcanBalance(data?.ican_balance ?? 0));
+    }
   }, [user?.id]);
   
   // Stats array for display
@@ -241,12 +253,20 @@ const Dashboard = () => {
       color: '#4caf50',
       bgColor: alpha('#4caf50', 0.12)
     },
-    { 
-      icon: <MessageIcon sx={{ fontSize: 40 }} style={{ color: '#ff9800' }} />, 
-      value: stats.newMessages.toString(), 
+    {
+      icon: <MessageIcon sx={{ fontSize: 40 }} style={{ color: '#ff9800' }} />,
+      value: stats.newMessages.toString(),
       label: 'New Messages',
       color: '#ff9800',
       bgColor: alpha('#ff9800', 0.12)
+    },
+    {
+      icon: <Typography variant="h5" sx={{ fontWeight: 700, color: '#7c3aed', lineHeight: 1 }}>₡</Typography>,
+      value: icanBalance === null ? '…' : Number(icanBalance).toFixed(2),
+      label: 'ICAN Coins',
+      color: '#7c3aed',
+      bgColor: alpha('#7c3aed', 0.12),
+      onClick: () => { window.location.href = '/ican-wallet'; }
     }
   ];
 
@@ -434,10 +454,11 @@ const Dashboard = () => {
                 size={{
                   xs: 12,
                   sm: 6,
-                  md: 3
+                  md: index === statsArray.length - 1 ? 12 / statsArray.length : 3
                 }}>
-                <Card 
-                  sx={{ 
+                <Card
+                  onClick={stat.onClick}
+                  sx={{
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
@@ -445,6 +466,7 @@ const Dashboard = () => {
                     overflow: 'hidden',
                     borderRadius: 3,
                     p: 3,
+                    cursor: stat.onClick ? 'pointer' : 'default',
                     transition: 'transform 0.3s, box-shadow 0.3s',
                     '&:hover': {
                       transform: 'translateY(-5px)',
@@ -517,178 +539,132 @@ const Dashboard = () => {
             ))}
           </Grid>
 
-          {/* Mobile Horizontal Scroll Layout */}
+          {/* Mobile Compact Grid Layout - No Scrolling */}
           <Box 
             sx={{ 
               display: { xs: 'block', md: 'none' } 
             }}
           >
-            <Box
-              onScroll={handleStatsScroll}
-              sx={{
-                display: 'flex',
-                overflowX: 'auto',
-                overflowY: 'hidden',
-                gap: 2,
-                pb: 2,
-                px: 1,
-                mx: -1,
-                scrollBehavior: 'smooth',
-                WebkitOverflowScrolling: 'touch',
-                scrollSnapType: 'x mandatory',
-                '&::-webkit-scrollbar': {
-                  height: 6,
-                },
-                '&::-webkit-scrollbar-track': {
-                  background: 'rgba(0,0,0,0.05)',
-                  borderRadius: 3,
-                },
-                '&::-webkit-scrollbar-thumb': {
-                  background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                  borderRadius: 3,
-                  '&:hover': {
-                    background: `linear-gradient(90deg, ${theme.palette.primary.dark}, ${theme.palette.secondary.dark})`,
-                  }
-                },
-                '@media (max-width: 600px)': {
-                  '&::-webkit-scrollbar': {
-                    display: 'none'
-                  }
-                }
-              }}
-            >
+            <Grid container spacing={1}>
               {statsArray.map((stat, index) => (
-                <Card 
+                <Grid
                   key={index}
-                  sx={{ 
-                    minWidth: '240px',
-                    maxWidth: '280px',
-                    width: '240px',
-                    scrollSnapAlign: 'center',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    borderRadius: 3,
-                    p: 2.5,
-                    transition: 'transform 0.3s, box-shadow 0.3s',
-                    flexShrink: 0,
-                    boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-                    border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
-                    '&:hover': {
-                      transform: 'translateY(-3px)',
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.12)'
-                    },
-                    '&:first-of-type': {
-                      ml: 1,
-                    },
-                    '&:last-of-type': {
-                      mr: 1,
-                    }
+                  size={{
+                    xs: 4,
+                    sm: 2.4
                   }}
                 >
-                  {/* Background decorative shape */}
-                  <Box
+                  <Card
+                    onClick={stat.onClick}
                     sx={{
-                      position: 'absolute',
-                      top: -20,
-                      right: -20,
-                      width: 80,
-                      height: 80,
-                      borderRadius: '50%',
-                      backgroundColor: stat.bgColor,
-                      zIndex: 0
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      borderRadius: 2,
+                      p: 1.5,
+                      cursor: stat.onClick ? 'pointer' : 'default',
+                      transition: 'all 0.2s',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                      border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                      '&:active': {
+                        transform: 'scale(0.95)',
+                      },
+                      minHeight: { xs: '100px', sm: '110px' }
                     }}
-                  />
-                  
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', zIndex: 1, mb: 1 }}>
-                    <Box>
-                      <Typography variant="h4" component="div" fontWeight="bold" sx={{ mb: 0.5, fontSize: '2rem' }}>
-                        {stat.value}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary" fontWeight="medium" sx={{ fontSize: '0.875rem' }}>
-                        {stat.label}
-                      </Typography>
-                    </Box>
+                  >
+                    {/* Small background accent */}
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: -10,
+                        right: -10,
+                        width: 40,
+                        height: 40,
+                        borderRadius: '50%',
+                        backgroundColor: stat.bgColor,
+                        zIndex: 0,
+                        opacity: 0.5,
+                      }}
+                    />
+                    
+                    {/* Icon */}
                     <Avatar
                       sx={{
                         bgcolor: stat.bgColor,
                         color: stat.color,
-                        width: 48,
-                        height: 48,
-                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                        width: 32,
+                        height: 32,
+                        mb: 0.75,
+                        zIndex: 1,
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                       }}
                     >
-                      {React.cloneElement(stat.icon, { sx: { fontSize: 28 } })}
+                      {React.cloneElement(stat.icon, { sx: { fontSize: 18 } })}
                     </Avatar>
-                  </Box>
-                  
-                  {/* Trend indicator */}
-                  <Box 
-                    sx={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      mt: 'auto', 
-                      pt: 1,
-                      zIndex: 1
-                    }}
-                  >
+                    
+                    {/* Value */}
+                    <Typography 
+                      variant="h6" 
+                      component="div" 
+                      fontWeight="bold" 
+                      sx={{ 
+                        fontSize: { xs: '1.1rem', sm: '1.25rem' },
+                        lineHeight: 1.1,
+                        mb: 0.25,
+                        zIndex: 1,
+                        textAlign: 'center'
+                      }}
+                    >
+                      {stat.value}
+                    </Typography>
+                    
+                    {/* Label */}
+                    <Typography 
+                      variant="caption" 
+                      color="text.secondary" 
+                      fontWeight="500"
+                      sx={{ 
+                        fontSize: { xs: '0.6rem', sm: '0.65rem' },
+                        lineHeight: 1.2,
+                        textAlign: 'center',
+                        zIndex: 1,
+                        px: 0.5,
+                        mb: 0.5
+                      }}
+                    >
+                      {stat.label}
+                    </Typography>
+                    
+                    {/* Mini trend chip */}
                     <Chip
-                      icon={<TrendingUpIcon fontSize="small" />}
-                      label={`${[10, 5, 8, 15][index]}% this week`}
+                      icon={<TrendingUpIcon sx={{ fontSize: '0.7rem !important' }} />}
+                      label={`${[10, 5, 8, 15, 'N/A'][index]}%`}
                       size="small"
                       sx={{ 
-                        bgcolor: alpha(stat.color, 0.1),
+                        bgcolor: alpha(stat.color, 0.12),
                         color: stat.color,
-                        fontWeight: 'medium',
-                        fontSize: '0.75rem',
-                        height: 24,
+                        fontWeight: '600',
+                        fontSize: { xs: '0.55rem', sm: '0.6rem' },
+                        height: 16,
+                        zIndex: 1,
                         '& .MuiChip-icon': {
-                          color: stat.color
+                          color: stat.color,
+                          ml: 0.25,
+                          mr: -0.25
+                        },
+                        '& .MuiChip-label': {
+                          px: 0.5
                         }
                       }}
                     />
-                  </Box>
-                </Card>
+                  </Card>
+                </Grid>
               ))}
-            </Box>
-
-            {/* Mobile scroll indicator */}
-            <Box 
-              sx={{ 
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                mt: 2,
-                gap: 1,
-                opacity: 0.8
-              }}
-            >
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                Swipe to view all stats
-              </Typography>
-              <Box
-                sx={{
-                  display: 'flex',
-                  gap: 0.5,
-                  ml: 1
-                }}
-              >
-                {[...Array(2)].map((_, index) => (
-                  <Box
-                    key={index}
-                    sx={{
-                      width: scrollPosition < (index + 1) * 0.5 ? 8 : 6,
-                      height: scrollPosition < (index + 1) * 0.5 ? 8 : 6,
-                      borderRadius: '50%',
-                      bgcolor: scrollPosition < (index + 1) * 0.5 ? 'primary.main' : 'action.disabled',
-                      transition: 'all 0.3s ease',
-                      transform: scrollPosition < (index + 1) * 0.5 ? 'scale(1.2)' : 'scale(1)'
-                    }}
-                  />
-                ))}
-              </Box>
-            </Box>
+            </Grid>
           </Box>
         </Box>
 

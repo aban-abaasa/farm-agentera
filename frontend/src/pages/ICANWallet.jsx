@@ -6,6 +6,8 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
   Tooltip, IconButton, Snackbar,
 } from '@mui/material';
+import BuyIcan from '../components/BuyIcan';
+import SellIcan from '../components/SellIcan';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
@@ -46,7 +48,7 @@ function formatDate(ts) {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function BalanceCard({ balance, onSend, onReceive, onRefresh, refreshing }) {
+function BalanceCard({ balance, onSend, onReceive, onBuy, onSell, onRefresh, refreshing }) {
   const theme = useTheme();
   const [copied, setCopied] = useState(false);
 
@@ -97,29 +99,28 @@ function BalanceCard({ balance, onSend, onReceive, onRefresh, refreshing }) {
         )}
 
         <Grid container spacing={2}>
-          <Grid item xs={4}>
-            <Button fullWidth variant="contained"
-              startIcon={<ArrowUpwardIcon />}
-              onClick={onSend}
+          <Grid item xs={3}>
+            <Button fullWidth variant="contained" startIcon={<ArrowUpwardIcon />} onClick={onSend}
               sx={{ background: 'rgba(255,255,255,0.15)', '&:hover': { background: 'rgba(255,255,255,0.25)' }, borderRadius: 3 }}>
               Send
             </Button>
           </Grid>
-          <Grid item xs={4}>
-            <Button fullWidth variant="contained"
-              startIcon={<ArrowDownwardIcon />}
-              onClick={onReceive}
+          <Grid item xs={3}>
+            <Button fullWidth variant="contained" startIcon={<ArrowDownwardIcon />} onClick={onReceive}
               sx={{ background: 'rgba(255,255,255,0.15)', '&:hover': { background: 'rgba(255,255,255,0.25)' }, borderRadius: 3 }}>
               Receive
             </Button>
           </Grid>
-          <Grid item xs={4}>
-            <Button fullWidth variant="contained"
-              startIcon={<RefreshIcon />}
-              onClick={onRefresh}
-              disabled={refreshing}
-              sx={{ background: 'rgba(255,255,255,0.15)', '&:hover': { background: 'rgba(255,255,255,0.25)' }, borderRadius: 3 }}>
-              {refreshing ? '...' : 'Refresh'}
+          <Grid item xs={3}>
+            <Button fullWidth variant="contained" onClick={onBuy}
+              sx={{ background: 'rgba(34,197,94,0.35)', '&:hover': { background: 'rgba(34,197,94,0.55)' }, borderRadius: 3 }}>
+              💳 Buy
+            </Button>
+          </Grid>
+          <Grid item xs={3}>
+            <Button fullWidth variant="contained" onClick={onSell}
+              sx={{ background: 'rgba(244,63,94,0.35)', '&:hover': { background: 'rgba(244,63,94,0.55)' }, borderRadius: 3 }}>
+              💰 Sell
             </Button>
           </Grid>
         </Grid>
@@ -214,6 +215,8 @@ export default function ICANWallet() {
   const [tabValue, setTabValue] = useState(0);
   const [sendOpen, setSendOpen] = useState(false);
   const [receiveOpen, setReceiveOpen] = useState(false);
+  const [buyOpen, setBuyOpen] = useState(false);
+  const [sellOpen, setSellOpen] = useState(false);
   const [snack, setSnack] = useState('');
 
   useEffect(() => {
@@ -284,6 +287,8 @@ export default function ICANWallet() {
         balance={balance}
         onSend={() => setSendOpen(true)}
         onReceive={() => setReceiveOpen(true)}
+        onBuy={() => setBuyOpen(true)}
+        onSell={() => setSellOpen(true)}
         onRefresh={handleRefresh}
         refreshing={refreshing}
       />
@@ -394,6 +399,28 @@ export default function ICANWallet() {
       {/* Dialogs */}
       <SendDialog open={sendOpen} onClose={() => setSendOpen(false)} userId={userId} onDone={loadData} />
       {balance.address && <ReceiveDialog open={receiveOpen} onClose={() => setReceiveOpen(false)} address={balance.address} />}
+
+      {/* Buy ICAN Dialog */}
+      <Dialog open={buyOpen} onClose={() => setBuyOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 4 } }}>
+        <DialogTitle fontWeight={700}>💳 Buy ICAN Coins</DialogTitle>
+        <DialogContent sx={{ p: 1 }}>
+          <BuyIcan userId={userId} onSuccess={() => { loadData(); setBuyOpen(false); }} />
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={() => setBuyOpen(false)} variant="outlined">Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Sell ICAN Dialog */}
+      <Dialog open={sellOpen} onClose={() => setSellOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 4 } }}>
+        <DialogTitle fontWeight={700}>💰 Sell ICAN Coins</DialogTitle>
+        <DialogContent sx={{ p: 1 }}>
+          <SellIcan userId={userId} onSuccess={() => { loadData(); setSellOpen(false); }} />
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={() => setSellOpen(false)} variant="outlined">Close</Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Snackbar */}
       <Snackbar open={!!snack} autoHideDuration={3000} onClose={() => setSnack('')} message={snack} />

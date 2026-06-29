@@ -122,11 +122,18 @@ const MainLayout = () => {
       icon: <ResourcesIcon />, 
       category: 'main' 
     },
-    { 
-      text: t('header.supportTeam'), 
-      path: '/support-team', 
-      icon: <SupportIcon />, 
-      category: 'main' 
+    {
+      text: t('header.supportTeam'),
+      path: '/support-team',
+      icon: <SupportIcon />,
+      category: 'main'
+    },
+    {
+      text: '₡ ICAN Wallet',
+      path: '/ican-wallet',
+      icon: <PaidIcon />,
+      category: 'main',
+      requireAuth: true,
     },
   ];
 
