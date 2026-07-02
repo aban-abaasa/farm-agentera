@@ -38,6 +38,7 @@ import Finance from './pages/Finance'
 import Investments from './pages/Investments'
 import Messages from './pages/Messages'
 import ICANWallet from './pages/ICANWallet'
+import DevPanel from './pages/DevPanel'
 import { Suspense } from 'react'
 import { CircularProgress, Box } from '@mui/material'
 import PageContainer from './components/layout/PageContainer'
@@ -75,6 +76,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/dev-panel" element={<DevPanel />} />
             
             {/* Profile completion route - special case */}
             <Route path="/complete-profile" element={<CompleteProfile />} />

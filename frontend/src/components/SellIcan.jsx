@@ -1,53 +1,52 @@
-/**
- * 💰 Sell ICAN Component - FARM-AGENT
- * Simplified version for selling ICAN coins
- */
-
 import React, { useState, useEffect } from 'react';
 import {
   Box, TextField, Button, Alert, CircularProgress,
-  Typography, InputAdornment,
+  Typography, InputAdornment, Skeleton,
 } from '@mui/material';
-import { sellICAN, getBalance, icanToUGX, ICAN_TO_UGX } from '../services/icanWalletService';
+import { sellICAN, getBalance } from '../services/icanWalletService';
+import { useLiveIcaneracoinPrice } from '../hooks/useIcanPrice';
 
 export default function SellIcan({ userId, onSuccess }) {
   const [icanAmount, setIcanAmount] = useState('');
-  const [balance, setBalance] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [balance, setBalance]       = useState(0);
+  const [loading, setLoading]       = useState(true);
   const [processing, setProcessing] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError]           = useState('');
+  const [success, setSuccess]       = useState('');
 
-  const ugxAmount = icanAmount ? icanToUGX(parseFloat(icanAmount)) : 0;
+  const { priceUgx, priceUsd, appreciationPct, loading: priceLoading } =
+    useLiveIcaneracoinPrice();
+
+  const ugxAmount =
+    icanAmount && priceUgx > 0
+      ? parseFloat(icanAmount) * priceUgx
+      : 0;
 
   useEffect(() => {
-    const loadBalance = async () => {
+    if (!userId) return;
+    const load = async () => {
       try {
         const bal = await getBalance(userId);
         setBalance(bal.ican);
       } catch (err) {
         setError('Failed to load balance');
-        console.error('Load balance error:', err);
       } finally {
         setLoading(false);
       }
     };
-
-    if (userId) {
-      loadBalance();
-    }
+    load();
   }, [userId]);
 
   const handleSell = async (e) => {
     e.preventDefault();
 
     if (!icanAmount || parseFloat(icanAmount) <= 0) {
-      setError('Please enter a valid ICAN amount');
+      setError('Please enter a valid icaneracoin amount');
       return;
     }
 
     if (parseFloat(icanAmount) > balance) {
-      setError(`Insufficient balance. You have ${balance.toFixed(4)} ICAN`);
+      setError(`Insufficient balance. You have ${balance.toFixed(4)} icaneracoins`);
       return;
     }
 
@@ -64,20 +63,16 @@ export default function SellIcan({ userId, onSuccess }) {
 
       if (result.success) {
         setSuccess(
-          `✅ Successfully sold ${parseFloat(icanAmount).toFixed(4)} ICAN for UGX ${ugxAmount.toLocaleString()}!`
+          `Successfully sold ${parseFloat(icanAmount).toFixed(4)} icaneracoins for UGX ${Math.round(ugxAmount).toLocaleString()}!`
         );
-        
-        // Update local balance
         setBalance(balance - parseFloat(icanAmount));
         setIcanAmount('');
-        
         if (onSuccess) onSuccess(result);
       } else {
         setError(result.error || 'Sale failed');
       }
     } catch (err) {
       setError(err.message || 'An error occurred during sale');
-      console.error('Sell ICAN error:', err);
     } finally {
       setProcessing(false);
     }
@@ -93,47 +88,82 @@ export default function SellIcan({ userId, onSuccess }) {
 
   return (
     <Box component="form" onSubmit={handleSell} sx={{ p: 2 }}>
+
+      {/* Live Price Banner */}
+      <Box
+        sx={{
+          mb: 2, p: 1.5,
+          background: 'linear-gradient(135deg,#6c47ff22,#6c47ff11)',
+          border: '1px solid #6c47ff44',
+          borderRadius: 2,
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        }}
+      >
+        <Box>
+          <Typography variant="caption" color="text.secondary" fontWeight={600}>
+            icaneracoin live price
+          </Typography>
+          {priceLoading ? (
+            <Skeleton width={100} height={24} />
+          ) : (
+            <Typography variant="body2" fontWeight={700} color="primary">
+              UGX {priceUgx.toLocaleString()} · ${priceUsd.toFixed(4)} USD
+            </Typography>
+          )}
+        </Box>
+        {!priceLoading && appreciationPct > 0 && (
+          <Typography variant="caption" color="success.main" fontWeight={700}>
+            +{appreciationPct.toFixed(2)}% above floor
+          </Typography>
+        )}
+      </Box>
+
       <Typography variant="body2" color="text.secondary" mb={2}>
-        Convert ICAN back to local currency at the current rate
+        Convert icaneracoins back to local currency at the live rate
       </Typography>
 
       {balance > 0 && (
         <Box
           sx={{
-            mb: 2,
-            p: 2,
+            mb: 2, p: 2,
             background: '#eef9f5',
             borderRadius: 2,
             border: '1px solid #c7e9df',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           }}
         >
-          <Typography variant="caption" color="success.dark" fontWeight={600}>
-            Your ICAN Balance:{' '}
-            <Typography component="span" variant="body1" fontWeight={700}>
-              {balance.toFixed(4)}
+          <Box>
+            <Typography variant="caption" color="success.dark" fontWeight={600} display="block">
+              Your icaneracoin Balance
             </Typography>
-          </Typography>
+            <Typography variant="body1" fontWeight={700}>
+              {balance.toFixed(4)} ERA
+            </Typography>
+          </Box>
+          {!priceLoading && (
+            <Box textAlign="right">
+              <Typography variant="caption" color="text.secondary" display="block">
+                Estimated value
+              </Typography>
+              <Typography variant="body2" fontWeight={600} color="success.dark">
+                UGX {Math.round(balance * priceUgx).toLocaleString()}
+              </Typography>
+            </Box>
+          )}
         </Box>
       )}
 
       <TextField
         fullWidth
-        label="ICAN Amount to Sell"
+        label="icaneracoins to Sell"
         type="number"
         value={icanAmount}
-        onChange={(e) => {
-          setIcanAmount(e.target.value);
-          setError('');
-          setSuccess('');
-        }}
-        placeholder="Enter ICAN amount"
+        onChange={(e) => { setIcanAmount(e.target.value); setError(''); setSuccess(''); }}
+        placeholder="Enter amount"
         disabled={processing || balance === 0}
-        inputProps={{
-          max: balance,
-          step: '0.0001',
-        }}
+        inputProps={{ max: balance, step: '0.0001' }}
         InputProps={{
-          startAdornment: <InputAdornment position="start">💎</InputAdornment>,
+          startAdornment: <InputAdornment position="start">ERA</InputAdornment>,
         }}
         sx={{ mb: 2 }}
       />
@@ -141,46 +171,30 @@ export default function SellIcan({ userId, onSuccess }) {
       {icanAmount > 0 && (
         <Box
           sx={{
-            p: 2,
-            mb: 2,
+            p: 2, mb: 2,
             background: '#f5f5f5',
             borderRadius: 2,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           }}
         >
           <Box>
-            <Typography variant="caption" color="text.secondary">
-              You Sell
-            </Typography>
+            <Typography variant="caption" color="text.secondary">You Sell</Typography>
             <Typography variant="body1" fontWeight={700}>
-              {parseFloat(icanAmount).toFixed(4)} ICAN
+              {parseFloat(icanAmount).toFixed(4)} icaneracoins
             </Typography>
           </Box>
           <Typography variant="h6">→</Typography>
           <Box>
-            <Typography variant="caption" color="text.secondary">
-              You Get
-            </Typography>
+            <Typography variant="caption" color="text.secondary">You Get</Typography>
             <Typography variant="body1" fontWeight={700} color="primary">
-              UGX {ugxAmount.toLocaleString()}
+              UGX {Math.round(ugxAmount).toLocaleString()}
             </Typography>
           </Box>
         </Box>
       )}
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      {success && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {success}
-        </Alert>
-      )}
+      {error   && <Alert severity="error"   sx={{ mb: 2 }}>{error}</Alert>}
+      {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
 
       <Button
         type="submit"
@@ -190,39 +204,35 @@ export default function SellIcan({ userId, onSuccess }) {
           !icanAmount ||
           parseFloat(icanAmount) <= 0 ||
           parseFloat(icanAmount) > balance ||
-          processing
+          processing ||
+          priceLoading
         }
         sx={{ mb: 2 }}
       >
         {processing ? (
-          <>
-            <CircularProgress size={20} sx={{ mr: 1 }} /> Processing...
-          </>
+          <><CircularProgress size={20} sx={{ mr: 1 }} /> Processing...</>
         ) : (
-          '💰 Sell Now'
+          'Sell icaneracoins'
         )}
       </Button>
 
       <Box
         sx={{
-          p: 2,
-          background: '#f8f9fa',
-          borderRadius: 2,
-          borderLeft: '3px solid',
-          borderColor: 'primary.main',
+          p: 2, background: '#f8f9fa', borderRadius: 2,
+          borderLeft: '3px solid', borderColor: 'primary.main',
         }}
       >
         <Typography variant="caption" fontWeight={600} color="text.secondary" display="block" mb={1}>
-          ℹ️ HOW IT WORKS
+          HOW IT WORKS
         </Typography>
         <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
-          ✓ Current rate: 1 ICAN = {ICAN_TO_UGX.toLocaleString()} UGX
+          Live rate: 1 icaneracoin = UGX {priceLoading ? '...' : priceUgx.toLocaleString()}
         </Typography>
         <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
-          ✓ Money processed and sent to your account
+          Payout processed and sent to your account
         </Typography>
         <Typography variant="caption" color="text.secondary" display="block">
-          ✓ No hidden fees or charges
+          No hidden fees or charges
         </Typography>
       </Box>
     </Box>

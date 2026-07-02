@@ -1,5 +1,5 @@
 /**
- * Blockchain Message Service — FARM-AGENT
+ * Blockchain Message Service — BACKBONE
  * Handles blockchain verification for messages
  * Part of Icaneracoin ecosystem
  */

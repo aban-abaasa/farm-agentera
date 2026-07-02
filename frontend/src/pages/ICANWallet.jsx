@@ -36,7 +36,7 @@ const TX_LABELS = {
 
 const APP_LABELS = {
   ican: 'ICAN Core', 'digital-city-era': 'Supermarket',
-  'farm-agent': 'Farm Agent', mybodaguy: 'My Boda Guy',
+  'farm-agent': 'Backbone', mybodaguy: 'My Boda Guy',
 };
 
 function formatDate(ts) {
@@ -71,7 +71,7 @@ function BalanceCard({ balance, onSend, onReceive, onBuy, onSell, onRefresh, ref
       <CardContent sx={{ p: 4 }}>
         <Box display="flex" alignItems="center" gap={1.5} mb={3}>
           <AccountBalanceWalletIcon sx={{ color: '#a78bfa' }} />
-          <Typography fontWeight={700} fontSize={16}>Icaneracoin Wallet — Farm Agent</Typography>
+          <Typography fontWeight={700} fontSize={16}>Icaneracoin Wallet — Backbone</Typography>
         </Box>
 
         <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', letterSpacing: 2, textTransform: 'uppercase' }}>
@@ -278,7 +278,7 @@ export default function ICANWallet() {
         <AgricultureIcon sx={{ fontSize: 32, color: theme.palette.primary.main }} />
         <Box>
           <Typography variant="h5" fontWeight={800}>ICAN Wallet</Typography>
-          <Typography variant="body2" color="text.secondary">Farm Agent — Icaneracoin powered earnings</Typography>
+          <Typography variant="body2" color="text.secondary">Backbone — Icaneracoin powered earnings</Typography>
         </Box>
       </Box>
 
@@ -312,7 +312,7 @@ export default function ICANWallet() {
       {/* Earn-more section */}
       <Card elevation={0} sx={{ border: `1px solid ${alpha(theme.palette.success.main, 0.3)}`, borderRadius: 3, mb: 3, background: alpha(theme.palette.success.light, 0.05) }}>
         <CardContent>
-          <Typography fontWeight={700} gutterBottom>Earn ICAN on Farm Agent</Typography>
+          <Typography fontWeight={700} gutterBottom>Earn ICAN on Backbone</Typography>
           <Box component="ul" sx={{ m: 0, pl: 2 }}>
             {[
               'Sell produce on the marketplace — earn ICAN equivalent to your UGX sale amount',

@@ -159,7 +159,7 @@ const MainLayout = () => {
           gap: 1
         }}>
           <HomeIcon />
-          FARM-AGENT
+          BACKBONE
         </Typography>
       </Toolbar>
       <Divider />
@@ -300,7 +300,7 @@ const MainLayout = () => {
               mr: 3
             }}>
               <HomeIcon />
-              FARM-AGENT
+              BACKBONE
             </Typography>
 
             {/* Desktop Navigation */}
