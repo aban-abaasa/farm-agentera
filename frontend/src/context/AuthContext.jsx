@@ -230,13 +230,24 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserData = useCallback(async (userId) => {
     try {
-      // Get user profile from Supabase
-      const { data: profile, error } = await getUserProfile(userId);
-      
+      // Get user profile from Supabase. For brand-new sign-ups (especially
+      // Google OAuth first-time users) the on_auth_user_created DB trigger
+      // that creates the profiles row can lag slightly behind the client's
+      // first read, so retry a few times before giving up and signing out.
+      let profile = null;
+      let error = null;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        ({ data: profile, error } = await getUserProfile(userId));
+        if (profile) break;
+        const notFound = error?.code === 'PGRST116' || /no rows/i.test(error?.message || '');
+        if (!notFound) break;
+        await new Promise((resolve) => setTimeout(resolve, 600));
+      }
+
       if (error || !profile) {
         throw error || new Error('User profile not found');
       }
-      
+
       setUser(profile);
       // Cache the user profile
       storage.set(STORAGE_KEYS.USER, profile);
