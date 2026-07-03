@@ -44,6 +44,7 @@ import { CircularProgress, Box } from '@mui/material'
 import PageContainer from './components/layout/PageContainer'
 import ProtectedRoute from './components/ProtectedRoute'
 import ErrorBoundary from './components/ErrorBoundary'
+import ChatWidget from './components/ChatWidget'
 
 // Wrap page components with PageContainer for consistent layout
 const withPageContainer = (Component, props = {}) => {
@@ -117,6 +118,7 @@ function App() {
             </Route>
           </Routes>
         </Suspense>
+        <ChatWidget />
         </ErrorBoundary>
       </AuthProvider>
     </Router>
