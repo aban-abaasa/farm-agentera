@@ -4,12 +4,7 @@
  * All earnings auto-deduct 10% tithe via DB stored function.
  */
 
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY,
-);
+import { supabase } from '../lib/supabase/client';
 
 export const ICAN_TO_UGX = 5000;
 export const SOURCE_APP = 'farm-agent';

@@ -165,9 +165,22 @@ export async function getUserProfile(userId) {
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
     
     if (error) throw error;
+    
+    // If no profile found, return a PGRST116-like error for retry logic compatibility
+    if (!data) {
+      return { 
+        data: null, 
+        error: { 
+          code: 'PGRST116', 
+          message: 'No rows returned',
+          details: 'Profile not found for user'
+        } 
+      };
+    }
+    
     return { data, error: null };
   } catch (error) {
     console.error('Error getting user profile:', error);
@@ -187,7 +200,7 @@ export async function updateUserProfile(userId, updates) {
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (profileError) throw profileError;
 
@@ -253,7 +266,7 @@ export async function updateUserProfile(userId, updates) {
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (refreshError) {
       console.warn('Profile updated but could not re-fetch updated row; returning merged fallback.', refreshError);
@@ -458,7 +471,7 @@ export async function isProfileComplete(userId) {
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
     
     if (error) throw error;
 

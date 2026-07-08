@@ -15,16 +15,11 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import AgricultureIcon from '@mui/icons-material/Agriculture';
 import { useTheme, alpha } from '@mui/material/styles';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase/client';
 import {
   getOrCreateWallet, getBalance, getTransactions, sendICAN,
   formatICAN, ICAN_TO_UGX,
 } from '../services/icanWalletService';
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY,
-);
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 

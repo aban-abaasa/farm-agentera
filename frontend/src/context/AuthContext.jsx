@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { supabase } from '../lib/supabase/client';
 import { 
   signIn, 
   signUp, 
@@ -242,6 +243,69 @@ export const AuthProvider = ({ children }) => {
         const notFound = error?.code === 'PGRST116' || /no rows/i.test(error?.message || '');
         if (!notFound) break;
         await new Promise((resolve) => setTimeout(resolve, 600));
+      }
+
+      // If profile still doesn't exist after retries, try to create it manually
+      if (!profile && error?.code === 'PGRST116') {
+        try {
+          const { data: { user: authUser } } = await supabase.auth.getUser();
+          if (authUser) {
+            // Extract user metadata
+            const metadata = authUser.user_metadata || {};
+            
+            // Create minimal profile - only use fields we know must exist
+            // (id and email are required in the schema)
+            const { data: newProfile, error: insertError } = await supabase
+              .from('profiles')
+              .insert({
+                id: userId,
+                email: authUser.email
+              })
+              .select()
+              .maybeSingle();
+            
+            if (insertError) {
+              console.error('Failed to create minimal profile:', insertError);
+              // Even after creation fails, try one more fetch
+              const { data: retryProfile } = await getUserProfile(userId);
+              if (retryProfile) {
+                profile = retryProfile;
+                error = null;
+              }
+            } else if (newProfile) {
+              // Now update with additional fields that may or may not exist
+              const updates = {};
+              const firstName = metadata.first_name || metadata.firstName || metadata.given_name || '';
+              const lastName = metadata.last_name || metadata.lastName || metadata.family_name || '';
+              
+              if (firstName) updates.first_name = firstName;
+              if (lastName) updates.last_name = lastName;
+              if (metadata.phone) updates.phone_number = metadata.phone;
+              if (metadata.location) updates.location = metadata.location;
+              if (metadata.role) updates.role = metadata.role;
+              if (metadata.farmer_type) updates.farmer_type = metadata.farmer_type;
+              if (metadata.farm_size) updates.farm_size = metadata.farm_size;
+              if (metadata.bio) updates.bio = metadata.bio;
+              
+              // Try to update, but don't fail if update fails (columns might not exist)
+              if (Object.keys(updates).length > 0) {
+                await supabase
+                  .from('profiles')
+                  .update(updates)
+                  .eq('id', userId)
+                  .catch(() => {}); // Silently ignore update errors
+              }
+              
+              // Fetch the final profile
+              const { data: finalProfile } = await getUserProfile(userId);
+              profile = finalProfile || newProfile;
+              error = null;
+              console.log('Successfully created profile manually for user:', userId);
+            }
+          }
+        } catch (createError) {
+          console.error('Error creating profile manually:', createError);
+        }
       }
 
       if (error || !profile) {

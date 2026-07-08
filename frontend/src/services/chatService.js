@@ -149,24 +149,38 @@ export const resolveChatIdentity = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
-    const { data: profile } = await supabase
+    const { data: profile, error } = await supabase
       .from('profiles')
-      .select('id, first_name, last_name, email, role')
+      .select('*')  // Select all columns to handle different schema variations
       .eq('id', user.id)
       .maybeSingle();
 
+    // If there's an error or no profile, return null instead of crashing
+    if (error) {
+      console.warn('Error fetching profile for chat identity:', error);
+      return null;
+    }
+    
     if (!profile) return null;
 
-    const name = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.email || 'User';
+    // Handle multiple possible column name variations
+    const firstName = profile.first_name || profile.firstName || profile.firstname || profile.given_name || '';
+    const lastName = profile.last_name || profile.lastName || profile.lastname || profile.family_name || '';
+    const fullName = profile.full_name || profile.fullName || profile.name || '';
+    const email = profile.email || user.email || '';
+    const role = profile.role || profile.user_role || 'user';
+    
+    const name = `${firstName} ${lastName}`.trim() || fullName || email || 'User';
 
     return {
       userId: profile.id,
       authId: user.id,
       name,
-      email: profile.email || user.email || '',
-      role: profile.role || 'user',
+      email,
+      role,
     };
-  } catch {
+  } catch (err) {
+    console.warn('Error resolving chat identity:', err);
     return null;
   }
 };
