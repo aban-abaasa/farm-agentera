@@ -62,7 +62,7 @@ const Footer = () => {
                   WebkitTextFillColor: 'transparent',
                   mb: 2
                 }}>
-                BACKBONE
+                AgriBone
               </Typography>
               <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.9)', mb: 3, maxWidth: '90%' }}>
                 Connecting farmers across Uganda to share resources, knowledge, and build a stronger agricultural community.
@@ -271,7 +271,7 @@ const Footer = () => {
           gap: 2
         }}>
           <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-            © {new Date().getFullYear()} BACKBONE. All rights reserved.
+            © {new Date().getFullYear()} AgriBone. All rights reserved.
           </Typography>
           <Box sx={{ 
             display: 'flex', 

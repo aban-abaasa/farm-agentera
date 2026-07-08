@@ -159,7 +159,7 @@ const MainLayout = () => {
           gap: 1
         }}>
           <HomeIcon />
-          BACKBONE
+          AgriBone
         </Typography>
       </Toolbar>
       <Divider />
@@ -300,7 +300,7 @@ const MainLayout = () => {
               mr: 3
             }}>
               <HomeIcon />
-              BACKBONE
+              AgriBone
             </Typography>
 
             {/* Desktop Navigation */}

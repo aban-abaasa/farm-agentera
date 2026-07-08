@@ -1,5 +1,5 @@
 /**
- * ICAN Wallet Service — BACKBONE
+ * ICAN Wallet Service — AgriBone
  * 1 ICAN = 5,000 UGX floor price.
  * All earnings auto-deduct 10% tithe via DB stored function.
  */

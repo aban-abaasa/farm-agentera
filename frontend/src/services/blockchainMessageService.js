@@ -1,5 +1,5 @@
 /**
- * Blockchain Message Service — BACKBONE
+ * Blockchain Message Service — AgriBone
  * Handles blockchain verification for messages
  * Part of Icaneracoin ecosystem
  */
