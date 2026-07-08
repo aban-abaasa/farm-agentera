@@ -751,7 +751,10 @@ const FarmOnboarding = ({ onComplete, userId }) => {
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <AgricultureIcon sx={{ fontSize: 60, color: theme.palette.primary.main, mb: 2 }} />
           <Typography variant="h4" component="h1" gutterBottom>
-            Welcome to Backbone
+            Welcome to AgriBone
+          </Typography>
+          <Typography variant="subtitle2" sx={{ color: theme.palette.primary.main, fontWeight: 600, letterSpacing: 0.5, mb: 1 }}>
+            Agriculture is our Backbone
           </Typography>
           <Typography variant="body1" color="textSecondary">
             Let's set up your farm profile to get you started with personalized farm management

@@ -690,7 +690,7 @@ const FarmDevDashboard = ({ onLogout }) => {
             </div>
             <div>
               <p style={{ fontSize:9, textTransform:'uppercase', letterSpacing:'0.2em', color:th.muted, lineHeight:1 }}>Dev Console</p>
-              <p style={{ fontSize:14, fontWeight:900, color:th.txt, lineHeight:1.3 }}>Backbone</p>
+              <p style={{ fontSize:14, fontWeight:900, color:th.txt, lineHeight:1.3 }}>AgriBone</p>
             </div>
           </div>
 
