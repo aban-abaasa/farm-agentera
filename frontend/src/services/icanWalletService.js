@@ -138,6 +138,43 @@ export async function sellICAN({ userId, icanAmount, reference = null }) {
   return data;
 }
 
+// ─── Send Out (cash out via Flutterwave) ──────────────────────────────────────
+
+/**
+ * Sell ICAN and disburse the UGX directly to mobile money or a bank account
+ * via Flutterwave, instead of an offline cashier payout. Debits the wallet
+ * immediately; the transfer itself settles asynchronously and is refunded
+ * automatically if Flutterwave rejects or fails it.
+ */
+export async function requestIcanPayout({
+  icanAmount,
+  channel, // 'mobilemoneyuganda' | 'bank'
+  phoneNumber,
+  network, // 'MTN' | 'AIRTEL' — required for mobilemoneyuganda
+  accountNumber,
+  bankCode,
+  beneficiaryName,
+}) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('Not signed in');
+
+  const { data, error } = await supabase.functions.invoke('flutterwave-payout', {
+    body: {
+      ican_amount: icanAmount,
+      channel,
+      phone_number: phoneNumber,
+      network,
+      account_number: accountNumber,
+      bank_code: bankCode,
+      beneficiary_name: beneficiaryName,
+      source_app: SOURCE_APP,
+    },
+  });
+  if (error) throw error;
+  if (!data?.success) throw new Error(data?.error ?? 'Payout failed');
+  return data;
+}
+
 // ─── Transfer ────────────────────────────────────────────────────────────────
 
 export async function sendICAN({ fromUserId, toUserId, amount, note = '' }) {

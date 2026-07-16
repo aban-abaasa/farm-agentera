@@ -24,6 +24,7 @@ import {
   Typography
 } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
+import { COUNTRY_NAMES } from '../../data/countries';
 
 // Uganda's regions for the dropdown
 const ugandaRegions = [
@@ -90,6 +91,8 @@ const Register = () => {
         .min(2, 'Last name must be at least 2 characters'),
       phone: Yup.string()
         .required('Phone number is required'),
+      country: Yup.string()
+        .required('Country is required'),
       location: Yup.string()
         .required('Location is required')
     }),
@@ -116,6 +119,7 @@ const Register = () => {
       firstName: '',
       lastName: '',
       phone: '',
+      country: '',
       location: '',
       role: 'farmer',
       farmingType: '',
@@ -291,6 +295,25 @@ const Register = () => {
                     error={formik.touched.phone && Boolean(formik.errors.phone)}
                     helperText={formik.touched.phone && formik.errors.phone}
                   />
+                  <TextField
+                    margin="normal"
+                    fullWidth
+                    id="country"
+                    select
+                    label="Country"
+                    name="country"
+                    value={formik.values.country}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={formik.touched.country && Boolean(formik.errors.country)}
+                    helperText={formik.touched.country && formik.errors.country}
+                  >
+                    {COUNTRY_NAMES.map((name) => (
+                      <MenuItem key={name} value={name}>
+                        {name}
+                      </MenuItem>
+                    ))}
+                  </TextField>
                   <TextField
                     margin="normal"
                     fullWidth

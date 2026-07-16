@@ -19,6 +19,7 @@ export async function signUp(email, password, userData = {}) {
           first_name: userData.firstName || '',
           last_name: userData.lastName || '',
           phone: userData.phone || '',
+          country: userData.country || '',
           location: userData.location || '',
           role: userData.role || 'user',
           farmer_type: userData.farmingType || '',
@@ -41,6 +42,7 @@ export async function signUp(email, password, userData = {}) {
         .from('profiles')
         .update({
           phone_number: userData.phone || null,
+          country: userData.country || null,
           location: userData.location || null,
           role: userData.role || 'user',
           farmer_type: userData.farmingType || null,

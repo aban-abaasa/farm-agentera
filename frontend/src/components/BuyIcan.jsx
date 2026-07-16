@@ -1,16 +1,29 @@
 import React, { useState } from 'react';
 import {
   Box, TextField, Button, Alert, CircularProgress,
-  Typography, InputAdornment, Skeleton,
+  Typography, InputAdornment, Skeleton, ToggleButtonGroup, ToggleButton,
 } from '@mui/material';
-import { buyICAN } from '../services/icanWalletService';
+import { SOURCE_APP } from '../services/icanWalletService';
+import { supabase } from '../lib/supabase/client';
+import { payWithFlutterwave, generateTxRef } from '../services/flutterwaveClient';
 import { useLiveIcaneracoinPrice } from '../hooks/useIcanPrice';
+
+const PAYMENT_METHODS = [
+  { key: 'mtn', label: '📱 MTN', paymentOptions: 'mobilemoneyuganda' },
+  { key: 'airtel', label: '📱 Airtel', paymentOptions: 'mobilemoneyuganda' },
+  { key: 'card', label: '💳 Card', paymentOptions: 'card' },
+  { key: 'bank', label: '🏦 Bank', paymentOptions: 'account' },
+];
 
 export default function BuyIcan({ userId, onSuccess }) {
   const [ugxAmount, setUgxAmount]   = useState('');
+  const [method, setMethod]         = useState('mtn');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [processing, setProcessing] = useState(false);
   const [error, setError]           = useState('');
   const [success, setSuccess]       = useState('');
+
+  const isMobileMoney = method === 'mtn' || method === 'airtel';
 
   const { priceUgx, priceUsd, appreciationPct, loading: priceLoading } =
     useLiveIcaneracoinPrice();
@@ -34,26 +47,59 @@ export default function BuyIcan({ userId, onSuccess }) {
       return;
     }
 
+    if (isMobileMoney && !phoneNumber) {
+      setError('Enter your mobile money number');
+      return;
+    }
+
     try {
       setProcessing(true);
       setError('');
       setSuccess('');
 
-      const result = await buyICAN({
-        userId,
-        icanAmount,
-        paymentRef: `FARM-BUY-${Date.now()}`,
+      const { data: userData } = await supabase.auth.getUser();
+      const txRef = generateTxRef('FARM-BUY');
+      const selectedMethod = PAYMENT_METHODS.find((m) => m.key === method);
+
+      const payment = await payWithFlutterwave({
+        amount: parseFloat(ugxAmount),
+        currency: 'UGX',
+        customerEmail: userData?.user?.email,
+        customerName: userData?.user?.user_metadata?.full_name,
+        customerPhone: isMobileMoney ? phoneNumber : undefined,
+        paymentOptions: selectedMethod.paymentOptions,
+        title: 'AgriBone — IcanEra Wallet',
+        description: `Buy ${icanAmount.toFixed(4)} icaneracoins`,
+        txRef,
       });
 
-      if (result.success) {
-        setSuccess(
-          `Successfully purchased ${icanAmount.toFixed(4)} icaneracoins for UGX ${parseFloat(ugxAmount).toLocaleString()}!`
-        );
-        setUgxAmount('');
-        if (onSuccess) onSuccess(result);
-      } else {
-        setError(result.error || 'Purchase failed');
+      if (payment.status === 'cancelled') {
+        setError('Payment cancelled');
+        return;
       }
+      if (payment.status !== 'successful' || !payment.transaction_id) {
+        setError('Payment was not successful');
+        return;
+      }
+
+      const { data, error: fnError } = await supabase.functions.invoke('verify-flutterwave-payment', {
+        body: {
+          transaction_id: payment.transaction_id,
+          tx_ref: txRef,
+          ican_amount: icanAmount,
+          source_app: SOURCE_APP,
+        },
+      });
+
+      if (fnError) throw fnError;
+      if (!data?.success) throw new Error(data?.error || 'Payment verification failed');
+
+      setSuccess(
+        `Successfully purchased ${icanAmount.toFixed(4)} icaneracoins for UGX ${parseFloat(ugxAmount).toLocaleString()}!`
+      );
+      setUgxAmount('');
+      setPhoneNumber('');
+      if (onSuccess) onSuccess(data);
     } catch (err) {
       setError(err.message || 'An error occurred during purchase');
     } finally {
@@ -96,6 +142,26 @@ export default function BuyIcan({ userId, onSuccess }) {
       <Typography variant="body2" color="text.secondary" mb={2}>
         Convert your local currency to icaneracoins at the live rate
       </Typography>
+
+      <Typography variant="body2" color="text.secondary" mb={1}>Payment Method</Typography>
+      <ToggleButtonGroup fullWidth exclusive value={method}
+        onChange={(_, v) => v && setMethod(v)} disabled={processing} sx={{ mb: 2 }}>
+        {PAYMENT_METHODS.map((m) => (
+          <ToggleButton key={m.key} value={m.key}>{m.label}</ToggleButton>
+        ))}
+      </ToggleButtonGroup>
+
+      {isMobileMoney && (
+        <TextField
+          fullWidth
+          label="Mobile Money Number"
+          value={phoneNumber}
+          onChange={(e) => setPhoneNumber(e.target.value)}
+          placeholder="e.g. 0770123456"
+          disabled={processing}
+          sx={{ mb: 2 }}
+        />
+      )}
 
       <TextField
         fullWidth
@@ -143,7 +209,7 @@ export default function BuyIcan({ userId, onSuccess }) {
         type="submit"
         fullWidth
         variant="contained"
-        disabled={!ugxAmount || parseFloat(ugxAmount) <= 0 || processing || priceLoading}
+        disabled={!ugxAmount || parseFloat(ugxAmount) <= 0 || (isMobileMoney && !phoneNumber) || processing || priceLoading}
         sx={{ mb: 2 }}
       >
         {processing ? (
@@ -151,6 +217,15 @@ export default function BuyIcan({ userId, onSuccess }) {
         ) : (
           'Buy icaneracoins'
         )}
+      </Button>
+
+      <Button
+        fullWidth
+        size="small"
+        onClick={() => window.open('https://icanera.space/', '_blank', 'noopener,noreferrer')}
+        sx={{ mb: 2, textTransform: 'none', color: 'text.secondary' }}
+      >
+        Prefer the web? Buy for free at icanera.space ↗
       </Button>
 
       <Box

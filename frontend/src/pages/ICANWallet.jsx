@@ -4,10 +4,13 @@ import {
   Chip, Table, TableHead, TableRow, TableCell, TableBody,
   TableContainer, Paper, CircularProgress, Alert, Divider,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
-  Tooltip, IconButton, Snackbar,
+  Tooltip, IconButton, Snackbar, ToggleButtonGroup, ToggleButton,
 } from '@mui/material';
 import BuyIcan from '../components/BuyIcan';
 import SellIcan from '../components/SellIcan';
+import SendIcanOut from '../components/SendIcanOut';
+import SetPinPrompt from '../components/SetPinPrompt';
+import { hasPinSet } from '../services/pinService';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
@@ -17,7 +20,7 @@ import AgricultureIcon from '@mui/icons-material/Agriculture';
 import { useTheme, alpha } from '@mui/material/styles';
 import { supabase } from '../lib/supabase/client';
 import {
-  getOrCreateWallet, getBalance, getTransactions, sendICAN,
+  getOrCreateWallet, getBalance, getTransactions, sendICAN, requestIcanPayout,
   formatICAN, ICAN_TO_UGX,
 } from '../services/icanWalletService';
 
@@ -43,7 +46,7 @@ function formatDate(ts) {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function BalanceCard({ balance, onSend, onReceive, onBuy, onSell, onRefresh, refreshing }) {
+function BalanceCard({ balance, onSend, onReceive, onBuy, onSell, onSendOut, onRefresh, refreshing }) {
   const theme = useTheme();
   const [copied, setCopied] = useState(false);
 
@@ -66,7 +69,7 @@ function BalanceCard({ balance, onSend, onReceive, onBuy, onSell, onRefresh, ref
       <CardContent sx={{ p: 4 }}>
         <Box display="flex" alignItems="center" gap={1.5} mb={3}>
           <AccountBalanceWalletIcon sx={{ color: '#a78bfa' }} />
-          <Typography fontWeight={700} fontSize={16}>Icaneracoin Wallet — AgriBone</Typography>
+          <Typography fontWeight={700} fontSize={16}>AgriBone — IcanEra Wallet</Typography>
         </Box>
 
         <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', letterSpacing: 2, textTransform: 'uppercase' }}>
@@ -119,27 +122,66 @@ function BalanceCard({ balance, onSend, onReceive, onBuy, onSell, onRefresh, ref
             </Button>
           </Grid>
         </Grid>
+
+        <Button fullWidth variant="contained" onClick={onSendOut} startIcon={<span>📤</span>}
+          sx={{ mt: 2, background: 'rgba(244,63,94,0.2)', border: '1px solid rgba(244,63,94,0.4)', '&:hover': { background: 'rgba(244,63,94,0.35)' }, borderRadius: 3 }}>
+          Send Out to Mobile Money / Bank
+        </Button>
       </CardContent>
     </Card>
   );
 }
 
-function SendDialog({ open, onClose, userId, onDone }) {
+function SendDialog({ open, onClose, userId, balance, onDone }) {
+  const [destination, setDestination] = useState('wallet');
+
+  // ICAN-to-ICAN fields
   const [address, setAddress] = useState('');
-  const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
+
+  // Real-money payout fields
+  const [network, setNetwork] = useState('MTN');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [bankCode, setBankCode] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [beneficiaryName, setBeneficiaryName] = useState('');
+
+  const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const amountNum = parseFloat(amount) || 0;
+  const isPayout = destination !== 'wallet';
+  const feePercent = 3; // flat 3% cash-out fee (mobile money / bank) — sending to another ICAN wallet is 0%
+  const ugxGross = amountNum * ICAN_TO_UGX;
+  const ugxNet = ugxGross - Math.round((ugxGross * feePercent) / 100);
+
+  const canSend = isPayout
+    ? amountNum > 0 && amountNum <= (balance?.ican ?? 0) &&
+      (destination === 'mobilemoneyuganda' ? !!phoneNumber : !!accountNumber && !!bankCode && !!beneficiaryName)
+    : !!address && amountNum > 0;
+
   const handleSend = async () => {
     setError('');
-    if (!address || !amount) { setError('Please fill in all fields'); return; }
+    if (!canSend) { setError('Please fill in all fields'); return; }
     setLoading(true);
     try {
-      const { data: rw, error: re } = await supabase
-        .from('ican_user_wallets').select('user_id').eq('wallet_address', address.trim()).single();
-      if (re || !rw) { setError('Wallet address not found'); return; }
-      await sendICAN({ fromUserId: userId, toUserId: rw.user_id, amount: parseFloat(amount), note });
+      if (destination === 'wallet') {
+        const { data: rw, error: re } = await supabase
+          .from('ican_user_wallets').select('user_id').eq('wallet_address', address.trim()).single();
+        if (re || !rw) { setError('Wallet address not found'); return; }
+        await sendICAN({ fromUserId: userId, toUserId: rw.user_id, amount: amountNum, note });
+      } else {
+        await requestIcanPayout({
+          icanAmount: amountNum,
+          channel: destination,
+          phoneNumber: destination === 'mobilemoneyuganda' ? phoneNumber : undefined,
+          network: destination === 'mobilemoneyuganda' ? network : undefined,
+          accountNumber: destination === 'bank' ? accountNumber : undefined,
+          bankCode: destination === 'bank' ? bankCode : undefined,
+          beneficiaryName: destination === 'bank' ? beneficiaryName : undefined,
+        });
+      }
       onDone();
       onClose();
     } catch (e) {
@@ -151,23 +193,83 @@ function SendDialog({ open, onClose, userId, onDone }) {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 4 } }}>
-      <DialogTitle fontWeight={700}>Send ICAN Coins</DialogTitle>
+      <DialogTitle fontWeight={700}>Send</DialogTitle>
       <DialogContent>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        <TextField fullWidth label="Recipient Wallet Address" value={address}
-          onChange={e => setAddress(e.target.value)} sx={{ mb: 2, mt: 1 }}
-          placeholder="ICA-XXXXXXXXXXXXXXXX" />
+
+        <Typography variant="body2" color="text.secondary" mb={1}>Send To</Typography>
+        <ToggleButtonGroup fullWidth exclusive value={destination}
+          onChange={(_, v) => v && setDestination(v)} disabled={loading} sx={{ mb: 1 }}>
+          <ToggleButton value="wallet">💎 ICAN Wallet</ToggleButton>
+          <ToggleButton value="mobilemoneyuganda">📱 Mobile Money</ToggleButton>
+          <ToggleButton value="bank">🏦 Bank Account</ToggleButton>
+        </ToggleButtonGroup>
+        <Typography variant="caption" color="text.secondary" display="block" mb={2}>
+          Cards can only receive top-ups, not payouts — send to a card isn't supported by any provider we integrate with.
+        </Typography>
+
+        {destination === 'wallet' && (
+          <TextField fullWidth label="Recipient Wallet Address" value={address}
+            onChange={e => setAddress(e.target.value)} sx={{ mb: 2 }}
+            placeholder="ICA-XXXXXXXXXXXXXXXX" />
+        )}
+
+        {destination === 'mobilemoneyuganda' && (
+          <>
+            <ToggleButtonGroup fullWidth exclusive value={network}
+              onChange={(_, v) => v && setNetwork(v)} disabled={loading} sx={{ mb: 2 }}>
+              <ToggleButton value="MTN">MTN</ToggleButton>
+              <ToggleButton value="AIRTEL">Airtel</ToggleButton>
+            </ToggleButtonGroup>
+            <TextField fullWidth label="Mobile Money Number" value={phoneNumber}
+              onChange={e => setPhoneNumber(e.target.value)} placeholder="e.g. 0770123456" sx={{ mb: 2 }} />
+          </>
+        )}
+
+        {destination === 'bank' && (
+          <>
+            <TextField fullWidth label="Bank Code" value={bankCode}
+              onChange={e => setBankCode(e.target.value)} sx={{ mb: 2 }} />
+            <TextField fullWidth label="Account Number" value={accountNumber}
+              onChange={e => setAccountNumber(e.target.value)} sx={{ mb: 2 }} />
+            <TextField fullWidth label="Account Holder Name" value={beneficiaryName}
+              onChange={e => setBeneficiaryName(e.target.value)} sx={{ mb: 2 }} />
+          </>
+        )}
+
         <TextField fullWidth label="Amount (ICAN)" type="number" value={amount}
           onChange={e => setAmount(e.target.value)} sx={{ mb: 2 }}
-          helperText={amount ? `≈ UGX ${(parseFloat(amount || 0) * ICAN_TO_UGX).toLocaleString()}` : '1 ICAN = 5,000 UGX'} />
-        <TextField fullWidth label="Note (optional)" value={note}
-          onChange={e => setNote(e.target.value)} sx={{ mb: 1 }} />
-        <Alert severity="info" sx={{ mt: 1 }}>10% tithe is automatically deducted from recipient earnings.</Alert>
+          inputProps={isPayout ? { max: balance?.ican } : undefined}
+          helperText={!isPayout && amount ? `≈ UGX ${(parseFloat(amount || 0) * ICAN_TO_UGX).toLocaleString()}` : '1 ICAN = 5,000 UGX'} />
+
+        {destination === 'wallet' && (
+          <TextField fullWidth label="Note (optional)" value={note}
+            onChange={e => setNote(e.target.value)} sx={{ mb: 1 }} />
+        )}
+
+        {isPayout && amountNum > 0 && (
+          <Box sx={{ p: 2, mb: 1, background: '#f5f5f5', borderRadius: 2 }}>
+            <Box display="flex" justifyContent="space-between" mb={0.5}>
+              <Typography variant="caption" color="text.secondary">Fee ({feePercent}%)</Typography>
+              <Typography variant="caption" color="error.main">-UGX {(ugxGross - ugxNet).toLocaleString()}</Typography>
+            </Box>
+            <Box display="flex" justifyContent="space-between">
+              <Typography variant="body2" fontWeight={700}>Recipient Gets</Typography>
+              <Typography variant="body2" fontWeight={700} color="primary">UGX {ugxNet.toLocaleString()}</Typography>
+            </Box>
+          </Box>
+        )}
+
+        <Alert severity="info" sx={{ mt: 1 }}>
+          {isPayout
+            ? 'Sent via Flutterwave. A 3% cash-out fee applies. If the transfer fails, your ICAN is refunded automatically.'
+            : 'No fee — the recipient receives the full amount you send.'}
+        </Alert>
       </DialogContent>
       <DialogActions sx={{ p: 3, gap: 1 }}>
         <Button onClick={onClose} variant="outlined">Cancel</Button>
-        <Button onClick={handleSend} variant="contained" disabled={loading}>
-          {loading ? <CircularProgress size={20} /> : 'Send ICAN'}
+        <Button onClick={handleSend} variant="contained" disabled={!canSend || loading}>
+          {loading ? <CircularProgress size={20} /> : 'Send'}
         </Button>
       </DialogActions>
     </Dialog>
@@ -212,6 +314,8 @@ export default function ICANWallet() {
   const [receiveOpen, setReceiveOpen] = useState(false);
   const [buyOpen, setBuyOpen] = useState(false);
   const [sellOpen, setSellOpen] = useState(false);
+  const [sendOutOpen, setSendOutOpen] = useState(false);
+  const [needsPin, setNeedsPin] = useState(false);
   const [snack, setSnack] = useState('');
 
   useEffect(() => {
@@ -227,6 +331,7 @@ export default function ICANWallet() {
       const [bal, txs] = await Promise.all([getBalance(userId), getTransactions(userId)]);
       setBalance(bal);
       setTransactions(txs);
+      hasPinSet(userId).then((has) => setNeedsPin(!has)).catch(() => {});
     } catch (e) {
       setSnack('Error loading wallet: ' + e.message);
     }
@@ -272,7 +377,7 @@ export default function ICANWallet() {
       <Box display="flex" alignItems="center" gap={2} mb={3}>
         <AgricultureIcon sx={{ fontSize: 32, color: theme.palette.primary.main }} />
         <Box>
-          <Typography variant="h5" fontWeight={800}>ICAN Wallet</Typography>
+          <Typography variant="h5" fontWeight={800}>IcanEra Wallet</Typography>
           <Typography variant="body2" color="text.secondary">AgriBone — Icaneracoin powered earnings</Typography>
         </Box>
       </Box>
@@ -284,6 +389,7 @@ export default function ICANWallet() {
         onReceive={() => setReceiveOpen(true)}
         onBuy={() => setBuyOpen(true)}
         onSell={() => setSellOpen(true)}
+        onSendOut={() => setSendOutOpen(true)}
         onRefresh={handleRefresh}
         refreshing={refreshing}
       />
@@ -392,7 +498,7 @@ export default function ICANWallet() {
       )}
 
       {/* Dialogs */}
-      <SendDialog open={sendOpen} onClose={() => setSendOpen(false)} userId={userId} onDone={loadData} />
+      <SendDialog open={sendOpen} onClose={() => setSendOpen(false)} userId={userId} balance={balance} onDone={loadData} />
       {balance.address && <ReceiveDialog open={receiveOpen} onClose={() => setReceiveOpen(false)} address={balance.address} />}
 
       {/* Buy ICAN Dialog */}
@@ -416,6 +522,19 @@ export default function ICANWallet() {
           <Button onClick={() => setSellOpen(false)} variant="outlined">Close</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Send Out Dialog */}
+      <Dialog open={sendOutOpen} onClose={() => setSendOutOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 4 } }}>
+        <DialogTitle fontWeight={700}>📤 Send ICAN Out</DialogTitle>
+        <DialogContent sx={{ p: 1 }}>
+          <SendIcanOut userId={userId} balance={balance.ican} onSuccess={() => { loadData(); setSendOutOpen(false); }} />
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={() => setSendOutOpen(false)} variant="outlined">Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      <SetPinPrompt open={needsPin} userId={userId} onDone={() => setNeedsPin(false)} />
 
       {/* Snackbar */}
       <Snackbar open={!!snack} autoHideDuration={3000} onClose={() => setSnack('')} message={snack} />
