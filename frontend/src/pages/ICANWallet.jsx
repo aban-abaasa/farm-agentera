@@ -10,6 +10,8 @@ import BuyIcan from '../components/BuyIcan';
 import SellIcan from '../components/SellIcan';
 import SendIcanOut from '../components/SendIcanOut';
 import SetPinPrompt from '../components/SetPinPrompt';
+import PayMoneyModal from '../components/PayMoneyModal';
+import ReceiveMoneyModal from '../components/ReceiveMoneyModal';
 import { hasPinSet } from '../services/pinService';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
@@ -23,6 +25,7 @@ import {
   getOrCreateWallet, getBalance, getTransactions, sendICAN, requestIcanPayout,
   formatICAN, ICAN_TO_UGX,
 } from '../services/icanWalletService';
+import { parseIcanPayCode, payIcanRequest } from '../services/icanPaymentRequestService';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -46,7 +49,7 @@ function formatDate(ts) {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function BalanceCard({ balance, onSend, onReceive, onBuy, onSell, onSendOut, onRefresh, refreshing }) {
+function BalanceCard({ balance, onSend, onPay, onReceive, onBuy, onSell, onSendOut, onRefresh, refreshing }) {
   const theme = useTheme();
   const [copied, setCopied] = useState(false);
 
@@ -97,6 +100,12 @@ function BalanceCard({ balance, onSend, onReceive, onBuy, onSell, onSendOut, onR
         )}
 
         <Grid container spacing={2}>
+          <Grid item xs={3}>
+            <Button fullWidth variant="contained" onClick={onPay}
+              sx={{ background: 'rgba(249,115,22,0.35)', '&:hover': { background: 'rgba(249,115,22,0.55)' }, borderRadius: 3 }}>
+              Pay
+            </Button>
+          </Grid>
           <Grid item xs={3}>
             <Button fullWidth variant="contained" startIcon={<ArrowUpwardIcon />} onClick={onSend}
               sx={{ background: 'rgba(255,255,255,0.15)', '&:hover': { background: 'rgba(255,255,255,0.25)' }, borderRadius: 3 }}>
@@ -312,6 +321,7 @@ export default function ICANWallet() {
   const [tabValue, setTabValue] = useState(0);
   const [sendOpen, setSendOpen] = useState(false);
   const [receiveOpen, setReceiveOpen] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
   const [buyOpen, setBuyOpen] = useState(false);
   const [sellOpen, setSellOpen] = useState(false);
   const [sendOutOpen, setSendOutOpen] = useState(false);
@@ -350,6 +360,22 @@ export default function ICANWallet() {
     setSnack('Wallet refreshed');
   };
 
+  const handlePaymentScanned = async (scannedValue) => {
+    const paymentCode = parseIcanPayCode(scannedValue);
+    if (!paymentCode) {
+      setSnack('This QR code is not an ICAN payment request');
+      return;
+    }
+    try {
+      await payIcanRequest({ paymentCode, payerUserId: userId });
+      setSnack('Payment sent successfully');
+      setPayOpen(false);
+      await loadData();
+    } catch (e) {
+      setSnack(e.message || 'Payment failed');
+    }
+  };
+
   const tabFilters = [
     (tx) => true,
     (tx) => tx.direction === 'in',
@@ -386,6 +412,7 @@ export default function ICANWallet() {
       <BalanceCard
         balance={balance}
         onSend={() => setSendOpen(true)}
+        onPay={() => setPayOpen(true)}
         onReceive={() => setReceiveOpen(true)}
         onBuy={() => setBuyOpen(true)}
         onSell={() => setSellOpen(true)}
@@ -499,7 +526,8 @@ export default function ICANWallet() {
 
       {/* Dialogs */}
       <SendDialog open={sendOpen} onClose={() => setSendOpen(false)} userId={userId} balance={balance} onDone={loadData} />
-      {balance.address && <ReceiveDialog open={receiveOpen} onClose={() => setReceiveOpen(false)} address={balance.address} />}
+      {balance.address && <ReceiveMoneyModal isOpen={receiveOpen} userId={userId} onClose={() => setReceiveOpen(false)} onSuccess={loadData} />}
+      <PayMoneyModal isOpen={payOpen} onClose={() => setPayOpen(false)} onPaymentScanned={handlePaymentScanned} />
 
       {/* Buy ICAN Dialog */}
       <Dialog open={buyOpen} onClose={() => setBuyOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 4 } }}>

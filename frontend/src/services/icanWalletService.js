@@ -177,13 +177,14 @@ export async function requestIcanPayout({
 
 // ─── Transfer ────────────────────────────────────────────────────────────────
 
-export async function sendICAN({ fromUserId, toUserId, amount, note = '' }) {
+export async function sendICAN({ fromUserId, toUserId, amount, note = '', referenceId = null }) {
   const { data, error } = await supabase.rpc('transfer_ican', {
     p_from_user: fromUserId,
     p_to_user: toUserId,
     p_amount: amount,
     p_note: note,
     p_source_app: SOURCE_APP,
+    p_reference_id: referenceId,
   });
   if (error) throw error;
   if (!data.success) throw new Error(data.error);
