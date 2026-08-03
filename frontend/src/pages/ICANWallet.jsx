@@ -12,7 +12,7 @@ import SendIcanOut from '../components/SendIcanOut';
 import SetPinPrompt from '../components/SetPinPrompt';
 import PayMoneyModal from '../components/PayMoneyModal';
 import ReceiveMoneyModal from '../components/ReceiveMoneyModal';
-import { hasPinSet } from '../services/pinService';
+import { hasPinSet, verifyPin } from '../services/pinService';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
@@ -361,12 +361,26 @@ export default function ICANWallet() {
   };
 
   const handlePaymentScanned = async (scannedValue) => {
+    if (!userId) {
+      setSnack('Wallet is still loading. Please try again.');
+      return;
+    }
     const paymentCode = parseIcanPayCode(scannedValue);
     if (!paymentCode) {
       setSnack('This QR code is not an ICAN payment request');
       return;
     }
     try {
+      const pin = window.prompt('Enter your transaction PIN to authorize this payment:');
+      if (pin === null) {
+        setSnack('Payment cancelled');
+        return;
+      }
+      const pinCheck = await verifyPin(userId, pin);
+      if (!pinCheck.success) {
+        setSnack(pinCheck.error || 'PIN verification failed. Payment was not sent.');
+        return;
+      }
       await payIcanRequest({ paymentCode, payerUserId: userId });
       setSnack('Payment sent successfully');
       setPayOpen(false);

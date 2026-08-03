@@ -9,7 +9,7 @@
  */
 
 import { supabase } from '../lib/supabase/client';
-import { sendICAN } from './icanWalletService';
+import { sendICAN, ICAN_TO_UGX } from './icanWalletService';
 
 const TABLE = 'payment_requests';
 
@@ -58,8 +58,10 @@ export async function getIcanPaymentRequest(paymentCode) {
 
 /** Parses a scanned QR value; returns the payment code, or null if not an ICAN payment request. */
 export function parseIcanPayCode(scannedText) {
-  const match = /^ICANPAY:(.+)$/.exec((scannedText || '').trim());
-  return match ? match[1] : null;
+  const value = (scannedText || '').trim();
+  const match = /^ICANPAY:(.+)$/i.exec(value);
+  if (match) return match[1].trim();
+  return /^ICANPAY_[A-Z0-9]+$/i.test(value) ? value : null;
 }
 
 export async function payIcanRequest({ paymentCode, payerUserId }) {
@@ -74,16 +76,21 @@ export async function payIcanRequest({ paymentCode, payerUserId }) {
     referenceId: request.id,
   });
 
-  const { error: completionError } = await supabase
-    .from(TABLE)
-    .update({
-      status: 'completed',
-      payer_user_id: payerUserId,
-      ican_tx_id: transfer.out_tx_id,
-      completed_at: new Date().toISOString(),
-    })
-    .eq('payment_code', paymentCode)
-    .eq('status', 'pending');
+  const completion = {
+    status: 'completed',
+    payer_user_id: payerUserId,
+    ican_tx_id: transfer.out_tx_id,
+    completed_at: new Date().toISOString(),
+  };
+  let { error: completionError } = await supabase
+    .from(TABLE).update(completion).eq('payment_code', paymentCode).eq('status', 'pending');
+  if (completionError?.message?.includes('ican_tx_id')) {
+    ({ error: completionError } = await supabase
+      .from(TABLE)
+      .update({ status: 'completed', payer_user_id: payerUserId, completed_at: completion.completed_at })
+      .eq('payment_code', paymentCode)
+      .eq('status', 'pending'));
+  }
 
   if (completionError) {
     throw new Error(`Payment transferred, but the request could not be closed: ${completionError.message}`);
