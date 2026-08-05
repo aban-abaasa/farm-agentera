@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA Diagnostic Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .check {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .pass { background: #4caf50; color: white; }
+        .fail { background: #f44336; color: white; }
+        .warn { background: #ff9800; color: white; }
+        h1 { color: #2e7d32; }
+        button {
+            background: #2e7d32;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        button:hover { background: #1b5e20; }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 AgriBone PWA Diagnostic Tool</h1>
+    <p>This page checks if your PWA is properly configured for Chrome installation.</p>
+    
+    <button onclick="runChecks()">Run All Checks</button>
+    
+    <div id="results"></div>
+
+    <script>
+        async function runChecks() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>Running checks...</p>';
+            
+            let html = '';
+            
+            // Check 1: HTTPS or Localhost
+            html += '<div class="check">';
+            html += '<strong>1. HTTPS/Localhost:</strong>';
+            const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+            html += `<span class="status ${isSecure ? 'pass' : 'fail'}">${isSecure ? '✅ PASS' : '❌ FAIL'}</span>`;
+            html += `<p>Current: ${location.protocol}//${location.hostname}</p>`;
+            html += '</div>';
+            
+            // Check 2: Service Worker
+            html += '<div class="check">';
+            html += '<strong>2. Service Worker:</strong>';
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registration = await navigator.serviceWorker.getRegistration();
+                    if (registration) {
+                        html += '<span class="status pass">✅ REGISTERED</span>';
+                        html += `<p>Scope: ${registration.scope}</p>`;
+                        html += `<p>State: ${registration.active ? registration.active.state : 'Not active'}</p>`;
+                    } else {
+                        html += '<span class="status fail">❌ NOT REGISTERED</span>';
+                        html += '<p>Service worker not found. Restart dev server.</p>';
+                    }
+                } catch (e) {
+                    html += '<span class="status fail">❌ ERROR</span>';
+                    html += `<p>${e.message}</p>`;
+                }
+            } else {
+                html += '<span class="status fail">❌ NOT SUPPORTED</span>';
+            }
+            html += '</div>';
+            
+            // Check 3: Manifest
+            html += '<div class="check">';
+            html += '<strong>3. Manifest File:</strong>';
+            try {
+                const manifestResponse = await fetch('/manifest.webmanifest');
+                if (manifestResponse.ok) {
+                    const manifest = await manifestResponse.json();
+                    html += '<span class="status pass">✅ LOADED</span>';
+                    html += `<p>Name: ${manifest.name}</p>`;
+                    html += `<p>Short Name: ${manifest.short_name}</p>`;
+                    html += `<p>Display: ${manifest.display}</p>`;
+                    html += `<p>Icons: ${manifest.icons ? manifest.icons.length : 0} configured</p>`;
+                    html += `<pre>${JSON.stringify(manifest, null, 2)}</pre>`;
+                } else {
+                    html += '<span class="status fail">❌ NOT FOUND</span>';
+                }
+            } catch (e) {
+                html += '<span class="status fail">❌ ERROR</span>';
+                html += `<p>${e.message}</p>`;
+            }
+            html += '</div>';
+            
+            // Check 4: Icons
+            html += '<div class="check">';
+            html += '<strong>4. App Icon:</strong>';
+            try {
+                const iconResponse = await fetch('/agribone-logo.jpg');
+                if (iconResponse.ok) {
+                    html += '<span class="status pass">✅ ACCESSIBLE</span>';
+                    const blob = await iconResponse.blob();
+                    html += `<p>Size: ${(blob.size / 1024).toFixed(2)} KB</p>`;
+                    html += `<p>Type: ${blob.type}</p>`;
+                    html += `<img src="/agribone-logo.jpg" style="max-width: 192px; border-radius: 8px; margin-top: 10px;" />`;
+                } else {
+                    html += '<span class="status fail">❌ NOT FOUND</span>';
+                }
+            } catch (e) {
+                html += '<span class="status fail">❌ ERROR</span>';
+                html += `<p>${e.message}</p>`;
+            }
+            html += '</div>';
+            
+            // Check 5: beforeinstallprompt event
+            html += '<div class="check">';
+            html += '<strong>5. Install Prompt Availability:</strong>';
+            html += '<span class="status warn">⏳ WAITING</span>';
+            html += '<p>This check requires waiting for Chrome to trigger the beforeinstallprompt event.</p>';
+            html += '<p>Please wait 30 seconds and interact with the page (click, scroll).</p>';
+            html += '<p id="install-status">Listening for install prompt...</p>';
+            html += '</div>';
+            
+            // Check 6: Already Installed
+            html += '<div class="check">';
+            html += '<strong>6. Installation Status:</strong>';
+            const isInstalled = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+            html += `<span class="status ${isInstalled ? 'pass' : 'warn'}">${isInstalled ? '✅ INSTALLED' : '⚠️ NOT INSTALLED'}</span>`;
+            html += `<p>${isInstalled ? 'App is currently running as installed PWA' : 'App is running in browser'}</p>`;
+            html += '</div>';
+            
+            results.innerHTML = html;
+            
+            // Listen for install prompt
+            window.addEventListener('beforeinstallprompt', (e) => {
+                document.getElementById('install-status').innerHTML = '✅ Install prompt is available! Chrome will show the install button.';
+                document.getElementById('install-status').style.color = '#4caf50';
+                document.getElementById('install-status').style.fontWeight = 'bold';
+            });
+        }
+        
+        // Run checks on load
+        window.addEventListener('load', () => {
+            setTimeout(runChecks, 500);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="256" fill="#2e7d32"/>
+  
+  <!-- Farm/Agriculture icon design -->
+  <g transform="translate(256,256)">
+    <!-- Wheat/Grain symbol -->
+    <path d="M-50,-100 L-50,0 M-50,-80 Q-70,-80 -70,-60 Q-70,-40 -50,-40 M-50,-60 Q-30,-60 -30,-40 Q-30,-20 -50,-20 M-50,-40 Q-70,-40 -70,-20 Q-70,0 -50,0" 
+          stroke="#ffd700" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Leaf symbol -->
+    <path d="M20,-100 Q60,-80 60,-40 Q60,0 20,0 Q20,-50 20,-100 M20,-70 Q40,-60 40,-40" 
+          stroke="#a5d6a7" stroke-width="8" fill="#4caf50" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Ground line -->
+    <line x1="-80" y1="20" x2="80" y2="20" stroke="#8d6e63" stroke-width="12" stroke-linecap="round"/>
+    
+    <!-- Roots -->
+    <path d="M-50,20 L-50,50 M-40,30 L-45,55 M-60,30 L-55,55" 
+          stroke="#5d4037" stroke-width="4" opacity="0.8"/>
+    <path d="M20,20 L20,50 M30,30 L25,55 M10,30 L15,55" 
+          stroke="#5d4037" stroke-width="4" opacity="0.8"/>
+  </g>
+  
+  <!-- App name text (optional, can be removed for cleaner icon) -->
+  <text x="256" y="420" font-family="Arial, sans-serif" font-size="64" font-weight="bold" 
+        text-anchor="middle" fill="#ffffff">AB</text>
+</svg>
