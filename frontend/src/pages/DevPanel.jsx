@@ -31,6 +31,8 @@ import DeleteIcon            from '@mui/icons-material/Delete';
 import SendIcon              from '@mui/icons-material/Send';
 import TaskAltIcon           from '@mui/icons-material/TaskAlt';
 import MailIcon               from '@mui/icons-material/Mail';
+import VpnKeyIcon             from '@mui/icons-material/VpnKey';
+import EraApiDevTab           from '../components/EraApiDevTab';
 import {
   devListAllLandingMessages,
   devDeleteLandingMessage,
@@ -60,6 +62,7 @@ const TABS = [
   { id: 'value',         label: 'Value & Chain',Icon: ShieldIcon           },
   { id: 'board',         label: 'Public Board', Icon: ForumIcon            },
   { id: 'messages',      label: 'Messages',     Icon: MailIcon             },
+  { id: 'api',           label: 'API',          Icon: VpnKeyIcon           },
 ];
 
 const PLANS = ['basic', 'pro', 'enterprise'];
@@ -1130,6 +1133,7 @@ const FarmDevDashboard = ({ onLogout }) => {
         {/* ═══ PUBLIC BOARD TAB ═══ */}
         {tab==='board' && <PublicBoardTab th={th}/>}
         {tab==='messages' && <MessagesTab th={th}/>}
+        {tab==='api' && <EraApiDevTab theme={themeKey}/>}
 
       </div>
 
