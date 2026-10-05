@@ -26,6 +26,8 @@ import TagIcon               from '@mui/icons-material/Tag';
 import GppGoodIcon           from '@mui/icons-material/GppGood';
 import GppBadIcon            from '@mui/icons-material/GppBad';
 import ForumIcon             from '@mui/icons-material/Forum';
+import ChevronLeftIcon       from '@mui/icons-material/ChevronLeft';
+import InboxIcon             from '@mui/icons-material/Inbox';
 import PublicIcon            from '@mui/icons-material/Public';
 import DeleteIcon            from '@mui/icons-material/Delete';
 import SendIcon              from '@mui/icons-material/Send';
@@ -174,16 +176,88 @@ const fmtChatTime = (d) => {
   return date.toLocaleDateString();
 };
 
+const fmtClock = (d) => d ? new Date(d).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }) : '';
+const dayLabel = (d) => {
+  const date = new Date(d);
+  const startOf = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((startOf(new Date()) - startOf(date)) / 86400000);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Yesterday';
+  return date.toLocaleDateString([], { weekday:'short', day:'numeric', month:'short' });
+};
+
+// Inline-styled panel, so breakpoints come from matchMedia instead of CSS.
+const useMediaQuery = (query) => {
+  const get = () => (typeof window !== 'undefined' && window.matchMedia ? window.matchMedia(query).matches : false);
+  const [matches, setMatches] = useState(get);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const onChange = (e) => setMatches(e.matches);
+    setMatches(mq.matches);
+    mq.addEventListener ? mq.addEventListener('change', onChange) : mq.addListener(onChange);
+    return () => { mq.removeEventListener ? mq.removeEventListener('change', onChange) : mq.removeListener(onChange); };
+  }, [query]);
+  return matches;
+};
+
+const AVATAR_COLORS = ['#22c55e','#f59e0b','#38bdf8','#a78bfa','#f97316','#ec4899','#14b8a6'];
+const avatarColorFor = (name='') => AVATAR_COLORS[(name.charCodeAt(0) || 0) % AVATAR_COLORS.length];
+
+const chipStyle = (th, active) => ({
+  cursor:'pointer', flexShrink:0, whiteSpace:'nowrap', fontSize:12, fontWeight:700, padding:'7px 14px', borderRadius:99,
+  border: active ? `1px solid ${th.accent}` : th.pill.border,
+  background: active ? `${th.accent}22` : th.pill.background,
+  color: active ? th.accent : th.sub,
+});
+
+const SearchField = ({ th, value, onChange, placeholder }) => (
+  <div style={{ position:'relative' }}>
+    <SearchIcon sx={{ fontSize:17, position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:th.muted }}/>
+    <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} aria-label={placeholder}
+      style={{ ...th.input, width:'100%', boxSizing:'border-box', height:42, padding:'0 14px 0 38px', fontSize:16 }}/>
+  </div>
+);
+
+const EmptyBlock = ({ th, title, hint }) => (
+  <div style={{ padding:'48px 24px', textAlign:'center', display:'flex', flexDirection:'column', alignItems:'center', gap:8 }}>
+    <div style={{ width:52, height:52, borderRadius:16, display:'flex', alignItems:'center', justifyContent:'center',
+      background:th.glass.background, border:th.glass.border }}>
+      <InboxIcon sx={{ fontSize:24, color:th.muted }}/>
+    </div>
+    <p style={{ fontSize:14, fontWeight:700, color:th.sub }}>{title}</p>
+    {hint && <p style={{ fontSize:12, color:th.muted, maxWidth:260 }}>{hint}</p>}
+  </div>
+);
+
+const SkeletonRows = ({ th, rows=3 }) => (
+  <>
+    {Array.from({ length: rows }).map((_, i) => (
+      <div key={i} style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 16px' }}>
+        <div style={{ width:44, height:44, borderRadius:44, background:th.glass.background, animation:'pulse 1.4s ease-in-out infinite' }}/>
+        <div style={{ flex:1, display:'flex', flexDirection:'column', gap:8 }}>
+          <div style={{ height:10, width:'40%', borderRadius:6, background:th.glass.background, animation:'pulse 1.4s ease-in-out infinite' }}/>
+          <div style={{ height:10, width:'80%', borderRadius:6, background:th.glass.background, animation:'pulse 1.4s ease-in-out infinite' }}/>
+        </div>
+      </div>
+    ))}
+  </>
+);
+
 const MessagesTab = ({ th }) => {
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
   const [conversations, setConversations] = useState([]);
+  const [loadingList,   setLoadingList]   = useState(true);
   const [selectedId,    setSelectedId]    = useState(null);
   const [messages,      setMessages]      = useState([]);
   const [reply,         setReply]         = useState('');
   const [sending,       setSending]       = useState(false);
+  const [query,         setQuery]         = useState('');
+  const [unreadOnly,    setUnreadOnly]    = useState(false);
   const scrollRef = useRef(null);
+  const inputRef  = useRef(null);
 
   const refresh = useCallback(async () => {
-    setConversations(await listConversations());
+    try { setConversations(await listConversations()); } finally { setLoadingList(false); }
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
@@ -219,7 +293,30 @@ const MessagesTab = ({ th }) => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages]);
 
+  // composer grows with its content (up to ~5 lines)
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+  }, [reply, selectedId]);
+
+  // full-screen chat on phones: freeze the page behind it
+  const fullScreenChat = !isDesktop && !!selectedId;
+  useEffect(() => {
+    if (!fullScreenChat) return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [fullScreenChat]);
+
   const selected = conversations.find(c => c.id === selectedId);
+  const unreadCount = conversations.filter(c => c.unread_by_dev).length;
+  const q = query.trim().toLowerCase();
+  const visible = conversations.filter(c =>
+    (!unreadOnly || c.unread_by_dev) &&
+    (!q || [c.guest_name, c.guest_email, c.portal, c.last_message_preview].some(v => String(v || '').toLowerCase().includes(q)))
+  );
 
   const handleReply = async () => {
     const body = reply.trim();
@@ -236,82 +333,157 @@ const MessagesTab = ({ th }) => {
     }
   };
 
-  return (
-    <div style={{ display:'grid', gap:16, gridTemplateColumns: '320px 1fr' }}>
-      <div style={{ ...th.card, overflow:'hidden' }}>
-        <div style={{ padding:'14px 20px', borderBottom:'1px solid', ...th.divider }}>
-          <p style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.12em', color:th.muted }}>
-            Conversations ({conversations.length})
-          </p>
+  // Enter sends on desktop; touch keyboards keep Enter as a newline.
+  const onComposerKeyDown = (e) => {
+    if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent?.isComposing) return;
+    if (window.matchMedia('(pointer: coarse)').matches) return;
+    e.preventDefault();
+    handleReply();
+  };
+
+  const timeline = [];
+  messages.forEach((m, i) => {
+    const prev = messages[i - 1];
+    if (!prev || dayLabel(prev.created_at) !== dayLabel(m.created_at)) {
+      timeline.push({ type:'day', key:`day-${m.id}`, label: dayLabel(m.created_at) });
+    }
+    timeline.push({ type:'msg', key:m.id, m, first: !prev || prev.sender_role !== m.sender_role || timeline[timeline.length - 1].type === 'day' });
+  });
+
+  const showList = isDesktop || !selectedId;
+  const showChat = isDesktop || !!selectedId;
+
+  const listPane = (
+    <div style={{ ...th.card, overflow:'hidden', display:'flex', flexDirection:'column', minHeight:0 }}>
+      <div style={{ padding:'14px 14px 12px', borderBottom:'1px solid', ...th.divider, display:'flex', flexDirection:'column', gap:10 }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 2px' }}>
+          <p style={{ fontSize:15, fontWeight:800, color:th.txt }}>Conversations</p>
+          <span style={{ fontSize:11, fontWeight:600, color:th.muted }}>{conversations.length}</span>
         </div>
-        <div style={{ maxHeight:'65vh', overflowY:'auto' }}>
-          {conversations.map(c => (
-            <button key={c.id} onClick={() => setSelectedId(c.id)}
-              style={{ width:'100%', textAlign:'left', cursor:'pointer', border:'none', borderBottom:'1px solid',
-                ...th.divider, padding:'12px 16px', background: selectedId === c.id ? 'rgba(34,197,94,0.10)' : 'transparent' }}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
-                <span style={{ fontSize:13, fontWeight:600, color:th.txt }}>{c.guest_name || c.role || 'Guest'}</span>
-                {c.unread_by_dev && <span style={{ height:8, width:8, borderRadius:99, background:'#ef4444', flexShrink:0 }}/>}
-              </div>
-              <p style={{ fontSize:11, color:th.muted }}>{c.guest_email}</p>
-              <div style={{ marginTop:4, display:'flex', alignItems:'center', gap:6 }}>
-                <span style={{ ...th.pill, fontSize:10, padding:'2px 8px', textTransform:'capitalize' }}>{c.portal}</span>
-                <span style={{ fontSize:10, color:th.muted }}>{fmtChatTime(c.last_message_at)}</span>
-              </div>
-              {c.last_message_preview && <p style={{ marginTop:4, fontSize:11, color:th.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{c.last_message_preview}</p>}
-            </button>
-          ))}
-          {conversations.length === 0 && (
-            <p style={{ padding:'40px 16px', textAlign:'center', fontSize:13, color:th.muted }}>No conversations yet.</p>
-          )}
+        <SearchField th={th} value={query} onChange={setQuery} placeholder="Search name, email or message…"/>
+        <div style={{ display:'flex', gap:8 }}>
+          <button onClick={() => setUnreadOnly(false)} style={chipStyle(th, !unreadOnly)}>All</button>
+          <button onClick={() => setUnreadOnly(true)}  style={chipStyle(th, unreadOnly)}>Unread{unreadCount ? ` (${unreadCount})` : ''}</button>
         </div>
       </div>
-
-      <div style={{ ...th.card, display:'flex', flexDirection:'column', overflow:'hidden' }}>
-        {!selected ? (
-          <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, color:th.muted }}>
-            Select a conversation to reply
-          </div>
-        ) : (
-          <>
-            <div style={{ padding:'12px 16px', borderBottom:'1px solid', ...th.divider }}>
-              <p style={{ fontSize:13, fontWeight:700, color:th.txt }}>{selected.guest_name || 'Guest'}</p>
-              <p style={{ fontSize:11, color:th.muted }}>{selected.guest_email} · {selected.portal}</p>
-            </div>
-            <div ref={scrollRef} style={{ flex:1, overflowY:'auto', padding:'12px 16px', display:'flex', flexDirection:'column', gap:8, maxHeight:'48vh' }}>
-              {messages.map(m => {
-                const fromDev = m.sender_role === 'dev';
-                return (
-                  <div key={m.id} style={{ display:'flex', justifyContent: fromDev ? 'flex-end' : 'flex-start' }}>
-                    <div style={{ maxWidth:'75%', borderRadius:14, padding:'8px 12px', fontSize:13,
-                      background: fromDev ? 'linear-gradient(135deg,#22c55e,#166534)' : th.glass.background,
-                      color: fromDev ? '#fff' : th.txt, border: fromDev ? 'none' : th.glass.border }}>
-                      {!fromDev && (
-                        <p style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', color:th.muted, marginBottom:2 }}>
-                          {m.sender_name || selected.role}
-                        </p>
-                      )}
-                      <p style={{ whiteSpace:'pre-wrap', wordBreak:'break-word' }}>{m.body}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <div style={{ display:'flex', alignItems:'center', gap:8, padding:'12px', borderTop:'1px solid', ...th.divider }}>
-              <input value={reply} onChange={e => setReply(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') handleReply(); }}
-                placeholder="Reply as FARM-AGENT Team…"
-                style={{ ...th.input, flex:1, padding:'8px 12px', fontSize:13, boxSizing:'border-box' }}/>
-              <button onClick={handleReply} disabled={sending || !reply.trim()}
-                style={{ cursor:'pointer', width:34, height:34, borderRadius:10, border:'none', flexShrink:0,
-                  background:'linear-gradient(135deg,#16a34a,#064e3b)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center',
-                  opacity: (sending || !reply.trim()) ? 0.5 : 1 }}>
-                <SendIcon sx={{ fontSize:15 }}/>
-              </button>
-            </div>
-          </>
+      <div style={{ flex:1, overflowY:'auto', overscrollBehavior:'contain', maxHeight: isDesktop ? 'none' : 'calc(100dvh - 22rem)' }}>
+        {loadingList && <SkeletonRows th={th} rows={4}/>}
+        {visible.map(c => {
+          const active = selectedId === c.id;
+          const nm = c.guest_name || c.role || 'Guest';
+          return (
+            <button key={c.id} onClick={() => setSelectedId(c.id)}
+              style={{ width:'100%', textAlign:'left', cursor:'pointer', border:'none', borderBottom:'1px solid', ...th.divider,
+                position:'relative', display:'flex', alignItems:'center', gap:12, padding:'12px 16px', fontFamily:'inherit',
+                background: active ? `${th.accent}1a` : 'transparent' }}>
+              {active && <span style={{ position:'absolute', left:0, top:0, bottom:0, width:3, background:th.accent }}/>}
+              <Avatar name={nm} color={avatarColorFor(nm)} size={44}/>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', gap:8 }}>
+                  <span style={{ fontSize:14, fontWeight: c.unread_by_dev ? 800 : 600, color:th.txt, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{nm}</span>
+                  <span style={{ fontSize:10, flexShrink:0, color: c.unread_by_dev ? th.accent : th.muted, fontWeight: c.unread_by_dev ? 700 : 400 }}>{fmtChatTime(c.last_message_at)}</span>
+                </div>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, marginTop:2 }}>
+                  <span style={{ fontSize:12, color: c.unread_by_dev ? th.sub : th.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                    {c.last_message_preview || c.guest_email || 'No messages yet'}
+                  </span>
+                  {c.unread_by_dev && <span style={{ height:10, width:10, borderRadius:99, background:th.accent, flexShrink:0, boxShadow:`0 0 6px ${th.accent}` }}/>}
+                </div>
+                {c.portal && <span style={{ ...th.pill, display:'inline-block', marginTop:5, fontSize:10, padding:'1px 8px', borderRadius:99, textTransform:'capitalize' }}>{c.portal}</span>}
+              </div>
+            </button>
+          );
+        })}
+        {!loadingList && visible.length === 0 && (
+          <EmptyBlock th={th} title={conversations.length === 0 ? 'No conversations yet' : 'No matches'}
+            hint={conversations.length === 0 ? 'New chats from the app will appear here in real time.' : 'Try a different search or switch back to All.'}/>
         )}
       </div>
+    </div>
+  );
+
+  const chatPane = (
+    <div style={{
+      display:'flex', flexDirection:'column', overflow:'hidden', minHeight:0,
+      ...(fullScreenChat
+        ? { position:'fixed', inset:0, zIndex:60, background:th.bg.background, paddingTop:'env(safe-area-inset-top)' }
+        : { ...th.card }),
+    }}>
+      {!selected ? (
+        <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <EmptyBlock th={th} title="Select a conversation" hint="Pick a chat on the left to read and reply."/>
+        </div>
+      ) : (
+        <>
+          <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 12px', borderBottom:'1px solid', ...th.divider, ...th.header }}>
+            {!isDesktop && (
+              <button onClick={() => setSelectedId(null)} aria-label="Back to conversations"
+                style={{ cursor:'pointer', width:40, height:40, borderRadius:40, border:'none', background:'transparent', color:th.sub,
+                  display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                <ChevronLeftIcon sx={{ fontSize:26 }}/>
+              </button>
+            )}
+            <Avatar name={selected.guest_name || 'Guest'} color={avatarColorFor(selected.guest_name || 'Guest')} size={38}/>
+            <div style={{ minWidth:0 }}>
+              <p style={{ fontSize:14, fontWeight:700, color:th.txt, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{selected.guest_name || 'Guest'}</p>
+              <p style={{ fontSize:11, color:th.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{selected.guest_email} · {selected.portal}</p>
+            </div>
+          </div>
+
+          <div ref={scrollRef} style={{ flex:1, overflowY:'auto', overscrollBehavior:'contain', padding:'12px 14px' }}>
+            {messages.length === 0 && <p style={{ textAlign:'center', fontSize:12, color:th.muted, padding:'40px 0' }}>No messages yet.</p>}
+            {timeline.map(row => {
+              if (row.type === 'day') {
+                return (
+                  <div key={row.key} style={{ display:'flex', justifyContent:'center', margin:'14px 0 6px' }}>
+                    <span style={{ ...th.pill, fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', padding:'3px 12px', borderRadius:99 }}>{row.label}</span>
+                  </div>
+                );
+              }
+              const { m, first } = row;
+              const fromDev = m.sender_role === 'dev';
+              return (
+                <div key={row.key} style={{ display:'flex', justifyContent: fromDev ? 'flex-end' : 'flex-start', marginTop: first ? 12 : 2 }}>
+                  <div style={{ maxWidth: isDesktop ? '70%' : '85%', padding:'8px 12px', fontSize:14, boxShadow:'0 1px 2px rgba(0,0,0,0.12)',
+                    borderRadius: fromDev ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                    background: fromDev ? 'linear-gradient(135deg,#22c55e,#166534)' : th.card.background,
+                    color: fromDev ? '#fff' : th.txt, border: fromDev ? 'none' : th.glass.border }}>
+                    {!fromDev && first && (
+                      <p style={{ fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'0.05em', color:th.accent, marginBottom:2 }}>
+                        {m.sender_name || selected.role}
+                      </p>
+                    )}
+                    <p style={{ whiteSpace:'pre-wrap', wordBreak:'break-word' }}>{m.body}</p>
+                    <p style={{ fontSize:10, textAlign:'right', marginTop:2, lineHeight:1, color: fromDev ? 'rgba(255,255,255,0.72)' : th.muted }}>{fmtClock(m.created_at)}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={{ display:'flex', alignItems:'flex-end', gap:8, padding:'10px 12px', paddingBottom:'calc(10px + env(safe-area-inset-bottom))', borderTop:'1px solid', ...th.divider, ...th.header, borderBottom:'none' }}>
+            <textarea ref={inputRef} rows={1} value={reply} onChange={e => setReply(e.target.value)} onKeyDown={onComposerKeyDown}
+              placeholder="Reply as FARM-AGENT Team…" aria-label="Reply"
+              style={{ ...th.input, flex:1, resize:'none', minHeight:42, maxHeight:120, padding:'10px 14px', fontSize:16, lineHeight:1.35,
+                borderRadius:20, boxSizing:'border-box', fontFamily:'inherit' }}/>
+            <button onClick={handleReply} disabled={sending || !reply.trim()} aria-label="Send reply"
+              style={{ cursor:'pointer', width:42, height:42, borderRadius:42, border:'none', flexShrink:0,
+                background:'linear-gradient(135deg,#16a34a,#064e3b)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center',
+                opacity: (sending || !reply.trim()) ? 0.45 : 1, boxShadow: reply.trim() ? '0 4px 14px rgba(22,163,74,0.4)' : 'none' }}>
+              <SendIcon sx={{ fontSize:18 }}/>
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+
+  return (
+    <div style={isDesktop
+      ? { display:'grid', gap:16, gridTemplateColumns:'340px 1fr', height:'calc(100dvh - 13rem)', minHeight:480 }
+      : { display:'block' }}>
+      {showList && listPane}
+      {showChat && chatPane}
     </div>
   );
 };
@@ -329,6 +501,8 @@ const PublicBoardTab = ({ th }) => {
   const [grantAmount,   setGrantAmount]   = useState('');
   const [grantingId,    setGrantingId]    = useState(null);
   const [grantError,    setGrantError]    = useState('');
+  const [filter,        setFilter]        = useState('all'); // all | needs_reply | public | private
+  const [query,         setQuery]         = useState('');
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -411,26 +585,50 @@ const PublicBoardTab = ({ th }) => {
     }
   };
 
-  const topLevel = items.filter(m => !m.parent_id);
+  const allTop = items.filter(m => !m.parent_id);
+  const hasTeamReply = (m) => items.some(it => it.parent_id === m.id && it.sender_role === 'dev');
+  const needsReply = allTop.filter(m => m.is_public && !hasTeamReply(m)).length;
+  const q = query.trim().toLowerCase();
+  const topLevel = allTop.filter(m =>
+    (filter === 'all' ||
+      (filter === 'public' && m.is_public) ||
+      (filter === 'private' && !m.is_public) ||
+      (filter === 'needs_reply' && m.is_public && !hasTeamReply(m))) &&
+    (!q || [m.name, m.email, m.message, m.origin_app].some(v => String(v || '').toLowerCase().includes(q)))
+  );
+  const filters = [
+    { id:'all', label:'All' },
+    { id:'needs_reply', label:`Needs reply${needsReply ? ` (${needsReply})` : ''}` },
+    { id:'public', label:'Public' },
+    { id:'private', label:'Private' },
+  ];
 
   return (
-    <div style={{ ...th.card, overflow:'hidden' }}>
-      <div style={{ padding:'14px 20px', borderBottom:`1px solid`, ...th.divider, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <p style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.12em', color:th.muted }}>
-          Landing page messages ({topLevel.length})
-        </p>
-        <button onClick={refresh} title="Refresh"
-          style={{ ...th.pill, cursor:'pointer', padding:'6px 9px', display:'flex', alignItems:'center', border:'none' }}>
-          <RefreshIcon sx={{ fontSize:15, animation: loading ? 'spin 1s linear infinite' : 'none' }}/>
+    <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+        <div>
+          <p style={{ fontSize:18, fontWeight:900, color:th.txt, lineHeight:1.2 }}>Public Board</p>
+          <p style={{ fontSize:12, color:th.muted }}>Landing page messages · {allTop.length} total</p>
+        </div>
+        <button onClick={refresh} title="Refresh" aria-label="Refresh messages"
+          style={{ ...th.pill, cursor:'pointer', width:40, height:40, display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <RefreshIcon sx={{ fontSize:17, animation: loading ? 'spin 1s linear infinite' : 'none' }}/>
         </button>
       </div>
-      <div style={{ maxHeight:'65vh', overflowY:'auto' }}>
+      <SearchField th={th} value={query} onChange={setQuery} placeholder="Search name, email or message…"/>
+      <div style={{ display:'flex', gap:8, overflowX:'auto', paddingBottom:2, scrollbarWidth:'none' }}>
+        {filters.map(f => <button key={f.id} onClick={() => setFilter(f.id)} style={chipStyle(th, filter === f.id)}>{f.label}</button>)}
+      </div>
+    <div style={{ ...th.card, overflow:'hidden' }}>
+      <div>
+        {loading && allTop.length === 0 && <SkeletonRows th={th}/>}
         {topLevel.map((m, i) => {
           const replies = items.filter(it => it.parent_id === m.id);
           const isExpanded = expandedId === m.id;
           return (
             <div key={m.id}>
-              <div style={{ padding:'14px 20px', display:'flex', alignItems:'flex-start', gap:12 }}>
+              <div style={{ padding:'14px 16px', display:'flex', alignItems:'flex-start', gap:12 }}>
+                <Avatar name={m.name || 'Website visitor'} color={avatarColorFor(m.name || 'W')} size={40}/>
                 <div onClick={() => { setExpandedId(isExpanded ? null : m.id); setReplyDraft(''); }}
                   style={{ flex:1, minWidth:0, cursor:'pointer' }}>
                   <div style={{ display:'flex', flexWrap:'wrap', alignItems:'center', gap:8, marginBottom:3 }}>
@@ -450,7 +648,8 @@ const PublicBoardTab = ({ th }) => {
                   <p style={{ fontSize:13, color:th.txt, marginTop:4, whiteSpace:'pre-wrap', wordBreak:'break-word' }}>{m.message}</p>
                 </div>
                 <button onClick={() => handleDelete(m.id)} disabled={deletingId === m.id} title="Delete message"
-                  style={{ cursor:'pointer', flexShrink:0, width:30, height:30, borderRadius:8, border:'none',
+                  aria-label="Delete message"
+                  style={{ cursor:'pointer', flexShrink:0, width:38, height:38, borderRadius:10, border:'none',
                     background:'rgba(248,113,113,0.10)', color:'#f87171', display:'flex', alignItems:'center', justifyContent:'center',
                     opacity: deletingId === m.id ? 0.4 : 1 }}>
                   <DeleteIcon sx={{ fontSize:15 }}/>
@@ -458,7 +657,7 @@ const PublicBoardTab = ({ th }) => {
               </div>
 
               {isExpanded && (
-                <div style={{ padding:'0 20px 16px 52px' }}>
+                <div style={{ padding:'0 16px 16px 68px' }}>
                   {m.user_id && (
                     <div style={{ marginBottom: 10 }}>
                       <button onClick={() => handleOpenGrant(m.id)}
@@ -548,10 +747,10 @@ const PublicBoardTab = ({ th }) => {
                     <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                       <input value={replyDraft} onChange={e => setReplyDraft(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter') handleReply(m.id); }}
-                        placeholder="Reply as FARM-AGENT Team…"
-                        style={{ ...th.input, flex:1, padding:'8px 12px', fontSize:13, boxSizing:'border-box' }}/>
-                      <button onClick={() => handleReply(m.id)} disabled={replying || !replyDraft.trim()}
-                        style={{ cursor:'pointer', width:34, height:34, borderRadius:10, border:'none', flexShrink:0,
+                        placeholder="Reply as FARM-AGENT Team…" aria-label="Reply"
+                        style={{ ...th.input, flex:1, height:42, padding:'0 12px', fontSize:16, boxSizing:'border-box' }}/>
+                      <button onClick={() => handleReply(m.id)} disabled={replying || !replyDraft.trim()} aria-label="Send reply"
+                        style={{ cursor:'pointer', width:42, height:42, borderRadius:12, border:'none', flexShrink:0,
                           background:'linear-gradient(135deg,#16a34a,#064e3b)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center',
                           opacity: (replying || !replyDraft.trim()) ? 0.5 : 1 }}>
                         <SendIcon sx={{ fontSize:15 }}/>
@@ -565,15 +764,18 @@ const PublicBoardTab = ({ th }) => {
           );
         })}
         {!loading && topLevel.length === 0 && (
-          <p style={{ padding:40, textAlign:'center', color:th.muted, fontSize:14 }}>No landing page messages yet.</p>
+          <EmptyBlock th={th} title={allTop.length === 0 ? 'No messages yet' : 'No messages match'}
+            hint={allTop.length === 0 ? 'Questions from the landing page will show up here.' : 'Try another filter or clear the search.'}/>
         )}
       </div>
+    </div>
     </div>
   );
 };
 
 // ─── MAIN DASHBOARD ───────────────────────────────────────────────────────────
 const FarmDevDashboard = ({ onLogout }) => {
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const [themeKey, setThemeKey] = useState(() => localStorage.getItem('farm_dev_theme')||'dark');
   const th = themes[themeKey];
   const toggle = () => { const n = themeKey==='dark'?'light':'dark'; setThemeKey(n); localStorage.setItem('farm_dev_theme',n); };
@@ -682,7 +884,7 @@ const FarmDevDashboard = ({ onLogout }) => {
 
       {/* ══ HEADER ══ */}
       <div style={{ position:'sticky', top:0, zIndex:50, ...th.header }}>
-        <div style={{ maxWidth:1400, margin:'0 auto', padding:'12px 24px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+        <div style={{ maxWidth:1400, margin:'0 auto', padding: isMobile ? 'calc(10px + env(safe-area-inset-top)) 16px 10px' : '12px 24px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
           {/* Logo */}
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
             <div style={{ width:40, height:40, borderRadius:12, background:'linear-gradient(135deg,#16a34a,#064e3b)',
@@ -707,21 +909,21 @@ const FarmDevDashboard = ({ onLogout }) => {
               style={{ ...th.pill, cursor:'pointer', padding:'7px 10px', display:'flex', alignItems:'center' }}>
               <RefreshIcon sx={{ fontSize:16, animation: loading ? 'spin 1s linear infinite' : 'none' }}/>
             </button>
-            <button onClick={toggle}
+            <button onClick={toggle} aria-label="Toggle theme"
               style={{ ...th.pill, cursor:'pointer', padding:'7px 10px', display:'flex', alignItems:'center' }}>
               {themeKey==='dark'?<LightModeIcon sx={{fontSize:16}}/>:<DarkModeIcon sx={{fontSize:16}}/>}
             </button>
-            <button onClick={onLogout}
-              style={{ cursor:'pointer', padding:'7px 14px', borderRadius:10, border:'1px solid rgba(248,113,113,0.25)',
+            <button onClick={onLogout} aria-label="Exit"
+              style={{ cursor:'pointer', padding: isMobile ? '7px 10px' : '7px 14px', borderRadius:10, border:'1px solid rgba(248,113,113,0.25)',
                 background:'rgba(248,113,113,0.10)', color:'#f87171', fontSize:12, fontWeight:600,
                 display:'flex', alignItems:'center', gap:6 }}>
-              <LogoutIcon sx={{fontSize:14}}/> Exit
+              <LogoutIcon sx={{fontSize:14}}/> {!isMobile && 'Exit'}
             </button>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div style={{ maxWidth:1400, margin:'0 auto', padding:'0 24px', display:'flex', overflowX:'auto' }}>
+        {/* Tabs (desktop / tablet — phones get the bottom bar below) */}
+        {!isMobile && <div style={{ maxWidth:1400, margin:'0 auto', padding:'0 24px', display:'flex', overflowX:'auto' }}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => { setTab(t.id); setSearch(''); }}
               style={{ cursor:'pointer', padding:'11px 18px', display:'flex', alignItems:'center', gap:7,
@@ -731,11 +933,11 @@ const FarmDevDashboard = ({ onLogout }) => {
               <t.Icon sx={{fontSize:14}}/>{t.label}
             </button>
           ))}
-        </div>
+        </div>}
       </div>
 
       {/* ══ CONTENT ══ */}
-      <div style={{ maxWidth:1400, margin:'0 auto', padding:'24px 24px 48px' }}>
+      <div style={{ maxWidth:1400, margin:'0 auto', padding: isMobile ? '16px 16px calc(88px + env(safe-area-inset-bottom))' : '24px 24px 48px' }}>
 
         {/* Search */}
         {['users','farms','suppliers'].includes(tab) && (
@@ -1137,8 +1339,29 @@ const FarmDevDashboard = ({ onLogout }) => {
 
       </div>
 
-      {/* spin keyframes */}
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      {/* mobile bottom tab bar — same pattern as the main app */}
+      {isMobile && (
+        <nav style={{ position:'fixed', left:0, right:0, bottom:0, zIndex:40, display:'flex', overflowX:'auto', scrollbarWidth:'none',
+          paddingBottom:'env(safe-area-inset-bottom)', ...th.header, borderBottom:'none', borderTop: th.header.borderBottom }}>
+          {TABS.map(t => {
+            const active = tab === t.id;
+            return (
+              <button key={t.id} onClick={() => { setTab(t.id); setSearch(''); window.scrollTo({ top:0 }); }} aria-current={active ? 'page' : undefined}
+                style={{ position:'relative', flex:'1 0 76px', minWidth:76, cursor:'pointer', border:'none', background:'transparent', fontFamily:'inherit',
+                  display:'flex', flexDirection:'column', alignItems:'center', gap:2, padding:'8px 4px', color: active ? th.accent : th.muted }}>
+                {active && <span style={{ position:'absolute', top:0, left:'22%', right:'22%', height:2, borderRadius:'0 0 4px 4px', background:th.accent }}/>}
+                <span style={{ width:46, height:28, borderRadius:14, display:'flex', alignItems:'center', justifyContent:'center', background: active ? `${th.accent}1f` : 'transparent' }}>
+                  <t.Icon sx={{ fontSize:20 }}/>
+                </span>
+                <span style={{ fontSize:10, fontWeight:700, lineHeight:1.1, whiteSpace:'nowrap' }}>{t.label === 'Registered Farms' ? 'Farms' : t.label === 'Value & Chain' ? 'Chain' : t.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      )}
+
+      {/* keyframes */}
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}`}</style>
     </div>
   );
 };
