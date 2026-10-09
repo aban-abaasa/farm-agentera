@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { Outlet, Link, NavLink, useNavigate } from 'react-router-dom';
 import {
   AppBar,
   Box,
@@ -20,12 +20,11 @@ import {
   MenuItem,
   Avatar,
   Container,
-  Tooltip
+  Tooltip,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
   Dashboard as DashboardIcon,
-  Home as HomeIcon,
   Storage as MarketplaceIcon,
   EmojiPeople as SupportIcon,
   Forum as CommunityIcon,
@@ -35,365 +34,329 @@ import {
   Login as LoginIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
-  Extension as ExtensionIcon,
   ExpandMore as ExpandMoreIcon,
+  Close as CloseIcon,
+  Explore as PathwaysIcon,
 } from '@mui/icons-material';
-import Footer from './Footer';
+import AgricultureIcon from '@mui/icons-material/Agriculture';
+import PaidIcon from '@mui/icons-material/Paid';
 import { useTranslation } from 'react-i18next';
+import Footer from './Footer';
 import LanguageSwitcher from '../LanguageSwitcher';
 import ThemeToggle from '../ThemeToggle';
+import { BrandMark, Wordmark } from '../classic/Brand';
+import { DoubleRule } from '../classic/Ornament';
 import { useAuth } from '../../context/AuthContext';
-import AgricultureIcon from '@mui/icons-material/Agriculture';
-import GrassIcon from '@mui/icons-material/Grass';
-import PaidIcon from '@mui/icons-material/Paid';
+import { fonts } from '../../theme';
+
+const FOREST = '#1f4d36';
+const PARCHMENT = '#f3ebd8';
+
+const todayLine = () =>
+  new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
 const MainLayout = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileAnchorEl, setProfileAnchorEl] = useState(null);
-  const [extensionsAnchorEl, setExtensionsAnchorEl] = useState(null);
+  const [moreAnchorEl, setMoreAnchorEl] = useState(null);
   const { t } = useTranslation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  
-  // Check if user is authenticated
+
   const isAuthenticated = !!user;
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
+  const toggleDrawer = () => setMobileOpen((open) => !open);
+  const closeProfile = () => setProfileAnchorEl(null);
+  const closeMore = () => setMoreAnchorEl(null);
 
-  const handleProfileMenuOpen = (event) => {
-    setProfileAnchorEl(event.currentTarget);
-  };
-
-  const handleProfileMenuClose = () => {
-    setProfileAnchorEl(null);
-  };
-
-  const handleExtensionsMenuOpen = (event) => {
-    setExtensionsAnchorEl(event.currentTarget);
-  };
-
-  const handleExtensionsMenuClose = () => {
-    setExtensionsAnchorEl(null);
-  };
-  
   const handleLogout = () => {
     logout();
-    handleProfileMenuClose();
+    closeProfile();
     navigate('/login');
   };
 
   const navigationItems = [
-    // Main Navigation Items
-    { 
-      text: 'Dashboard', 
-      path: '/dashboard', 
-      icon: <DashboardIcon />, 
-      category: 'main',
-      requireAuth: true 
-    },
-    { 
-      text: t('header.marketplace'), 
-      path: '/marketplace', 
-      icon: <MarketplaceIcon />, 
-      category: 'main',
-      requireAuth: false 
-    },
-    { 
-      text: t('header.myFarm', 'My Farm'), 
-      path: '/farm-management', 
-      icon: <AgricultureIcon />, 
-      category: 'main',
-      requireAuth: false 
-    },
-    { 
-      text: t('header.community'), 
-      path: '/community', 
-      icon: <CommunityIcon />, 
-      category: 'main',
-      requireAuth: false 
-    },
-    { 
-      text: t('header.resources'), 
-      path: '/resources', 
-      icon: <ResourcesIcon />, 
-      category: 'main' 
-    },
-    {
-      text: t('header.supportTeam'),
-      path: '/support-team',
-      icon: <SupportIcon />,
-      category: 'main'
-    },
-    {
-      text: '₡ ICAN Wallet',
-      path: '/ican-wallet',
-      icon: <PaidIcon />,
-      category: 'main',
-      requireAuth: true,
-    },
+    { text: t('header.pathways', 'Pathways'), path: '/join', icon: <PathwaysIcon /> },
+    { text: t('header.marketplace'), path: '/marketplace', icon: <MarketplaceIcon /> },
+    { text: t('header.myFarm', 'My Farm'), path: '/farm-management', icon: <AgricultureIcon /> },
+    { text: t('header.community'), path: '/community', icon: <CommunityIcon /> },
+    { text: t('header.supportTeam', 'On-Ground Team'), path: '/support-team', icon: <SupportIcon /> },
+    { text: 'ICAN Wallet', path: '/ican-wallet', icon: <PaidIcon />, requireAuth: true },
+    { text: 'Dashboard', path: '/dashboard', icon: <DashboardIcon />, requireAuth: true },
   ];
 
-  // Extensions items (for dropdown)
-  const extensionsItems = [
-    { 
-      text: t('header.weather'), 
-      path: '/weather', 
-      icon: <WeatherIcon />, 
-      requireAuth: false 
-    },
+  // Lives under "More" on desktop.
+  const moreItems = [
+    { text: t('header.resources'), path: '/resources', icon: <ResourcesIcon /> },
+    { text: t('header.weather'), path: '/weather', icon: <WeatherIcon /> },
   ];
+
+  const visibleNav = navigationItems.filter((item) => !item.requireAuth || isAuthenticated);
+
+  const brandLink = (
+    <Box
+      component={Link}
+      to="/"
+      aria-label="AgriBone home"
+      sx={{ display: 'inline-flex', alignItems: 'center', gap: 1.5, textDecoration: 'none', color: 'inherit' }}
+    >
+      <BrandMark size={34} />
+      <Wordmark size="1.15rem" />
+    </Box>
+  );
 
   const drawer = (
-    <div>
-      <Toolbar sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
-        <Typography variant="h6" component={Link} to="/" sx={{ 
-          fontWeight: 700, 
-          textDecoration: 'none', 
-          color: 'inherit',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1
-        }}>
-          <HomeIcon />
-          AgriBone
-        </Typography>
+    <Box sx={{ width: 290 }} role="presentation">
+      <Toolbar sx={{ justifyContent: 'space-between', borderBottom: '3px double', borderColor: 'divider' }}>
+        {brandLink}
+        <IconButton aria-label="Close menu" onClick={toggleDrawer}>
+          <CloseIcon />
+        </IconButton>
       </Toolbar>
-      <Divider />
-      <List>
-        {/* Main Navigation Items */}
-        {navigationItems.filter(item => !item.requireAuth || (item.requireAuth && isAuthenticated)).map((item) => (
-          <ListItem key={item.text} disablePadding>
-            <ListItemButton component={Link} to={item.path} onClick={handleDrawerToggle}>
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
+      <List sx={{ py: 1 }}>
+        {[...visibleNav, ...moreItems].map((item) => (
+          <ListItem key={item.path} disablePadding>
+            <ListItemButton component={NavLink} to={item.path} onClick={toggleDrawer} sx={{ py: 1.4 }}>
+              <ListItemIcon sx={{ minWidth: 40, color: 'warning.main' }}>{item.icon}</ListItemIcon>
+              <ListItemText
+                primary={item.text}
+                primaryTypographyProps={{
+                  sx: { fontFamily: fonts.display, fontWeight: 600, fontSize: '1.05rem' },
+                }}
+              />
             </ListItemButton>
           </ListItem>
         ))}
-        
-        {/* Extensions Section */}
-        {extensionsItems.some(item => !item.requireAuth || (item.requireAuth && isAuthenticated)) && (
-          <>
-            <Divider sx={{ my: 1 }} />
-            <ListItem>
-              <ListItemIcon>
-                <ExtensionIcon />
-              </ListItemIcon>
-              <ListItemText primary="Extensions" sx={{ opacity: 0.7 }} />
-            </ListItem>
-            {extensionsItems.filter(item => !item.requireAuth || (item.requireAuth && isAuthenticated)).map((item) => (
-              <ListItem key={item.text} disablePadding>
-                <ListItemButton component={Link} to={item.path} onClick={handleDrawerToggle} sx={{ pl: 4 }}>
-                  <ListItemIcon>{item.icon}</ListItemIcon>
-                  <ListItemText primary={item.text} />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </>
-        )}
       </List>
-    </div>
+    </Box>
   );
 
-  // Extensions menu
-  const extensionsMenu = (
-    <Menu
-      anchorEl={extensionsAnchorEl}
-      open={Boolean(extensionsAnchorEl)}
-      onClose={handleExtensionsMenuClose}
-      transformOrigin={{ horizontal: 'left', vertical: 'top' }}
-      anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
-      PaperProps={{
-        sx: {
-          mt: 1,
-          minWidth: 200,
-        }
-      }}
-    >
-      {extensionsItems.filter(item => !item.requireAuth || (item.requireAuth && isAuthenticated)).map((item) => (
-        <MenuItem 
-          key={item.text}
-          component={Link} 
-          to={item.path} 
-          onClick={handleExtensionsMenuClose}
-        >
-          <ListItemIcon>
-            {item.icon}
-          </ListItemIcon>
-          <ListItemText>{item.text}</ListItemText>
-        </MenuItem>
-      ))}
-    </Menu>
-  );
-
-  // Profile menu
-  const profileMenu = (
-    <Menu
-      anchorEl={profileAnchorEl}
-      open={Boolean(profileAnchorEl)}
-      onClose={handleProfileMenuClose}
-      transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-      anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-    >
-      {isAuthenticated ? (
-        <>
-          <MenuItem component={Link} to={`/profile/${user.id}`} onClick={handleProfileMenuClose}>
-            <ListItemIcon>
-              <ProfileIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>{t('header.profile')}</ListItemText>
-          </MenuItem>
-          <MenuItem component={Link} to="/settings" onClick={handleProfileMenuClose}>
-            <ListItemIcon>
-              <SettingsIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>{t('header.settings')}</ListItemText>
-          </MenuItem>
-          <Divider />
-          <MenuItem onClick={handleLogout}>
-            <ListItemIcon>
-              <LogoutIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>{t('header.logout')}</ListItemText>
-          </MenuItem>
-        </>
-      ) : (
-        <MenuItem component={Link} to="/login" onClick={handleProfileMenuClose}>
-          <ListItemIcon>
-            <LoginIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>{t('header.login')}</ListItemText>
-        </MenuItem>
-      )}
-    </Menu>
-  );
+  const navLinkSx = {
+    color: 'text.primary',
+    fontFamily: fonts.body,
+    fontWeight: 600,
+    fontSize: '0.74rem',
+    letterSpacing: '0.16em',
+    textTransform: 'uppercase',
+    textDecoration: 'none',
+    px: 2,
+    py: 1.4,
+    position: 'relative',
+    borderRadius: 0,
+    '&:hover': { backgroundColor: 'transparent', color: 'primary.main' },
+    '&::after': {
+      content: '""',
+      position: 'absolute',
+      left: 16,
+      right: 16,
+      bottom: 6,
+      height: 2,
+      backgroundColor: 'warning.main',
+      transform: 'scaleX(0)',
+      transition: 'transform .25s ease',
+    },
+    '&:hover::after, &.active::after': { transform: 'scaleX(1)' },
+    '&.active': { color: 'primary.main' },
+  };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      {/* App Bar */}
-      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
-        <Container maxWidth="xl">
-          <Toolbar>
-            {isMobile && (
-              <IconButton
-                color="inherit"
-                aria-label="open drawer"
-                edge="start"
-                onClick={handleDrawerToggle}
-                sx={{ mr: 2 }}
-              >
-                <MenuIcon />
-              </IconButton>
-            )}
-            <Typography variant="h6" component={Link} to="/" sx={{ 
-              flexGrow: 0, 
-              textDecoration: 'none', 
-              color: 'inherit',
-              fontWeight: 700,
-              letterSpacing: 1,
+      {/* ── Top strip: dateline, motto, controls ── */}
+      <Box sx={{ bgcolor: FOREST, color: PARCHMENT }}>
+        <Container maxWidth="xl" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 40 }}>
+          <Typography
+            className="kicker"
+            sx={{ display: { xs: 'none', sm: 'block' }, fontSize: '0.66rem', opacity: 0.85, flex: 1 }}
+          >
+            {todayLine()}
+          </Typography>
+          <Typography
+            sx={{
+              display: { xs: 'none', md: 'block' },
+              fontFamily: fonts.accent,
+              fontStyle: 'italic',
+              fontSize: '1.02rem',
+              textAlign: 'center',
+              flex: 2,
+            }}
+          >
+            Rooted in the soil · Backed by the people
+          </Typography>
+          <Box
+            sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 1,
-              mr: 3
-            }}>
-              <HomeIcon />
-              AgriBone
-            </Typography>
-
-            {/* Desktop Navigation */}
-            {!isMobile && (
-              <Box sx={{ display: 'flex', flexGrow: 1, alignItems: 'center' }}>
-                {navigationItems.filter(item => !item.requireAuth || (item.requireAuth && isAuthenticated)).map((item) => (
-                  <Button 
-                    color="inherit" 
-                    component={Link} 
-                    to={item.path} 
-                    key={item.text}
-                    startIcon={item.icon}
-                    sx={{ mx: 0.5 }}
-                  >
-                    {item.text}
-                  </Button>
-                ))}
-                
-                {/* Extensions Dropdown */}
-                {extensionsItems.some(item => !item.requireAuth || (item.requireAuth && isAuthenticated)) && (
-                  <Button
-                    color="inherit"
-                    onClick={handleExtensionsMenuOpen}
-                    endIcon={<ExpandMoreIcon />}
-                    startIcon={<ExtensionIcon />}
-                    sx={{ mx: 0.5 }}
-                  >
-                    Extensions
-                  </Button>
-                )}
-              </Box>
-            )}
-            
-            {/* Theme Toggle and Language Switcher */}
+              justifyContent: 'flex-end',
+              flex: 1,
+              ml: { xs: 'auto', sm: 0 },
+              '& .MuiIconButton-root': { color: PARCHMENT },
+            }}
+          >
             <ThemeToggle />
             <LanguageSwitcher />
-            
-            {/* Login/Profile Button */}
             {isAuthenticated ? (
               <Tooltip title={user?.name || t('header.profile')}>
-                <IconButton onClick={handleProfileMenuOpen} sx={{ p: 0, ml: 1 }}>
-                  <Avatar alt={user?.name} src={user?.avatar}>
+                <IconButton onClick={(e) => setProfileAnchorEl(e.currentTarget)} sx={{ p: 0.5, ml: 0.5 }}>
+                  <Avatar
+                    alt={user?.name}
+                    src={user?.avatar}
+                    sx={{ width: 28, height: 28, bgcolor: '#b08d3c', color: FOREST, fontFamily: fonts.display, fontWeight: 700, fontSize: '0.85rem' }}
+                  >
                     {user?.name?.charAt(0) || 'U'}
                   </Avatar>
                 </IconButton>
               </Tooltip>
             ) : (
-              <Button 
-                color="inherit" 
-                component={Link} 
+              <Button
+                component={Link}
                 to="/login"
-                startIcon={<LoginIcon />}
+                size="small"
+                startIcon={<LoginIcon fontSize="small" />}
+                sx={{ color: PARCHMENT, ml: 0.5, '&:hover': { bgcolor: 'rgba(243,235,216,0.12)' } }}
               >
                 {t('header.login')}
               </Button>
             )}
+          </Box>
+        </Container>
+      </Box>
+
+      {/* ── Masthead (desktop) ── */}
+      {!isMobile && (
+        <Box component="header" sx={{ pt: 4, pb: 2.5, textAlign: 'center', color: 'text.primary' }}>
+          <Container maxWidth="lg">
+            <Box
+              component={Link}
+              to="/"
+              aria-label="AgriBone home"
+              sx={{ display: 'inline-flex', alignItems: 'center', gap: 3, textDecoration: 'none', color: 'inherit' }}
+            >
+              <BrandMark size={64} />
+              <Wordmark sx={{ fontSize: { md: '3.4rem', lg: '4.2rem' }, letterSpacing: '0.22em', pl: '0.22em' }} />
+              <BrandMark size={64} />
+            </Box>
+            <Typography
+              className="kicker"
+              sx={{ mt: 1.5, color: 'text.secondary', letterSpacing: '0.42em', fontSize: '0.7rem' }}
+            >
+              The Backbone of the Farm · Est. Uganda
+            </Typography>
+          </Container>
+        </Box>
+      )}
+
+      {/* ── Navigation rail ── */}
+      <AppBar
+        position="sticky"
+        component="nav"
+        aria-label="Primary"
+        sx={{
+          top: 0,
+          borderTop: '3px solid',
+          borderBottom: '1px solid',
+          borderColor: 'text.primary',
+          boxShadow: '0 6px 12px -8px rgba(60,40,10,0.35)',
+        }}
+      >
+        <Container maxWidth="xl">
+          <Toolbar
+            disableGutters
+            variant="dense"
+            sx={{ justifyContent: isMobile ? 'space-between' : 'center', minHeight: 48, flexWrap: 'wrap' }}
+          >
+            {isMobile ? (
+              <>
+                <IconButton aria-label="Open menu" edge="start" onClick={toggleDrawer}>
+                  <MenuIcon />
+                </IconButton>
+                {brandLink}
+                <Box sx={{ width: 40 }} />
+              </>
+            ) : (
+              <>
+                {visibleNav.map((item, i) => (
+                  <Box key={item.path} sx={{ display: 'flex', alignItems: 'center' }}>
+                    {i > 0 && <Box aria-hidden="true" sx={{ width: '1px', height: 16, bgcolor: 'divider' }} />}
+                    <Button component={NavLink} to={item.path} sx={navLinkSx}>
+                      {item.text}
+                    </Button>
+                  </Box>
+                ))}
+                <Box aria-hidden="true" sx={{ width: '1px', height: 16, bgcolor: 'divider' }} />
+                <Button
+                  onClick={(e) => setMoreAnchorEl(e.currentTarget)}
+                  endIcon={<ExpandMoreIcon fontSize="small" />}
+                  sx={navLinkSx}
+                >
+                  More
+                </Button>
+              </>
+            )}
           </Toolbar>
         </Container>
       </AppBar>
-      
-      {/* Profile menu */}
-      {profileMenu}
-      
-      {/* Extensions menu */}
-      {extensionsMenu}
-      
-      {/* Mobile drawer */}
+
+      {/* Menus */}
+      <Menu
+        anchorEl={moreAnchorEl}
+        open={Boolean(moreAnchorEl)}
+        onClose={closeMore}
+        anchorOrigin={{ horizontal: 'center', vertical: 'bottom' }}
+        transformOrigin={{ horizontal: 'center', vertical: 'top' }}
+        PaperProps={{ sx: { mt: 0.5, minWidth: 200 } }}
+      >
+        {moreItems.map((item) => (
+          <MenuItem key={item.path} component={Link} to={item.path} onClick={closeMore}>
+            <ListItemIcon sx={{ color: 'warning.main' }}>{item.icon}</ListItemIcon>
+            <ListItemText>{item.text}</ListItemText>
+          </MenuItem>
+        ))}
+      </Menu>
+
+      <Menu
+        anchorEl={profileAnchorEl}
+        open={Boolean(profileAnchorEl)}
+        onClose={closeProfile}
+        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+      >
+        {isAuthenticated && [
+          <MenuItem key="profile" component={Link} to={`/profile/${user.id}`} onClick={closeProfile}>
+            <ListItemIcon><ProfileIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>{t('header.profile')}</ListItemText>
+          </MenuItem>,
+          <MenuItem key="settings" component={Link} to="/settings" onClick={closeProfile}>
+            <ListItemIcon><SettingsIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>{t('header.settings')}</ListItemText>
+          </MenuItem>,
+          <Divider key="divider" />,
+          <MenuItem key="logout" onClick={handleLogout}>
+            <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>{t('header.logout')}</ListItemText>
+          </MenuItem>,
+        ]}
+      </Menu>
+
       <Drawer
         variant="temporary"
         open={mobileOpen}
-        onClose={handleDrawerToggle}
-        ModalProps={{ keepMounted: true }} // Better mobile performance
-        sx={{
-          '& .MuiDrawer-paper': { width: 280 },
-          display: { xs: 'block', md: 'none' },
-        }}
+        onClose={toggleDrawer}
+        ModalProps={{ keepMounted: true }}
+        sx={{ display: { xs: 'block', md: 'none' } }}
       >
         {drawer}
       </Drawer>
 
       {/* Main content */}
-      <Box component="main" sx={{ 
-        flexGrow: 1, 
-        width: '100%',
-        mt: { xs: '56px', sm: '64px' }
-      }}>
+      <Box component="main" sx={{ flexGrow: 1, width: '100%' }}>
         <Outlet />
       </Box>
 
-      {/* Footer */}
       <Footer />
     </Box>
   );
 };
 
-export default MainLayout; 
+export default MainLayout;

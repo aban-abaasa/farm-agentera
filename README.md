@@ -2,6 +2,15 @@
 
 ![AGRI-TECH Logo](frontend/public/vite.svg)
 
+## 🌾 AgriBone — the Almanac redesign
+
+The app is now **AgriBone**, with a classic, print-inspired look (parchment, ink, serif type, brass accents; dark mode is "candlelit").
+
+- **Design system:** `frontend/src/theme.js`, `frontend/src/index.css`, shared pieces in `frontend/src/components/classic/`.
+- **Pathways** (`/join`, `/join/:role`): Customer, Farmer, On-Ground Support, Supplier, Partner & Investor. Copy lives in `frontend/src/content/agribone.js`.
+- **Applications:** On-ground support, supplier and partner applications are stored in `agribone_applications` and approved from the dev panel's *Applications* tab. Run `backend/db/schemas/farm/11_agribone_pathways.sql` in Supabase first.
+- Optional env vars: `VITE_ICANERA_CMMS_URL`, `VITE_PITCHIN_URL`.
+
 ## 📋 Overview
 
 AGRI-TECH is a comprehensive web platform designed to empower Ugandan farmers by providing tools and resources to improve agricultural productivity, market access, and knowledge sharing. The platform connects farmers with land owners, agricultural service providers, and produce buyers through an integrated marketplace while fostering community engagement and providing valuable resources.

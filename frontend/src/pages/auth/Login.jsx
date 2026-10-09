@@ -23,6 +23,7 @@ import {
 } from '@mui/material';
 import GoogleIcon from '@mui/icons-material/Google';
 import { useAuth } from '../../context/AuthContext';
+import { BrandMark, Wordmark } from '../../components/classic/Brand';
 import { resetPassword } from '../../services/api/authService';
 
 const Login = () => {
@@ -144,6 +145,10 @@ const Login = () => {
 
   return (
     <Container component="main" maxWidth="xs">
+      <Box component={RouterLink} to="/" aria-label="AgriBone home" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5, textDecoration: 'none', color: 'text.primary', mt: 6, mb: -4 }}>
+        <BrandMark size={40} />
+        <Wordmark size="1.4rem" />
+      </Box>
       <Paper elevation={3} sx={{ p: 4, mt: 8, borderRadius: 2 }}>
         <Box
           sx={{

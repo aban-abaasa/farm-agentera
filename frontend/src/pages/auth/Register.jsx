@@ -25,6 +25,7 @@ import {
 } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import { COUNTRY_NAMES } from '../../data/countries';
+import { BrandMark, Wordmark } from '../../components/classic/Brand';
 
 // Uganda's regions for the dropdown
 const ugandaRegions = [
@@ -176,6 +177,10 @@ const Register = () => {
 
   return (
     <Container component="main" maxWidth="sm">
+      <Box component={RouterLink} to="/" aria-label="AgriBone home" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5, textDecoration: 'none', color: 'text.primary', mt: 6, mb: -4 }}>
+        <BrandMark size={40} />
+        <Wordmark size="1.4rem" />
+      </Box>
       <Paper elevation={3} sx={{ p: 4, my: 8, borderRadius: 2 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <Typography component="h1" variant="h5" fontWeight="bold" gutterBottom>

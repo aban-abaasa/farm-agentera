@@ -35,6 +35,8 @@ import TaskAltIcon           from '@mui/icons-material/TaskAlt';
 import MailIcon               from '@mui/icons-material/Mail';
 import VpnKeyIcon             from '@mui/icons-material/VpnKey';
 import EraApiDevTab           from '../components/EraApiDevTab';
+import PinDropIcon            from '@mui/icons-material/PinDrop';
+import { devListApplications, devReviewApplication } from '../services/api/pathwayService';
 import {
   devListAllLandingMessages,
   devDeleteLandingMessage,
@@ -65,6 +67,7 @@ const TABS = [
   { id: 'board',         label: 'Public Board', Icon: ForumIcon            },
   { id: 'messages',      label: 'Messages',     Icon: MailIcon             },
   { id: 'api',           label: 'API',          Icon: VpnKeyIcon           },
+  { id: 'applications',  label: 'Applications', Icon: PinDropIcon          },
 ];
 
 const PLANS = ['basic', 'pro', 'enterprise'];
@@ -773,6 +776,119 @@ const PublicBoardTab = ({ th }) => {
   );
 };
 
+
+// ─── Pathway applications (on-ground support / suppliers / partners) ──────────
+const PATHWAY_LABEL = { support: 'On-Ground Support', supplier: 'Supplier', partner: 'Partner & Investor' };
+const STATUS_CLR    = { pending: '#fbbf24', approved: '#22c55e', rejected: '#f87171' };
+
+const ApplicationsTab = ({ th }) => {
+  const [items,   setItems]   = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter,  setFilter]  = useState('pending');
+  const [notes,   setNotes]   = useState({});
+  const [busyId,  setBusyId]  = useState(null);
+  const [error,   setError]   = useState('');
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    try {
+      setItems(await devListApplications(DEV_TOKEN));
+      setError('');
+    } catch (e) {
+      console.error('[ApplicationsTab] failed to load applications:', e);
+      setError('Could not load applications. Has 11_agribone_pathways.sql been run?');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const review = async (id, status) => {
+    setBusyId(id);
+    try {
+      const updated = await devReviewApplication(DEV_TOKEN, id, status, (notes[id] || '').trim() || null);
+      setItems(prev => prev.map(a => (a.id === id ? updated : a)));
+    } catch (e) {
+      console.error('[ApplicationsTab] review failed:', e);
+      setError('Could not save that decision. Please try again.');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const shown = items.filter(a => filter === 'all' || a.status === filter);
+  const count = s => items.filter(a => a.status === s).length;
+
+  return (
+    <div>
+      <div style={{ display:'flex', gap:8, marginBottom:16, flexWrap:'wrap' }}>
+        {['pending','approved','rejected','all'].map(f => (
+          <button key={f} onClick={() => setFilter(f)}
+            style={{ ...th.pill, cursor:'pointer', padding:'7px 14px', fontSize:12, fontWeight:600, textTransform:'capitalize',
+              ...(filter === f ? th.tabActive : {}) }}>
+            {f}{f !== 'all' ? ` (${count(f)})` : ` (${items.length})`}
+          </button>
+        ))}
+      </div>
+
+      {error && <p style={{ color:'#f87171', fontSize:13, marginBottom:12 }}>{error}</p>}
+      {loading && <p style={{ color:th.muted, fontSize:13 }}>Loading applications…</p>}
+      {!loading && shown.length === 0 && <Empty msg={`No ${filter === 'all' ? '' : filter + ' '}applications.`} th={th}/>}
+
+      <div style={{ display:'grid', gap:12 }}>
+        {shown.map(a => (
+          <div key={a.id} style={{ ...th.card, padding:20 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', gap:12, flexWrap:'wrap', alignItems:'center' }}>
+              <div>
+                <p style={{ fontWeight:800, fontSize:15, color:th.txt }}>{a.full_name}</p>
+                <p style={{ fontSize:12, color:th.sub, marginTop:2 }}>
+                  {PATHWAY_LABEL[a.pathway] || a.pathway}
+                  {a.sub_region ? ` · ${a.sub_region}` : ''}{a.region ? ` (${a.region})` : ''}{a.district ? ` · ${a.district}` : ''}
+                </p>
+              </div>
+              <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+                <Badge label={a.status} color={STATUS_CLR[a.status]}/>
+                <span style={{ fontSize:11, color:th.muted }}>{fmtDate(a.created_at)}</span>
+              </div>
+            </div>
+
+            <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginTop:12 }}>
+              {(a.capabilities || []).map(c => <Badge key={c} label={c} color={th.accent}/>)}
+            </div>
+
+            <div style={{ fontSize:13, color:th.sub, marginTop:12, display:'grid', gap:4 }}>
+              {a.phone && <span>Phone: {a.phone}</span>}
+              {a.organisation && <span>Organisation: {a.organisation}</span>}
+              {a.pitchin_ref && <span>PitchIn / registration: {a.pitchin_ref}</span>}
+              {a.details && <span style={{ whiteSpace:'pre-wrap' }}>{a.details}</span>}
+            </div>
+
+            <div style={{ display:'flex', gap:8, marginTop:16, flexWrap:'wrap' }}>
+              <input
+                value={notes[a.id] ?? a.review_note ?? ''}
+                onChange={e => setNotes(n => ({ ...n, [a.id]: e.target.value }))}
+                placeholder="Note to the applicant (optional)"
+                style={{ ...th.input, flex:'1 1 240px', padding:'8px 12px', fontSize:13 }}
+              />
+              <button disabled={busyId === a.id || a.status === 'approved'} onClick={() => review(a.id, 'approved')}
+                style={{ cursor:'pointer', padding:'8px 16px', borderRadius:10, border:'1px solid rgba(34,197,94,0.35)',
+                  background:'rgba(34,197,94,0.12)', color:'#22c55e', fontSize:12, fontWeight:700, opacity: a.status === 'approved' ? 0.4 : 1 }}>
+                Approve
+              </button>
+              <button disabled={busyId === a.id || a.status === 'rejected'} onClick={() => review(a.id, 'rejected')}
+                style={{ cursor:'pointer', padding:'8px 16px', borderRadius:10, border:'1px solid rgba(248,113,113,0.35)',
+                  background:'rgba(248,113,113,0.10)', color:'#f87171', fontSize:12, fontWeight:700, opacity: a.status === 'rejected' ? 0.4 : 1 }}>
+                Decline
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 // ─── MAIN DASHBOARD ───────────────────────────────────────────────────────────
 const FarmDevDashboard = ({ onLogout }) => {
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -1336,6 +1452,7 @@ const FarmDevDashboard = ({ onLogout }) => {
         {tab==='board' && <PublicBoardTab th={th}/>}
         {tab==='messages' && <MessagesTab th={th}/>}
         {tab==='api' && <EraApiDevTab theme={themeKey}/>}
+        {tab==='applications' && <ApplicationsTab th={th}/>}
 
       </div>
 
