@@ -39,6 +39,8 @@ import Investments from './pages/Investments'
 import Messages from './pages/Messages'
 import ICANWallet from './pages/ICANWallet'
 import DevPanel from './pages/DevPanel'
+import Join from './pages/join/Join'
+import JoinRole from './pages/join/JoinRole'
 import { Suspense } from 'react'
 import { CircularProgress, Box } from '@mui/material'
 import PageContainer from './components/layout/PageContainer'
@@ -70,6 +72,8 @@ function App() {
             {/* Public routes */}
             <Route path="/" element={<MainLayout />}>
               <Route index element={<Home />} />
+              <Route path="join" element={<Join />} />
+              <Route path="join/:role" element={<JoinRole />} />
               <Route path="*" element={withPageContainer(NotFound)} />
             </Route>
             

@@ -253,7 +253,7 @@ const ChatWidget = () => {
           <Box sx={{ px: 2, py: 1.5, background: 'linear-gradient(135deg,#2e7d32,#1b5e20)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Box>
               <Typography variant="subtitle2" fontWeight="bold">
-                {channel === 'community' ? 'Community' : 'FARM-AGENT Support'}
+                {channel === 'community' ? 'Community' : 'AgriBone Support'}
               </Typography>
               <Typography variant="caption" sx={{ opacity: 0.85 }}>
                 {channel === 'community' ? 'Public Q&A — everyone can read this' : 'We usually reply within a few minutes'}
@@ -321,7 +321,7 @@ const ChatWidget = () => {
                       }}
                     >
                       <Typography variant="caption" fontWeight="bold">
-                        {r.sender_role === 'dev' ? 'FARM-AGENT Team' : (r.name || 'Website visitor')}
+                        {r.sender_role === 'dev' ? 'AgriBone Team' : (r.name || 'Website visitor')}
                         {r.reward_reason && ' · 🪙'}
                       </Typography>
                       <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{r.message}</Typography>
