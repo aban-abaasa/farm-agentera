@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
   Box, Fab, Paper, Stack, Typography, IconButton, TextField, Button, Badge,
@@ -135,12 +135,35 @@ const ChatWidget = () => {
   }, [hidden, identity?.authId, identity?.isGuest, guestLikeKey]);
 
   const selectedThread = communityThreads.find((t) => t.id === selectedThreadId) || null;
+  // fetchPublicThreads returns newest-first, but the feed pins to the bottom
+  // like every chat — so list oldest-first and the latest lands in view.
+  const communityFeed = useMemo(() => [...communityThreads].reverse(), [communityThreads]);
+
+  // Smart auto-scroll: always jump to the latest message on open/channel/
+  // thread switches (deliberate navigation), but once you've scrolled up to
+  // read older messages, a new one arriving shouldn't yank you back down —
+  // only re-pin to the bottom if you were already near it (tracked by
+  // handleListScroll below, which reflects your position BEFORE the new
+  // message renders).
+  const isNearBottomRef = useRef(true);
+  const handleListScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    isNearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  };
 
   useEffect(() => {
     if (open && scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      isNearBottomRef.current = true;
     }
-  }, [supportMessages, communityThreads, selectedThreadId, open, channel]);
+  }, [open, channel, selectedThreadId]);
+
+  useEffect(() => {
+    if (open && scrollRef.current && isNearBottomRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [supportMessages, communityThreads]);
 
   const markChannelRead = (ch) => {
     if (ch === 'support') {
@@ -289,7 +312,7 @@ const ChatWidget = () => {
             </Button>
           </Stack>
 
-          <Box ref={scrollRef} sx={{ flex: 1, overflowY: 'auto', px: 1.5, py: 1.5, bgcolor: 'action.hover' }}>
+          <Box ref={scrollRef} onScroll={handleListScroll} sx={{ flex: 1, overflowY: 'auto', px: 1.5, py: 1.5, bgcolor: 'action.hover' }}>
             {channel === 'community' ? (
               selectedThread ? (
                 <>
@@ -349,7 +372,7 @@ const ChatWidget = () => {
                   No public questions yet — ask something below.
                 </Typography>
               ) : (
-                communityThreads.map((t) => (
+                communityFeed.map((t) => (
                   <Paper
                     key={t.id}
                     variant="outlined"
