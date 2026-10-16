@@ -3,6 +3,7 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import ChatIcon from '@mui/icons-material/Chat';
 import ForumIcon from '@mui/icons-material/Forum';
 import ActionGrid from '../../../components/account/ActionGrid';
+import ProfileNudge from '../../../components/account/ProfileNudge';
 import UpdatesFeed from '../../../components/account/UpdatesFeed';
 import RoleLayout from '../../../components/account/RoleLayout';
 import { buildFeed } from '../feed';
@@ -16,7 +17,12 @@ const actions = [
 
 const CustomerHome = ({ applications }) => (
   <RoleLayout
-    main={<ActionGrid items={actions} />}
+    main={
+      <>
+        <ProfileNudge />
+        <ActionGrid items={actions} />
+      </>
+    }
     side={<UpdatesFeed title="Getting started" items={buildFeed('customer', applications)} />}
   />
 );

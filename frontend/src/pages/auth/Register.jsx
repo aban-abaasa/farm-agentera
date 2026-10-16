@@ -8,55 +8,37 @@ import {
   Button,
   CircularProgress,
   Container,
-  FormControl,
-  FormControlLabel,
-  FormHelperText,
-  FormLabel,
+  Divider,
   Link,
-  MenuItem,
   Paper,
-  Radio,
-  RadioGroup,
-  Step,
-  StepLabel,
-  Stepper,
   TextField,
   Typography
 } from '@mui/material';
+import GoogleIcon from '@mui/icons-material/Google';
 import { useAuth } from '../../context/AuthContext';
-import { COUNTRY_NAMES } from '../../data/countries';
 import { BrandMark, Wordmark } from '../../components/classic/Brand';
 
-// Uganda's regions for the dropdown
-const ugandaRegions = [
-  'Central Region',
-  'Eastern Region',
-  'Northern Region',
-  'Western Region',
-  'Kampala',
-  'Other'
-];
+const validationSchema = Yup.object({
+  firstName: Yup.string().trim().required('Your first name, please'),
+  lastName: Yup.string().trim().required('Your last name, please'),
+  email: Yup.string().email('That email does not look right').required('We need your email'),
+  password: Yup.string().min(8, 'At least 8 characters').required('Choose a password')
+});
 
-// Farming types for the dropdown
-const farmingTypes = [
-  'Crop Farming',
-  'Livestock Farming',
-  'Mixed Farming',
-  'Plantation',
-  'Aquaculture',
-  'Poultry',
-  'Other'
-];
-
+/**
+ * Sign-up is deliberately short: name, email, password (or Google). Every
+ * new account is a customer. Phone, location and anything about farming,
+ * supplying or specialist work is asked later, from the customer page.
+ */
 const Register = () => {
-  const [activeStep, setActiveStep] = useState(0);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
-  const { register, user, loading } = useAuth();
+  const { register, loginWithGoogle, user, loading } = useAuth();
   const navigate = useNavigate();
-  
+
   // Redirect if user is already logged in
   useEffect(() => {
     if (!loading) {
@@ -67,103 +49,40 @@ const Register = () => {
     }
   }, [user, loading, navigate]);
 
-  const steps = ['Account Information', 'Personal Details', 'Farming Profile'];
-
-  const validationSchemas = [
-    // Step 1: Account Information
-    Yup.object({
-      email: Yup.string()
-        .email('Invalid email address')
-        .required('Email is required'),
-      password: Yup.string()
-        .required('Password is required')
-        .min(8, 'Password must be at least 8 characters'),
-      confirmPassword: Yup.string()
-        .oneOf([Yup.ref('password'), null], 'Passwords must match')
-        .required('Confirm Password is required')
-    }),
-    // Step 2: Personal Details
-    Yup.object({
-      firstName: Yup.string()
-        .required('First name is required')
-        .min(2, 'First name must be at least 2 characters'),
-      lastName: Yup.string()
-        .required('Last name is required')
-        .min(2, 'Last name must be at least 2 characters'),
-      phone: Yup.string()
-        .required('Phone number is required'),
-      country: Yup.string()
-        .required('Country is required'),
-      location: Yup.string()
-        .required('Location is required')
-    }),
-    // Step 3: Farming Profile
-    Yup.object({
-      role: Yup.string()
-        .required('Role is required'),
-      farmingType: Yup.string()
-        .when('role', {
-          is: (role) => role === 'farmer',
-          then: (schema) => schema.required('Farming type is required'),
-          otherwise: (schema) => schema
-        }),
-      bio: Yup.string()
-        .max(300, 'Bio must be 300 characters or less')
-    })
-  ];
-
   const formik = useFormik({
-    initialValues: {
-      email: '',
-      password: '',
-      confirmPassword: '',
-      firstName: '',
-      lastName: '',
-      phone: '',
-      country: '',
-      location: '',
-      role: 'buyer',
-      farmingType: '',
-      farmSize: '',
-      bio: ''
-    },
-    validationSchema: validationSchemas[activeStep],
-          onSubmit: async (values) => {
-      if (activeStep < steps.length - 1) {
-        setActiveStep(activeStep + 1);
-      } else {
-        setError('');
-        setIsSubmitting(true);
-        try {
-          // Destructure confirmPassword out as we don't need to send it to the API
-          const { confirmPassword: _confirmPassword, ...userData } = values;
-          
-          // Map form fields to the expected format for the API
-          const formattedUserData = {
-            ...userData,
-            // Convert farmSize to number if it exists
-            farmSize: userData.farmSize ? parseFloat(userData.farmSize) : null,
-            // Map farmingType to farmer_type for database consistency
-            farmingType: userData.farmingType || null
-          };
-          
-          await register(formattedUserData);
-          setRegistrationSuccess(true);
-          // Navigate to dashboard or show success message
-          setTimeout(() => {
-            navigate('/login');
-          }, 3000);
-        } catch (err) {
-          setError(err.message || 'Registration failed. Please try again.');
-        } finally {
-          setIsSubmitting(false);
-        }
+    initialValues: { firstName: '', lastName: '', email: '', password: '' },
+    validationSchema,
+    onSubmit: async (values) => {
+      setError('');
+      setIsSubmitting(true);
+      try {
+        await register({
+          email: values.email.trim(),
+          password: values.password,
+          firstName: values.firstName.trim(),
+          lastName: values.lastName.trim(),
+          role: 'buyer' // every account starts as a customer
+        });
+        setRegistrationSuccess(true);
+        setTimeout(() => navigate('/login'), 3000);
+      } catch (err) {
+        setError(err.message || 'Registration failed. Please try again.');
+      } finally {
+        setIsSubmitting(false);
       }
     }
   });
 
-  const handleBack = () => {
-    setActiveStep(activeStep - 1);
+  const handleGoogleSignUp = async () => {
+    setError('');
+    setIsGoogleSubmitting(true);
+    try {
+      await loginWithGoogle();
+      // The redirect is handled by the OAuth provider
+    } catch (err) {
+      setError(err.message || 'Could not continue with Google. Please try again.');
+      setIsGoogleSubmitting(false);
+    }
   };
 
   // Show loading indicator while checking authentication
@@ -175,278 +94,74 @@ const Register = () => {
     );
   }
 
+  const field = (name) => ({
+    name,
+    value: formik.values[name],
+    onChange: formik.handleChange,
+    onBlur: formik.handleBlur,
+    error: formik.touched[name] && Boolean(formik.errors[name]),
+    helperText: formik.touched[name] && formik.errors[name]
+  });
+
   return (
-    <Container component="main" maxWidth="sm">
+    <Container component="main" maxWidth="xs">
       <Box component={RouterLink} to="/" aria-label="AgriBone home" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5, textDecoration: 'none', color: 'text.primary', mt: 6, mb: -4 }}>
         <BrandMark size={40} />
         <Wordmark size="1.4rem" />
       </Box>
-      <Paper elevation={3} sx={{ p: 4, my: 8, borderRadius: 2 }}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <Typography component="h1" variant="h5" fontWeight="bold" gutterBottom>
-            Create Your Account
-          </Typography>
-          <Typography variant="body2" color="text.secondary" mb={4} textAlign="center">
-            Join our community of Ugandan farmers and unlock new opportunities
-          </Typography>
+      <Paper elevation={3} sx={{ p: { xs: 3, sm: 4 }, my: 8, borderRadius: 2 }}>
+        <Typography component="h1" variant="h5" fontWeight="bold" textAlign="center" gutterBottom>
+          Create your account
+        </Typography>
+        <Typography variant="body2" color="text.secondary" mb={3} textAlign="center">
+          It takes a minute. You can add the rest later.
+        </Typography>
 
-          <Stepper activeStep={activeStep} alternativeLabel sx={{ width: '100%', mb: 4 }}>
-            {steps.map((label) => (
-              <Step key={label}>
-                <StepLabel>{label}</StepLabel>
-              </Step>
-            ))}
-          </Stepper>
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-          {error && (
-            <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
-              {error}
-            </Alert>
-          )}
+        {registrationSuccess ? (
+          <Alert severity="success">
+            You&apos;re in! Please check your email to confirm your account. Taking you to sign in…
+          </Alert>
+        ) : (
+          <>
+            <Button
+              fullWidth
+              variant="outlined"
+              size="large"
+              startIcon={<GoogleIcon />}
+              onClick={handleGoogleSignUp}
+              disabled={isGoogleSubmitting || isSubmitting}
+            >
+              {isGoogleSubmitting ? 'Opening Google…' : 'Continue with Google'}
+            </Button>
 
-          {registrationSuccess ? (
-            <Alert severity="success" sx={{ width: '100%', mb: 2 }}>
-              Registration successful! Please check your email to verify your account.
-              You will be redirected to the login page shortly.
-            </Alert>
-          ) : (
-            <Box component="form" onSubmit={formik.handleSubmit} sx={{ mt: 1, width: '100%' }}>
-              {activeStep === 0 && (
-                // Step 1: Account Information
-                (<>
-                  <TextField
-                    margin="normal"
-                    fullWidth
-                    id="email"
-                    label="Email Address"
-                    name="email"
-                    autoComplete="email"
-                    autoFocus
-                    value={formik.values.email}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    error={formik.touched.email && Boolean(formik.errors.email)}
-                    helperText={formik.touched.email && formik.errors.email}
-                  />
-                  <TextField
-                    margin="normal"
-                    fullWidth
-                    name="password"
-                    label="Password"
-                    type="password"
-                    id="password"
-                    autoComplete="new-password"
-                    value={formik.values.password}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    error={formik.touched.password && Boolean(formik.errors.password)}
-                    helperText={formik.touched.password && formik.errors.password}
-                  />
-                  <TextField
-                    margin="normal"
-                    fullWidth
-                    name="confirmPassword"
-                    label="Confirm Password"
-                    type="password"
-                    id="confirmPassword"
-                    value={formik.values.confirmPassword}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    error={formik.touched.confirmPassword && Boolean(formik.errors.confirmPassword)}
-                    helperText={formik.touched.confirmPassword && formik.errors.confirmPassword}
-                  />
-                </>)
-              )}
+            <Divider sx={{ my: 2.5 }}>
+              <Typography variant="caption" color="text.secondary">or with email</Typography>
+            </Divider>
 
-              {activeStep === 1 && (
-                // Step 2: Personal Details
-                (<>
-                  <TextField
-                    margin="normal"
-                    fullWidth
-                    id="firstName"
-                    label="First Name"
-                    name="firstName"
-                    autoComplete="given-name"
-                    value={formik.values.firstName}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    error={formik.touched.firstName && Boolean(formik.errors.firstName)}
-                    helperText={formik.touched.firstName && formik.errors.firstName}
-                  />
-                  <TextField
-                    margin="normal"
-                    fullWidth
-                    id="lastName"
-                    label="Last Name"
-                    name="lastName"
-                    autoComplete="family-name"
-                    value={formik.values.lastName}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    error={formik.touched.lastName && Boolean(formik.errors.lastName)}
-                    helperText={formik.touched.lastName && formik.errors.lastName}
-                  />
-                  <TextField
-                    margin="normal"
-                    fullWidth
-                    id="phone"
-                    label="Phone Number"
-                    name="phone"
-                    autoComplete="tel"
-                    value={formik.values.phone}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    error={formik.touched.phone && Boolean(formik.errors.phone)}
-                    helperText={formik.touched.phone && formik.errors.phone}
-                  />
-                  <TextField
-                    margin="normal"
-                    fullWidth
-                    id="country"
-                    select
-                    label="Country"
-                    name="country"
-                    value={formik.values.country}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    error={formik.touched.country && Boolean(formik.errors.country)}
-                    helperText={formik.touched.country && formik.errors.country}
-                  >
-                    {COUNTRY_NAMES.map((name) => (
-                      <MenuItem key={name} value={name}>
-                        {name}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                  <TextField
-                    margin="normal"
-                    fullWidth
-                    id="location"
-                    select
-                    label="Region"
-                    name="location"
-                    value={formik.values.location}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    error={formik.touched.location && Boolean(formik.errors.location)}
-                    helperText={formik.touched.location && formik.errors.location}
-                  >
-                    {ugandaRegions.map((region) => (
-                      <MenuItem key={region} value={region}>
-                        {region}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                </>)
-              )}
-
-              {activeStep === 2 && (
-                // Step 3: Farming Profile
-                (<>
-                  <FormControl component="fieldset" margin="normal">
-                    <FormLabel component="legend">I am a:</FormLabel>
-                    <RadioGroup
-                      row
-                      name="role"
-                      value={formik.values.role}
-                      onChange={formik.handleChange}
-                    >
-                      <FormControlLabel value="farmer" control={<Radio />} label="Farmer" />
-                      <FormControlLabel value="buyer" control={<Radio />} label="Customer" />
-                      <FormControlLabel value="supplier" control={<Radio />} label="Supplier" />
-                      <FormControlLabel value="other" control={<Radio />} label="Other" />
-                    </RadioGroup>
-                  </FormControl>
-                  {formik.values.role === 'farmer' && (
-                    <>
-                      <TextField
-                        margin="normal"
-                        fullWidth
-                        id="farmingType"
-                        select
-                        label="Farming Type"
-                        name="farmingType"
-                        value={formik.values.farmingType}
-                        onChange={formik.handleChange}
-                        onBlur={formik.handleBlur}
-                        error={formik.touched.farmingType && Boolean(formik.errors.farmingType)}
-                        helperText={formik.touched.farmingType && formik.errors.farmingType}
-                      >
-                        {farmingTypes.map((type) => (
-                          <MenuItem key={type} value={type}>
-                            {type}
-                          </MenuItem>
-                        ))}
-                      </TextField>
-
-                      <TextField
-                        margin="normal"
-                        fullWidth
-                        id="farmSize"
-                        label="Farm Size (acres)"
-                        name="farmSize"
-                        type="number"
-                        value={formik.values.farmSize}
-                        onChange={formik.handleChange}
-                        onBlur={formik.handleBlur}
-                      />
-                    </>
-                  )}
-                  <TextField
-                    margin="normal"
-                    fullWidth
-                    id="bio"
-                    label="Short Bio"
-                    name="bio"
-                    multiline
-                    rows={4}
-                    value={formik.values.bio}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    error={formik.touched.bio && Boolean(formik.errors.bio)}
-                    helperText={
-                      (formik.touched.bio && formik.errors.bio) || 
-                      `${formik.values.bio.length}/300 characters`
-                    }
-                  />
-                </>)
-              )}
-
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
-                <Button
-                  onClick={handleBack}
-                  disabled={activeStep === 0}
-                  sx={{ mr: 1 }}
-                >
-                  Back
-                </Button>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disabled={isSubmitting}
-                >
-                  {activeStep === steps.length - 1
-                    ? (isSubmitting ? 'Creating Account...' : 'Create Account')
-                    : 'Next'}
-                </Button>
+            <Box component="form" onSubmit={formik.handleSubmit} noValidate>
+              <Box sx={{ display: 'flex', gap: 1.5 }}>
+                <TextField margin="dense" fullWidth required autoComplete="given-name" label="First name" {...field('firstName')} />
+                <TextField margin="dense" fullWidth required autoComplete="family-name" label="Last name" {...field('lastName')} />
               </Box>
+              <TextField margin="dense" fullWidth required type="email" autoComplete="email" label="Email" {...field('email')} />
+              <TextField margin="dense" fullWidth required type="password" autoComplete="new-password" label="Password" {...field('password')} />
 
-              {activeStep === 0 && (
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-                  <Box>
-                    <Link component={RouterLink} to="/login" variant="body2">
-                      Already have an account? Sign in
-                    </Link>
-                  </Box>
-                </Box>
-              )}
+              <Button type="submit" fullWidth variant="contained" size="large" disabled={isSubmitting || isGoogleSubmitting} sx={{ mt: 2.5 }}>
+                {isSubmitting ? 'Creating account…' : 'Create account'}
+              </Button>
             </Box>
-          )}
-        </Box>
+
+            <Typography variant="body2" textAlign="center" sx={{ mt: 2.5 }}>
+              Already have an account?{' '}
+              <Link component={RouterLink} to="/login">Sign in</Link>
+            </Typography>
+          </>
+        )}
       </Paper>
     </Container>
   );
 };
 
-export default Register; 
+export default Register;
