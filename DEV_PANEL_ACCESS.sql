@@ -191,7 +191,7 @@ GRANT EXECUTE ON FUNCTION public.farm_dev_system_totals(TEXT) TO anon, authentic
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 9. GRANT ICAN BONUS (with 10% tithe)
+-- 9. GRANT ICAN BONUS (credited in full)
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION public.farm_dev_grant_bonus(
   dev_token TEXT, target_user_id UUID, bonus_amount NUMERIC
@@ -201,7 +201,7 @@ SECURITY DEFINER SET search_path = public LANGUAGE plpgsql AS $$
 DECLARE tithe NUMERIC; net NUMERIC;
 BEGIN
   IF dev_token != 'dev_Farm_Ag3nt_KV25' THEN RAISE EXCEPTION 'unauthorized'; END IF;
-  tithe := ROUND(bonus_amount * 0.1, 6);
+  tithe := 0;  -- the wallet takes no tithe
   net   := bonus_amount - tithe;
   INSERT INTO public.ican_user_wallets (user_id, ican_balance, total_earned, total_tithe_paid)
   VALUES (target_user_id, net, bonus_amount, tithe)

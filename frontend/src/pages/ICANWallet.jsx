@@ -32,7 +32,7 @@ import { parseIcanPayCode, payIcanRequest } from '../services/icanPaymentRequest
 const TX_LABELS = {
   earn: 'Earned', cashback: 'Cashback', purchase: 'Purchase',
   transfer_in: 'Received', transfer_out: 'Sent',
-  tithe: 'Tithe (10%)', sale: 'Sale', refund: 'Refund',
+  sale: 'Sale', refund: 'Refund',
 };
 
 const APP_LABELS = {
@@ -337,7 +337,7 @@ function ReceiveDialog({ open, onClose, address }) {
 export default function ICANWallet() {
   const theme = useTheme();
   const [userId, setUserId] = useState(null);
-  const [balance, setBalance] = useState({ ican: 0, ugx: 0, address: null, totalEarned: 0, totalTithe: 0 });
+  const [balance, setBalance] = useState({ ican: 0, ugx: 0, address: null, totalEarned: 0 });
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -417,7 +417,6 @@ export default function ICANWallet() {
     (tx) => true,
     (tx) => tx.direction === 'in',
     (tx) => tx.direction === 'out',
-    (tx) => tx.transaction_type === 'tithe',
   ];
   const filteredTx = transactions.filter(tabFilters[tabValue]);
 
@@ -462,10 +461,9 @@ export default function ICANWallet() {
       <Grid container spacing={2} mb={3}>
         {[
           { label: 'Total Earned', value: `${formatICAN(balance.totalEarned)} ICAN` },
-          { label: 'Tithe Paid', value: `${formatICAN(balance.totalTithe)} ICAN` },
           { label: '1 ICAN', value: `UGX ${ICAN_TO_UGX.toLocaleString()}` },
         ].map(s => (
-          <Grid item xs={4} key={s.label}>
+          <Grid item xs={6} key={s.label}>
             <Paper elevation={0} sx={{ p: 2, borderRadius: 3, border: `1px solid ${theme.palette.divider}`, textAlign: 'center' }}>
               <Typography variant="caption" color="text.secondary" display="block">{s.label}</Typography>
               <Typography fontWeight={700} fontSize={13}>{s.value}</Typography>
@@ -483,7 +481,6 @@ export default function ICANWallet() {
               'Sell produce on the marketplace — earn ICAN equivalent to your UGX sale amount',
               'List land for lease — earn ICAN when a lease is confirmed',
               'Offer agricultural services — earn ICAN per completed job',
-              '10% tithe is auto-deducted from all earnings',
             ].map(item => (
               <Box component="li" key={item} sx={{ mb: 0.5 }}>
                 <Typography variant="body2" color="text.secondary">{item}</Typography>
@@ -496,7 +493,7 @@ export default function ICANWallet() {
       {/* Transactions */}
       <Typography fontWeight={700} mb={2}>Transaction History</Typography>
       <Tabs value={tabValue} onChange={(_, v) => setTabValue(v)} sx={{ mb: 2 }}>
-        {['All', 'Received', 'Sent', 'Tithe'].map(label => (
+        {['All', 'Received', 'Sent'].map(label => (
           <Tab key={label} label={label} />
         ))}
       </Tabs>
@@ -543,7 +540,7 @@ export default function ICANWallet() {
                     </TableCell>
                     <TableCell align="right">
                       <Typography fontWeight={700} fontSize={13}
-                        color={isIn ? 'success.main' : tx.transaction_type === 'tithe' ? 'warning.main' : 'error.main'}>
+                        color={isIn ? 'success.main' : 'error.main'}>
                         {isIn ? '+' : '-'}{formatICAN(tx.ican_amount)} ICAN
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
