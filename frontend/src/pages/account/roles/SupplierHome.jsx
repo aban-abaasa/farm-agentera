@@ -8,6 +8,7 @@ import BusinessProfileCard from '../../../components/account/BusinessProfileCard
 import UpdatesFeed from '../../../components/account/UpdatesFeed';
 import RoleLayout from '../../../components/account/RoleLayout';
 import { DIGITAL_CITY_URL } from '../../../content/agribone';
+import { useRoles } from '../../../context/RoleContext';
 import { buildFeed } from '../feed';
 
 const actions = [
@@ -17,8 +18,9 @@ const actions = [
   { icon: <ChatIcon fontSize="small" />, title: 'Messages', body: 'Talk to farmers who want to order.', to: '/messages' },
 ];
 
-const SupplierHome = ({ applications, applicationByPathway }) => {
-  const application = applicationByPathway.supplier;
+const SupplierHome = ({ applications }) => {
+  const { companyForRole } = useRoles();
+  const company = companyForRole('supplier');
   return (
     <RoleLayout
       main={
@@ -26,15 +28,11 @@ const SupplierHome = ({ applications, applicationByPathway }) => {
           <Alert severity="info" icon={<LocalShippingIcon fontSize="inherit" />}>
             Your supplier account is connected to Digital City Era, where your orders, stock and deliveries are managed.
           </Alert>
-          <BusinessProfileCard
-            roleLabel="Supplier"
-            businessName={application?.organisation}
-            pitchinRef={application?.pitchin_ref}
-          />
+          <BusinessProfileCard role="supplier" />
           <ActionGrid items={actions} />
         </>
       }
-      side={<UpdatesFeed title="Supplier feed" items={buildFeed('supplier', applications)} />}
+      side={<UpdatesFeed title="Supplier feed" items={buildFeed('supplier', applications, company)} />}
     />
   );
 };

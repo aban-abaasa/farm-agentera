@@ -6,6 +6,7 @@ import ActionGrid from '../../../components/account/ActionGrid';
 import BusinessProfileCard from '../../../components/account/BusinessProfileCard';
 import UpdatesFeed from '../../../components/account/UpdatesFeed';
 import RoleLayout from '../../../components/account/RoleLayout';
+import { useRoles } from '../../../context/RoleContext';
 import { buildFeed } from '../feed';
 import { fonts } from '../../../theme';
 
@@ -33,16 +34,18 @@ const CoverageCard = ({ application }) => {
 
 const SpecialistHome = ({ applications, applicationByPathway }) => {
   const application = applicationByPathway.support;
+  const { companyForRole } = useRoles();
+  const company = companyForRole('specialist');
   return (
     <RoleLayout
       main={
         <>
           <CoverageCard application={application} />
-          <BusinessProfileCard roleLabel="Specialist" pitchinRef={application?.pitchin_ref} />
+          <BusinessProfileCard role="specialist" />
           <ActionGrid items={actions} />
         </>
       }
-      side={<UpdatesFeed title="Specialist feed" items={buildFeed('specialist', applications)} />}
+      side={<UpdatesFeed title="Specialist feed" items={buildFeed('specialist', applications, company)} />}
     />
   );
 };

@@ -8,6 +8,7 @@ import ActionGrid from '../../../components/account/ActionGrid';
 import BusinessProfileCard from '../../../components/account/BusinessProfileCard';
 import UpdatesFeed from '../../../components/account/UpdatesFeed';
 import RoleLayout from '../../../components/account/RoleLayout';
+import { useRoles } from '../../../context/RoleContext';
 import { buildFeed } from '../feed';
 
 const actions = [
@@ -19,16 +20,20 @@ const actions = [
   { icon: <PinDropIcon fontSize="small" />, title: 'Find a specialist', body: 'Get verified, or find a manager or partner.', to: '/support-team' },
 ];
 
-const FarmerHome = ({ applications }) => (
+const FarmerHome = ({ applications }) => {
+  const { companyForRole } = useRoles();
+  const company = companyForRole('farmer');
+  return (
   <RoleLayout
     main={
       <>
-        <BusinessProfileCard roleLabel="Farm" />
+        <BusinessProfileCard role="farmer" />
         <ActionGrid items={actions} />
       </>
     }
-    side={<UpdatesFeed title="Farm feed" items={buildFeed('farmer', applications)} />}
+    side={<UpdatesFeed title="Farm feed" items={buildFeed('farmer', applications, company)} />}
   />
-);
+  );
+};
 
 export default FarmerHome;

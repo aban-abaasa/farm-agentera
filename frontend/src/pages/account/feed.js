@@ -1,4 +1,4 @@
-import { DIGITAL_CITY_URL, PITCHIN_URL } from '../../content/agribone';
+import { CMMS_URL, DIGITAL_CITY_URL, PITCHIN_URL } from '../../content/agribone';
 
 /** Which pathway application belongs to which account role. */
 const ROLE_PATHWAY = { supplier: 'supplier', specialist: 'support' };
@@ -29,7 +29,7 @@ const NEXT_STEPS = {
  * Build the feed for one role: what really happened to the person's
  * application (newest first), then the next steps for that role.
  */
-export const buildFeed = (role, applications) => {
+export const buildFeed = (role, applications, company = null) => {
   const pathway = ROLE_PATHWAY[role];
   const events = [];
 
@@ -50,5 +50,25 @@ export const buildFeed = (role, applications) => {
     });
 
   events.sort((x, y) => new Date(y.when) - new Date(x.when));
-  return [...events, ...(NEXT_STEPS[role] || []).map((s) => ({ ...s, tone: 'todo' }))];
+
+  let steps = NEXT_STEPS[role] || [];
+  if (company) {
+    // They already have a company in PitchIn / CMMS: drop "create it" and
+    // point at what is actually left to do for that company.
+    steps = steps.filter((s) => s.id !== 'todo-pitchin');
+    if (company.verification !== 'verified') {
+      steps = [
+        { id: 'todo-verify-company', title: 'Get your company verified', body: `${company.name} is not verified yet.`, href: PITCHIN_URL, cta: 'Open PitchIn' },
+        ...steps,
+      ];
+    }
+    if (!company.cmmsId && role !== 'customer') {
+      steps = [
+        ...steps,
+        { id: 'todo-cmms', title: 'Set up your company in CMMS', body: 'Track inventory, assets and orders.', href: CMMS_URL, cta: 'Open CMMS' },
+      ];
+    }
+  }
+
+  return [...events, ...steps.map((s) => ({ ...s, tone: 'todo' }))];
 };
