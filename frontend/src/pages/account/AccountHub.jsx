@@ -38,19 +38,30 @@ const AccountHub = () => {
   const missing = roleOrder.filter((r) => !roles.includes(r));
   const becoming = activeRole.startsWith(BECOME) ? activeRole.slice(BECOME.length) : null;
   const Home = HOMES[activeRole] || CustomerHome;
+  // With more than one role the role strip in the header does the switching; this page then only
+  // keeps the tabs for roles the person can still add.
+  const roleBarShown = roles.length > 1;
+  const heldRole = roles.includes(activeRole) ? activeRole : 'customer';
 
   return (
     <Box>
-      <Typography className="kicker" sx={{ color: 'warning.main' }}>My account</Typography>
+      <Typography className="kicker" sx={{ color: 'warning.main' }}>
+        {becoming ? 'Add a role' : roleBarShown ? `${accountRoles[heldRole].label} account` : 'My account'}
+      </Typography>
       <Typography variant="h3" component="h1" sx={{ fontFamily: fonts.display, mb: 0.5 }}>
         {name ? `Welcome, ${name}` : 'Welcome'}
       </Typography>
       <Typography color="text.secondary" sx={{ mb: 3 }}>
-        Everyone starts as a customer. Open a tab to switch account, or to add a farm, supplier or specialist account.
+        {becoming
+          ? `Add a farm, supplier or specialist role to your account.${roleBarShown ? ' Your other roles stay in the bar at the top.' : ''}`
+          : roleBarShown
+            ? accountRoles[heldRole].blurb
+            : 'Everyone starts as a customer. Open a tab to switch account, or to add a farm, supplier or specialist account.'}
       </Typography>
 
+      {(!roleBarShown || missing.length > 0) && (
       <Tabs
-        value={activeRole}
+        value={roleBarShown ? (becoming ? activeRole : false) : activeRole}
         onChange={(_, value) => setActiveRole(value)}
         variant="scrollable"
         scrollButtons="auto"
@@ -58,13 +69,14 @@ const AccountHub = () => {
         aria-label="Account roles"
         sx={{ mb: 3, borderBottom: '1px solid', borderColor: 'divider' }}
       >
-        {roles.map((role) => (
+        {!roleBarShown && roles.map((role) => (
           <Tab key={role} value={role} label={accountRoles[role].label} sx={{ fontWeight: 700 }} />
         ))}
         {missing.map((role) => (
           <Tab key={`${BECOME}${role}`} value={`${BECOME}${role}`} label={becomeLabel(role, applicationByPathway)} sx={{ fontWeight: 500, fontStyle: 'italic' }} />
         ))}
       </Tabs>
+      )}
 
       {loading && roles.length <= 1 && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}><CircularProgress size={22} /></Box>

@@ -15,6 +15,7 @@ import { accountRoles, pathwayToRole, roleOrder } from '../content/agribone';
 const RoleContext = createContext(null);
 
 const companyKey = (role) => `agribone_company_${role}`;
+const activeRoleKey = (userId) => `agribone_active_role_${userId}`;
 
 const readStored = (key) => {
   try {
@@ -100,7 +101,24 @@ export const RoleProvider = ({ children }) => {
     return 'customer';
   }, [roles, activeRole]);
 
-  const setActiveRole = useCallback((role) => setActiveRoleState(role), []);
+  // Remember which role the person was using, so a reload or a later visit opens the same page.
+  useEffect(() => {
+    if (!userId) {
+      setActiveRoleState('customer');
+      return;
+    }
+    const saved = readStored(activeRoleKey(userId));
+    if (saved) setActiveRoleState(saved);
+  }, [userId]);
+
+  const setActiveRole = useCallback(
+    (role) => {
+      setActiveRoleState(role);
+      // Only a held role is remembered; "become:<role>" is just a tab the person is looking at.
+      if (userId && role && !role.startsWith('become:')) writeStored(activeRoleKey(userId), role);
+    },
+    [userId],
+  );
 
   /**
    * The company a role runs as, read from PitchIn / CMMS. Picked by, in order:

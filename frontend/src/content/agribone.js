@@ -20,10 +20,25 @@ export const DIGITAL_CITY_URL = import.meta.env.VITE_DIGITAL_CITY_URL || 'https:
  * `pathway` is the /join slug that leads to the role.
  */
 export const accountRoles = {
-  customer: { key: 'customer', label: 'Customer', pathway: 'customer', business: false },
-  farmer: { key: 'farmer', label: 'Farmer', pathway: 'farmer', business: true },
-  supplier: { key: 'supplier', label: 'Supplier', pathway: 'supplier', business: true },
-  specialist: { key: 'specialist', label: 'Farm Specialist', pathway: 'support', business: true },
+  customer: { key: 'customer', label: 'Customer', pathway: 'customer', business: false, blurb: 'Buy at the source: order from farmers, stores and suppliers.' },
+  farmer: { key: 'farmer', label: 'Farmer', pathway: 'farmer', business: true, blurb: 'Run your farm: livestock, inputs, orders and sales.' },
+  supplier: { key: 'supplier', label: 'Supplier', pathway: 'supplier', business: true, blurb: 'Supply the farms: your products, orders and customers.' },
+  specialist: { key: 'specialist', label: 'Farm Specialist', pathway: 'support', business: true, blurb: 'Be AgriBone on the ground: serve the farmers around you.' },
+};
+
+/** Where choosing a role takes the person: that role's own page. */
+export const ROLE_HOME_PATH = '/account';
+
+/**
+ * The main navigation each role sees once signed in (paths, in order). Choosing a role
+ * changes the page and this navigation together, so a farmer sees farm tools and a
+ * customer sees the market.
+ */
+export const roleNav = {
+  customer: ['/join', '/marketplace', '/community', '/support-team', '/ican-wallet', '/account'],
+  farmer: ['/marketplace', '/farm-management', '/dashboard', '/community', '/support-team', '/ican-wallet', '/account'],
+  supplier: ['/marketplace', '/community', '/support-team', '/ican-wallet', '/account'],
+  specialist: ['/support-team', '/marketplace', '/community', '/ican-wallet', '/account'],
 };
 
 /** Order used for tabs and for choosing the default landing role. */

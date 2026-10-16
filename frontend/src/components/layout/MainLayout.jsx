@@ -47,6 +47,9 @@ import ThemeToggle from '../ThemeToggle';
 import { BrandMark, Wordmark } from '../classic/Brand';
 import { DoubleRule } from '../classic/Ornament';
 import { useAuth } from '../../context/AuthContext';
+import { useRoles } from '../../context/RoleContext';
+import { roleNav } from '../../content/agribone';
+import RoleBar from './RoleBar';
 import { fonts } from '../../theme';
 
 const FOREST = '#1f4d36';
@@ -63,6 +66,7 @@ const MainLayout = () => {
   const [moreAnchorEl, setMoreAnchorEl] = useState(null);
   const { t } = useTranslation();
   const { user, logout } = useAuth();
+  const { roles, activeRole } = useRoles();
   const navigate = useNavigate();
 
   const isAuthenticated = !!user;
@@ -94,7 +98,12 @@ const MainLayout = () => {
     { text: t('header.weather'), path: '/weather', icon: <WeatherIcon /> },
   ];
 
-  const visibleNav = navigationItems.filter((item) => !item.requireAuth || isAuthenticated);
+  // Signed in: the navigation that belongs to the role being used (customer, farmer, supplier or
+  // specialist). Signed out: the public navigation.
+  const heldRole = roles.includes(activeRole) ? activeRole : 'customer';
+  const visibleNav = isAuthenticated
+    ? (roleNav[heldRole] || roleNav.customer).map((path) => navigationItems.find((item) => item.path === path)).filter(Boolean)
+    : navigationItems.filter((item) => !item.requireAuth);
 
   const brandLink = (
     <Box
@@ -297,6 +306,7 @@ const MainLayout = () => {
             )}
           </Toolbar>
         </Container>
+        <RoleBar />
       </AppBar>
 
       {/* Menus */}
