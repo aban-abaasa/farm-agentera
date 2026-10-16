@@ -65,7 +65,7 @@ const CompleteProfile = () => {
       if (!user) {
         navigate('/login', { replace: true });
       } else if (profileStatus.isComplete) {
-        navigate('/dashboard', { replace: true });
+        navigate('/account', { replace: true });
       }
     }
   }, [user, loading, profileStatus, navigate]);
@@ -144,7 +144,7 @@ const CompleteProfile = () => {
           
           // Navigate to dashboard after short delay
           setTimeout(() => {
-            navigate('/dashboard');
+            navigate('/account');
           }, 2000);
         } catch (err) {
           setError(err.message || 'Failed to update profile. Please try again.');

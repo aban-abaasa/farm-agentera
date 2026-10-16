@@ -20,7 +20,7 @@ const AuthCallback = () => {
         navigate('/complete-profile');
       } else {
         // If everything is good, redirect to dashboard
-        navigate('/dashboard');
+        navigate('/account');
       }
     }
   }, [user, loading, profileStatus, navigate]);

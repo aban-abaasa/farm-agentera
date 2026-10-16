@@ -21,7 +21,7 @@ export async function signUp(email, password, userData = {}) {
           phone: userData.phone || '',
           country: userData.country || '',
           location: userData.location || '',
-          role: userData.role || 'user',
+          role: userData.role || 'buyer',
           farmer_type: userData.farmingType || '',
           farm_size: userData.farmSize || null,
           bio: userData.bio || ''
@@ -44,7 +44,7 @@ export async function signUp(email, password, userData = {}) {
           phone_number: userData.phone || null,
           country: userData.country || null,
           location: userData.location || null,
-          role: userData.role || 'user',
+          role: userData.role || 'buyer',
           farmer_type: userData.farmingType || null,
           farm_size: userData.farmSize ? parseFloat(userData.farmSize) : null,
           bio: userData.bio || null,
@@ -474,45 +474,16 @@ export async function isProfileComplete(userId) {
       .select('*')
       .eq('id', userId)
       .maybeSingle();
-    
+
     if (error) throw error;
 
+    // Complete as soon as there is a name. Phone, location and farm details
+    // are asked for later, on the customer page, and never block sign-in.
     const firstName = data?.first_name || data?.firstname || data?.firstName || data?.given_name || '';
     const lastName = data?.last_name || data?.lastname || data?.lastName || data?.family_name || '';
     const fullName = data?.full_name || data?.name || '';
-    const hasName = Boolean(firstName && lastName) || Boolean(fullName);
-    const phone = data?.phone_number || data?.phone || data?.phoneNumber || '';
-    const location = data?.location || data?.address || '';
-    const role = (data?.role || data?.user_role || '').toString().trim().toLowerCase();
-    const farmingType = data?.farmer_type || data?.farm_type || data?.farming_type || data?.farmType || '';
-    const farmSize = data?.farm_size || data?.farm_area || data?.farmSize || '';
-    const farmLocation = data?.farm_location || data?.farmLocation || '';
-    const profileColumns = new Set(Object.keys(data || {}));
-    const hasFarmColumnsInProfile = [
-      'farmer_type',
-      'farm_type',
-      'farming_type',
-      'farm_size',
-      'farm_area',
-      'farm_location'
-    ].some((column) => profileColumns.has(column));
+    const isComplete = Boolean(firstName || lastName || fullName);
 
-    const hasLocationColumns = profileColumns.has('location') || profileColumns.has('address');
-    const hasRoleColumns = profileColumns.has('role') || profileColumns.has('user_role') || profileColumns.has('account_role');
-    const hasRole = Boolean(role);
-    const requiresFarmProfile = role === 'farmer';
-    const hasFarmProfile = Boolean(farmingType || farmSize || farmLocation);
-    const passesFarmerRequirement = !requiresFarmProfile || !hasFarmColumnsInProfile || hasFarmProfile;
-    
-    // Enforce completion only for fields present in the deployed schema.
-    const isComplete = Boolean(
-      hasName &&
-      phone &&
-      (!hasLocationColumns || location) &&
-      (!hasRoleColumns || hasRole) &&
-      passesFarmerRequirement
-    );
-    
     return { isComplete, data, error: null };
   } catch (error) {
     console.error('Error checking profile completion:', error);

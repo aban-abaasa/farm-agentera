@@ -84,7 +84,8 @@ const MainLayout = () => {
     { text: t('header.community'), path: '/community', icon: <CommunityIcon /> },
     { text: t('header.supportTeam', 'On-Ground Team'), path: '/support-team', icon: <SupportIcon /> },
     { text: 'ICAN Wallet', path: '/ican-wallet', icon: <PaidIcon />, requireAuth: true },
-    { text: 'Dashboard', path: '/dashboard', icon: <DashboardIcon />, requireAuth: true },
+    { text: 'My Account', path: '/account', icon: <DashboardIcon />, requireAuth: true },
+    { text: 'Farm Dashboard', path: '/dashboard', icon: <DashboardIcon />, requireAuth: true },
   ];
 
   // Lives under "More" on desktop.

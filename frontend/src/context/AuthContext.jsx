@@ -26,44 +26,15 @@ const STORAGE_KEYS = {
   REMEMBER_ME: 'farm_agent_remember_me'
 };
 
+// A profile is "complete" as soon as it has a name. Phone, location and
+// farm details are collected later, on the customer page, never at the gate.
 const evaluateProfileCompletion = (profile) => {
   if (!profile) return false;
 
   const firstName = profile.first_name || profile.firstname || profile.firstName || profile.given_name || '';
   const lastName = profile.last_name || profile.lastname || profile.lastName || profile.family_name || '';
   const fullName = profile.full_name || profile.name || '';
-  const hasName = Boolean((firstName && lastName) || fullName);
-
-  const phone = profile.phone_number || profile.phone || profile.phoneNumber || '';
-  const location = profile.location || profile.address || '';
-  const role = (profile.role || profile.user_role || '').toString().trim().toLowerCase();
-  const hasRole = Boolean(role);
-
-  const farmingType = profile.farmer_type || profile.farm_type || profile.farming_type || profile.farmType || '';
-  const farmSize = profile.farm_size || profile.farm_area || profile.farmSize || '';
-  const farmLocation = profile.farm_location || profile.farmLocation || '';
-  const profileColumns = new Set(Object.keys(profile || {}));
-  const hasLocationColumns = profileColumns.has('location') || profileColumns.has('address');
-  const hasRoleColumns = profileColumns.has('role') || profileColumns.has('user_role') || profileColumns.has('account_role');
-  const hasFarmColumnsInProfile = [
-    'farmer_type',
-    'farm_type',
-    'farming_type',
-    'farm_size',
-    'farm_area',
-    'farm_location'
-  ].some((column) => profileColumns.has(column));
-  const requiresFarmProfile = role === 'farmer';
-  const hasFarmProfile = Boolean(farmingType || farmSize || farmLocation);
-  const passesFarmerRequirement = !requiresFarmProfile || !hasFarmColumnsInProfile || hasFarmProfile;
-
-  return Boolean(
-    hasName &&
-    phone &&
-    (!hasLocationColumns || location) &&
-    (!hasRoleColumns || hasRole) &&
-    passesFarmerRequirement
-  );
+  return Boolean(firstName || lastName || fullName);
 };
 
 // Session check interval (30 minutes - increased from 5 minutes)

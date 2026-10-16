@@ -9,6 +9,28 @@
 
 export const CMMS_URL = import.meta.env.VITE_ICANERA_CMMS_URL || 'https://icanera.space/#cmms';
 export const PITCHIN_URL = import.meta.env.VITE_PITCHIN_URL || 'https://icanera.space';
+export const DIGITAL_CITY_URL = import.meta.env.VITE_DIGITAL_CITY_URL || 'https://digitalcity-ug.com';
+
+/**
+ * Account roles. Every signed-in person is a `customer`. The other three get
+ * a business (admin) account with their own feed and business-profile card:
+ *   farmer     – direct, from the sign-up profile
+ *   supplier   – approved supplier application
+ *   specialist – approved on-ground support application (farm specialist)
+ * `pathway` is the /join slug that leads to the role.
+ */
+export const accountRoles = {
+  customer: { key: 'customer', label: 'Customer', pathway: 'customer', business: false },
+  farmer: { key: 'farmer', label: 'Farmer', pathway: 'farmer', business: true },
+  supplier: { key: 'supplier', label: 'Supplier', pathway: 'supplier', business: true },
+  specialist: { key: 'specialist', label: 'Farm Specialist', pathway: 'support', business: true },
+};
+
+/** Order used for tabs and for choosing the default landing role. */
+export const roleOrder = ['customer', 'farmer', 'supplier', 'specialist'];
+
+/** Which account role an approved pathway application unlocks. */
+export const pathwayToRole = { support: 'specialist', supplier: 'supplier' };
 
 /**
  * `mode: 'direct'`  – no vetting, the pathway page just points the person

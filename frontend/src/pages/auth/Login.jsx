@@ -41,7 +41,7 @@ const Login = () => {
   useEffect(() => {
     if (!loading) {
       if (user) {
-        navigate('/dashboard', { replace: true });
+        navigate('/account', { replace: true });
       }
       setPageLoading(false);
     }
@@ -78,7 +78,7 @@ const Login = () => {
           email: values.email,
           password: values.password
         });
-        navigate('/dashboard');
+        navigate('/account');
       } catch (err) {
         setError(err.message || 'Failed to log in. Please try again.');
       } finally {
