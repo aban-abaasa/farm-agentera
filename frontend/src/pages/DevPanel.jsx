@@ -14,7 +14,6 @@ import SearchIcon            from '@mui/icons-material/Search';
 import CardGiftcardIcon      from '@mui/icons-material/CardGiftcard';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import TrendingUpIcon        from '@mui/icons-material/TrendingUp';
-import VerifiedIcon          from '@mui/icons-material/Verified';
 import ToggleOnIcon          from '@mui/icons-material/ToggleOn';
 import ToggleOffIcon         from '@mui/icons-material/ToggleOff';
 import ContentCopyIcon       from '@mui/icons-material/ContentCopy';
@@ -979,7 +978,6 @@ const FarmDevDashboard = ({ onLogout }) => {
   // Aggregates
   const totalIcan   = walletRows.reduce((s,w) => s+Number(w.ican_balance||0), 0);
   const totalEarned = walletRows.reduce((s,w) => s+Number(w.total_earned||0), 0);
-  const totalTithe  = walletRows.reduce((s,w) => s+Number(w.total_tithe_paid||0), 0);
   const totalAcres  = farms.reduce((s,f) => s+Number(f.size_acres||0), 0);
   const bcVerified  = blockchain.filter(b => b.is_verified).length;
   const bcPending   = blockchain.length - bcVerified;
@@ -1070,7 +1068,6 @@ const FarmDevDashboard = ({ onLogout }) => {
             <StatCard Icon={PeopleIcon}              label="Registered Users"   value={fmt(users.length)}      grad="linear-gradient(135deg,#16a34a,#064e3b)"  th={th}/>
             <StatCard Icon={AccountBalanceWalletIcon} label="Total icaneracoin"  value={fmtI(totalIcan)}        grad="linear-gradient(135deg,#0891b2,#0e7490)"  sub={fmtUGX(totalIcan)} th={th}/>
             <StatCard Icon={TrendingUpIcon}           label="Total Earned"       value={fmtI(totalEarned)}      grad="linear-gradient(135deg,#7c3aed,#5b21b6)"  sub={fmtUGX(totalEarned)} th={th}/>
-            <StatCard Icon={VerifiedIcon}             label="Total Tithe Paid"   value={fmtI(totalTithe)}       grad="linear-gradient(135deg,#d97706,#b45309)"  sub={fmtUGX(totalTithe)} th={th}/>
           </div>
 
           <div style={th.card}>
@@ -1315,7 +1312,6 @@ const FarmDevDashboard = ({ onLogout }) => {
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:14, marginBottom:20 }}>
             <StatCard Icon={MonetizationOnIcon}      label="ICAN in Circulation"   value={fmtI(totalIcan)}    grad="linear-gradient(135deg,#0891b2,#0e7490)"  sub={fmtUGX(totalIcan)}   th={th}/>
             <StatCard Icon={TrendingUpIcon}           label="Total Ever Earned"     value={fmtI(totalEarned)}  grad="linear-gradient(135deg,#16a34a,#064e3b)"  sub={fmtUGX(totalEarned)} th={th}/>
-            <StatCard Icon={VerifiedIcon}             label="Total Tithe Collected" value={fmtI(totalTithe)}   grad="linear-gradient(135deg,#d97706,#b45309)"  sub={fmtUGX(totalTithe)}  th={th}/>
             <StatCard Icon={LockIcon}                 label="Blockchain Records"     value={fmt(blockchain.length)} grad="linear-gradient(135deg,#7c3aed,#5b21b6)" sub={`${fmt(bcVerified)} verified`} th={th}/>
           </div>
 
@@ -1328,7 +1324,6 @@ const FarmDevDashboard = ({ onLogout }) => {
             <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))', gap:12 }}>
               {[
                 { label:'Floor price',   val:'1 ICAN = 5,000 UGX', color:'#38bdf8' },
-                { label:'Tithe rate',    val:'10% auto-deducted',   color:'#fbbf24' },
                 { label:'System value',  val:`UGX ${fmt(totalIcan*ICAN_TO_UGX)}`, color:th.accent },
                 { label:'Active holders',val:fmt(walletRows.filter(w=>Number(w.ican_balance)>0).length), color:'#a78bfa' },
               ].map(r => (
@@ -1356,7 +1351,7 @@ const FarmDevDashboard = ({ onLogout }) => {
                       <span style={{ fontSize:13, fontWeight:700, color:colors[i%colors.length] }}>{fmtI(r.total_balance)} ICAN <span style={{ fontSize:11, color:th.muted }}>({pct.toFixed(1)}%)</span></span>
                     </div>
                     <ProgBar pct={pct} color={colors[i%colors.length]} th={th}/>
-                    <p style={{ fontSize:10, color:th.muted, marginTop:3 }}>{fmt(r.user_count)} farmers · {fmt(r.farm_count)} farms · Tithe: {fmtI(r.total_tithe)} ICAN</p>
+                    <p style={{ fontSize:10, color:th.muted, marginTop:3 }}>{fmt(r.user_count)} farmers · {fmt(r.farm_count)} farms </p>
                   </div>
                 );
               })}

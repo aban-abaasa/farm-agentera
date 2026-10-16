@@ -1,7 +1,7 @@
 /**
  * ICAN Wallet Service — AgriBone
  * 1 ICAN = 5,000 UGX floor price.
- * All earnings auto-deduct 10% tithe via DB stored function.
+ * Earnings are credited in full — the wallet takes no tithe.
  */
 
 import { supabase } from '../lib/supabase/client';
@@ -36,7 +36,6 @@ export async function getBalance(userId) {
     ugx: (wallet?.ican_balance ?? 0) * ICAN_TO_UGX,
     address: wallet?.wallet_address ?? null,
     totalEarned: wallet?.total_earned ?? 0,
-    totalTithe: wallet?.total_tithe_paid ?? 0,
   };
 }
 
@@ -60,11 +59,11 @@ export async function getTransactions(userId, limit = 50) {
 
 /**
  * Farmer earns ICAN when produce is sold on the marketplace.
- * DB function auto-deducts 10% tithe and credits net to wallet.
+ * DB function credits the full amount to the wallet.
  */
 /**
  * All three listing types go through farm_credit_listing_sale.
- * The DB function enforces the 5,000 UGX floor and 10% tithe.
+ * The DB function enforces the 5,000 UGX floor.
  */
 export async function earnFromProduceSale({ userId, ugxSaleAmount, saleId, produceTitle }) {
   const { data, error } = await supabase.rpc('farm_credit_listing_sale', {
@@ -109,7 +108,7 @@ export async function earnFromService({ userId, ugxServiceAmount, serviceId, ser
 
 /**
  * Buy ICAN coins — user pays UGX (notional), ICAN credited to wallet.
- * 1 ICAN = 5,000 UGX floor price. No tithe on purchases.
+ * 1 ICAN = 5,000 UGX floor price.
  */
 export async function buyICAN({ userId, icanAmount, paymentRef = null }) {
   const { data, error } = await supabase.rpc('buy_ican_coins', {
