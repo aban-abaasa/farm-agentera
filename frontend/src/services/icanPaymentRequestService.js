@@ -9,7 +9,7 @@
  */
 
 import { supabase } from '../lib/supabase/client';
-import { sendICAN, ICAN_TO_UGX } from './icanWalletService';
+import { SOURCE_APP } from './icanWalletService';
 
 const TABLE = 'payment_requests';
 
@@ -64,39 +64,27 @@ export function parseIcanPayCode(scannedText) {
   return /^ICANPAY_[A-Z0-9]+$/i.test(value) ? value : null;
 }
 
-export async function payIcanRequest({ paymentCode, payerUserId }) {
+/**
+ * Pays a scanned ICAN payment request.
+ *
+ * The transfer and the "mark completed" step happen in ONE database
+ * transaction (pay_ican_payment_request, see backend/PAY_ICAN_PAYMENT_REQUEST.sql).
+ * Doing them as two client calls left requests open after payment, because
+ * RLS only lets the request owner update it — so the same QR could be paid
+ * repeatedly. The payer is always the signed-in user, decided server-side.
+ */
+export async function payIcanRequest({ paymentCode }) {
+  // Friendly pre-check (amount shown/validated before we ask the server to move coins).
   const request = await getIcanPaymentRequest(paymentCode);
-  if (request.user_id === payerUserId) throw new Error('You cannot pay your own request');
 
-  const transfer = await sendICAN({
-    fromUserId: payerUserId,
-    toUserId: request.user_id,
-    amount: parseFloat(request.amount),
-    note: request.description || 'QR payment',
-    referenceId: request.id,
+  const { data, error } = await supabase.rpc('pay_ican_payment_request', {
+    p_payment_code: paymentCode,
+    p_source_app: SOURCE_APP,
   });
+  if (error) throw error;
+  if (!data?.success) throw new Error(data?.error ?? 'Payment failed');
 
-  const completion = {
-    status: 'completed',
-    payer_user_id: payerUserId,
-    ican_tx_id: transfer.out_tx_id,
-    completed_at: new Date().toISOString(),
-  };
-  let { error: completionError } = await supabase
-    .from(TABLE).update(completion).eq('payment_code', paymentCode).eq('status', 'pending');
-  if (completionError?.message?.includes('ican_tx_id')) {
-    ({ error: completionError } = await supabase
-      .from(TABLE)
-      .update({ status: 'completed', payer_user_id: payerUserId, completed_at: completion.completed_at })
-      .eq('payment_code', paymentCode)
-      .eq('status', 'pending'));
-  }
-
-  if (completionError) {
-    throw new Error(`Payment transferred, but the request could not be closed: ${completionError.message}`);
-  }
-
-  return { request, transfer };
+  return { request, transfer: data };
 }
 
 export async function getActiveIcanPaymentRequests(userId) {

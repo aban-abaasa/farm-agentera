@@ -156,6 +156,7 @@ function SendDialog({ open, onClose, userId, balance, onDone }) {
   const [beneficiaryName, setBeneficiaryName] = useState('');
 
   const [amount, setAmount] = useState('');
+  const [pin, setPin] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -165,20 +166,35 @@ function SendDialog({ open, onClose, userId, balance, onDone }) {
   const ugxGross = amountNum * ICAN_TO_UGX;
   const ugxNet = ugxGross - Math.round((ugxGross * feePercent) / 100);
 
+  const hasEnough = amountNum > 0 && amountNum <= (balance?.ican ?? 0);
   const canSend = isPayout
-    ? amountNum > 0 && amountNum <= (balance?.ican ?? 0) &&
+    ? hasEnough && !!pin &&
       (destination === 'mobilemoneyuganda' ? !!phoneNumber : !!accountNumber && !!bankCode && !!beneficiaryName)
-    : !!address && amountNum > 0;
+    : !!address.trim() && hasEnough && !!pin;
 
   const handleSend = async () => {
     setError('');
-    if (!canSend) { setError('Please fill in all fields'); return; }
+    if (!canSend) {
+      setError(amountNum > (balance?.ican ?? 0) ? 'Amount is more than your ICAN balance' : 'Please fill in all fields, including your PIN');
+      return;
+    }
     setLoading(true);
     try {
+      // Money is leaving the wallet: confirm the transaction PIN first (same as Pay).
+      const pinCheck = await verifyPin(userId, pin);
+      if (!pinCheck.success) { setError(pinCheck.error || 'PIN verification failed'); return; }
+
       if (destination === 'wallet') {
+        const target = address.trim();
+        if (balance?.address && target.toLowerCase() === balance.address.toLowerCase()) {
+          setError('You cannot send ICAN to your own wallet'); return;
+        }
+        // Works for wallets created in any app (ICAN, Farm Agentera, Digital City Era, My Boda Guy).
         const { data: rw, error: re } = await supabase
-          .from('ican_user_wallets').select('user_id').eq('wallet_address', address.trim()).single();
-        if (re || !rw) { setError('Wallet address not found'); return; }
+          .from('ican_user_wallets').select('user_id').eq('wallet_address', target).maybeSingle();
+        if (re) { setError('Could not look up that wallet. Please try again.'); return; }
+        if (!rw) { setError('Wallet address not found'); return; }
+        if (rw.user_id === userId) { setError('You cannot send ICAN to your own wallet'); return; }
         await sendICAN({ fromUserId: userId, toUserId: rw.user_id, amount: amountNum, note });
       } else {
         await requestIcanPayout({
@@ -191,6 +207,7 @@ function SendDialog({ open, onClose, userId, balance, onDone }) {
           beneficiaryName: destination === 'bank' ? beneficiaryName : undefined,
         });
       }
+      setPin('');
       onDone();
       onClose();
     } catch (e) {
@@ -220,7 +237,8 @@ function SendDialog({ open, onClose, userId, balance, onDone }) {
         {destination === 'wallet' && (
           <TextField fullWidth label="Recipient Wallet Address" value={address}
             onChange={e => setAddress(e.target.value)} sx={{ mb: 2 }}
-            placeholder="ICA-XXXXXXXXXXXXXXXX" />
+            placeholder="Paste the recipient's wallet address"
+            helperText="Copy it from the Receive screen of the ICAN app or any Icanera app." />
         )}
 
         {destination === 'mobilemoneyuganda' && (
@@ -253,8 +271,13 @@ function SendDialog({ open, onClose, userId, balance, onDone }) {
 
         {destination === 'wallet' && (
           <TextField fullWidth label="Note (optional)" value={note}
-            onChange={e => setNote(e.target.value)} sx={{ mb: 1 }} />
+            onChange={e => setNote(e.target.value)} sx={{ mb: 2 }} />
         )}
+
+        <TextField fullWidth label="Transaction PIN" type="password" value={pin}
+          onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+          inputProps={{ inputMode: 'numeric', autoComplete: 'off' }} sx={{ mb: 1 }} />
+
 
         {isPayout && amountNum > 0 && (
           <Box sx={{ p: 2, mb: 1, background: '#f5f5f5', borderRadius: 2 }}>
