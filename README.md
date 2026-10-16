@@ -1,5 +1,7 @@
 # AGRI-TECH: Agricultural Technology Platform for Ugandan Farmers
 
+A product of GODMINDERA ORGANISATION (U) LTD.
+
 ![AGRI-TECH Logo](frontend/public/vite.svg)
 
 ## 🌾 AgriBone — the Almanac redesign
