@@ -149,7 +149,7 @@ const Footer = () => (
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
         <Typography variant="caption" sx={{ color: 'rgba(243,235,216,0.65)', letterSpacing: '0.08em' }}>
-          © {new Date().getFullYear()} AGRIBONE · All rights reserved
+          © {new Date().getFullYear()} AGRIBONE · A product of GODMINDERA ORGANISATION (U) LTD · All rights reserved
         </Typography>
         <Box sx={{ display: 'flex', gap: 3 }}>
           {['Privacy Policy', 'Terms of Service', 'Sitemap'].map((label) => (
