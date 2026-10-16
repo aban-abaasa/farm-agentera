@@ -95,7 +95,7 @@ const DirectSteps = ({ pathway, user }) => {
   );
 };
 
-const ApplicationForm = ({ pathway, user }) => {
+export const ApplicationForm = ({ pathway, user, onSubmitted }) => {
   const [form, setForm] = useState(() => ({
     ...emptyForm,
     fullName: `${user.first_name || ''} ${user.last_name || ''}`.trim(),
@@ -145,6 +145,7 @@ const ApplicationForm = ({ pathway, user }) => {
       const saved = await submitApplication(user.id, slug, form);
       setExisting(saved);
       setState('sent');
+      onSubmitted?.(saved);
     } catch (err) {
       console.error('[JoinRole] application failed:', err);
       setState('error');

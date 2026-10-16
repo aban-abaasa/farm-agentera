@@ -7,14 +7,12 @@ import { accountRoles, pathwayToRole, roleOrder } from '../content/agribone';
 /**
  * Account roles for the signed-in person.
  *
- * Everyone is a `customer`. A `farmer` comes from the sign-up profile; a
+ * Everyone is a `customer` and lands on the customer page. A `farmer` comes from the profile; a
  * `supplier` or `specialist` (farm specialist) comes from an approved
  * pathway application. Roles accumulate — a person can hold several and
  * switch between them in /account.
  */
 const RoleContext = createContext(null);
-
-const ACTIVE_KEY = 'agribone_active_role';
 
 const companyKey = (role) => `agribone_company_${role}`;
 
@@ -34,29 +32,13 @@ const writeStored = (key, value) => {
   }
 };
 
-const readStoredRole = () => {
-  try {
-    return localStorage.getItem(ACTIVE_KEY);
-  } catch {
-    return null;
-  }
-};
-
-const storeRole = (role) => {
-  try {
-    localStorage.setItem(ACTIVE_KEY, role);
-  } catch {
-    /* storage unavailable — the choice just won't persist */
-  }
-};
-
 export const RoleProvider = ({ children }) => {
   const { user } = useAuth();
   const [applications, setApplications] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [companyChoice, setCompanyChoice] = useState({});
   const [loading, setLoading] = useState(false);
-  const [activeRole, setActiveRoleState] = useState(readStoredRole);
+  const [activeRole, setActiveRoleState] = useState('customer');
 
   const userId = user?.id;
   const profileRole = (user?.role || user?.user_role || '').toString().trim().toLowerCase();
@@ -110,17 +92,15 @@ export const RoleProvider = ({ children }) => {
     return map;
   }, [applications]);
 
-  // Land on the last role used; otherwise the person's "highest" business role.
+  // Everyone lands on the customer page. The active tab is a held role, or
+  // `become:<role>` for a role the person has not got yet.
   const resolvedRole = useMemo(() => {
-    if (!roles.length) return 'customer';
-    if (activeRole && roles.includes(activeRole)) return activeRole;
-    return [...roles].reverse().find((r) => r !== 'customer') || 'customer';
+    if (roles.includes(activeRole)) return activeRole;
+    if (activeRole?.startsWith('become:') && !roles.includes(activeRole.slice(7))) return activeRole;
+    return 'customer';
   }, [roles, activeRole]);
 
-  const setActiveRole = useCallback((role) => {
-    setActiveRoleState(role);
-    storeRole(role);
-  }, []);
+  const setActiveRole = useCallback((role) => setActiveRoleState(role), []);
 
   /**
    * The company a role runs as, read from PitchIn / CMMS. Picked by, in order:

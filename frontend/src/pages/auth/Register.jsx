@@ -122,7 +122,7 @@ const Register = () => {
       phone: '',
       country: '',
       location: '',
-      role: 'farmer',
+      role: 'buyer',
       farmingType: '',
       farmSize: '',
       bio: ''
@@ -353,7 +353,7 @@ const Register = () => {
                       onChange={formik.handleChange}
                     >
                       <FormControlLabel value="farmer" control={<Radio />} label="Farmer" />
-                      <FormControlLabel value="buyer" control={<Radio />} label="Buyer" />
+                      <FormControlLabel value="buyer" control={<Radio />} label="Customer" />
                       <FormControlLabel value="supplier" control={<Radio />} label="Supplier" />
                       <FormControlLabel value="other" control={<Radio />} label="Other" />
                     </RadioGroup>
