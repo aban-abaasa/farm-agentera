@@ -61,7 +61,7 @@ const Register = () => {
   useEffect(() => {
     if (!loading) {
       if (user) {
-        navigate('/dashboard', { replace: true });
+        navigate('/account', { replace: true });
       }
       setPageLoading(false);
     }

@@ -8,6 +8,7 @@ import Register from './pages/auth/Register'
 import AuthCallback from './pages/auth/AuthCallback'
 import CompleteProfile from './pages/auth/CompleteProfile'
 import { AuthProvider } from './context/AuthContext'
+import { RoleProvider } from './context/RoleContext'
 import ThemeContextProvider from './context/ThemeContext'
 import Settings from './pages/Settings'
 import Profile from './pages/profile/Profile'
@@ -39,6 +40,7 @@ import Investments from './pages/Investments'
 import Messages from './pages/Messages'
 import ICANWallet from './pages/ICANWallet'
 import DevPanel from './pages/DevPanel'
+import AccountHub from './pages/account/AccountHub'
 import Join from './pages/join/Join'
 import JoinRole from './pages/join/JoinRole'
 import { Suspense } from 'react'
@@ -62,6 +64,7 @@ function App() {
     <ThemeContextProvider>
       <Router>
         <AuthProvider>
+        <RoleProvider>
         <ErrorBoundary>
         <Suspense fallback={
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -89,6 +92,7 @@ function App() {
             {/* Protected routes - require authentication */}
             <Route element={<ProtectedRoute />}>
               <Route path="/" element={<MainLayout />}>
+                <Route path="account" element={withPageContainer(AccountHub)} />
                 <Route path="dashboard" element={withPageContainer(Dashboard)} />
                 <Route path="settings" element={withPageContainer(Settings)} />
                 <Route path="profile/:id" element={withPageContainer(Profile)} />
@@ -124,6 +128,7 @@ function App() {
         </Suspense>
         <ChatWidget />
         </ErrorBoundary>
+        </RoleProvider>
       </AuthProvider>
     </Router>
     </ThemeContextProvider>
