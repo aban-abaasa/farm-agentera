@@ -11,7 +11,7 @@ const NEXT_STEPS = {
   farmer: [
     { id: 'todo-pitchin', title: 'Create your business profile', body: 'Pitch your farm once in PitchIn.', href: PITCHIN_URL, cta: 'Open PitchIn' },
     { id: 'todo-verify', title: 'Get verified on the ground', body: 'A farm specialist in your sub-region can verify you.', to: '/support-team', cta: 'Find a specialist' },
-    { id: 'todo-list', title: 'List your first produce', body: 'Put your outputs on the market.', to: '/marketplace/create', cta: 'Create a listing' },
+    { id: 'todo-list', title: 'Tell suppliers what you have', body: 'Post your produce and price — suppliers on Digital City Era see it straight away.', to: '/produce-offers', cta: 'Post an offer' },
   ],
   supplier: [
     { id: 'todo-dce', title: 'Set up your supplier account', body: 'Orders, stock and deliveries are handled on Digital City Era.', href: DIGITAL_CITY_URL, cta: 'Open Digital City Era' },

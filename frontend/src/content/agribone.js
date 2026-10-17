@@ -197,13 +197,8 @@ export const charter = [
   },
 ];
 
-/** UBOS sub-regions of Uganda, grouped by region. */
-export const regions = {
-  Central: ['Kampala', 'Buganda North', 'Buganda South'],
-  Eastern: ['Busoga', 'Bukedi', 'Bugisu', 'Teso', 'Karamoja'],
-  Northern: ['Lango', 'Acholi', 'West Nile'],
-  Western: ['Bunyoro', 'Tooro', 'Ankole', 'Kigezi'],
-};
+/** UBOS sub-regions of Uganda, grouped by region (kept in ./regions.js so tests can import it). */
+export { regions } from './regions.js';
 
 export const supportCapabilities = [
   'Land specialist',

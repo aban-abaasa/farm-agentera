@@ -22,6 +22,7 @@ import ProduceListings from './pages/marketplace/ProduceListings'
 import ServiceListings from './pages/marketplace/ServiceListings'
 import ListingDetails from './pages/marketplace/ListingDetails'
 import CreateListing from './pages/marketplace/CreateListing'
+import ProduceOffers from './pages/ProduceOffers'
 import Community from './pages/community/Community'
 import CommunityDiscussions from './pages/community/CommunityDiscussions'
 import CommunityEvents from './pages/community/CommunityEvents'
@@ -121,6 +122,7 @@ function App() {
                 <Route path="investments" element={withPageContainer(Investments)} />
                 <Route path="messages" element={withPageContainer(Messages)} />
                 <Route path="marketplace/create" element={withPageContainer(CreateListing)} />
+                <Route path="produce-offers" element={withPageContainer(ProduceOffers)} />
                 <Route path="ican-wallet" element={withPageContainer(ICANWallet)} />
               </Route>
             </Route>
