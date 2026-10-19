@@ -11,6 +11,7 @@ The app is now **AgriBone**, with a classic, print-inspired look (parchment, ink
 - **Design system:** `frontend/src/theme.js`, `frontend/src/index.css`, shared pieces in `frontend/src/components/classic/`.
 - **Pathways** (`/join`, `/join/:role`): Customer, Farmer, On-Ground Support, Supplier, Partner & Investor. Copy lives in `frontend/src/content/agribone.js`.
 - **Applications:** On-ground support, supplier and partner applications are stored in `agribone_applications` and approved from the dev panel's *Applications* tab. Run `backend/db/schemas/farm/11_agribone_pathways.sql` in Supabase first.
+- **Produce offers:** farmers say what they have and at what price (`/produce-offers`); suppliers on Digital City Era see it live in their Supplier Portal. Run `backend/db/schemas/farm/12_produce_offers.sql` in Supabase first — see `PRODUCE_OFFERS_DEPLOY.md`.
 - Optional env vars: `VITE_ICANERA_CMMS_URL`, `VITE_PITCHIN_URL`.
 
 ## 📋 Overview
