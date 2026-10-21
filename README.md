@@ -1,6 +1,6 @@
 # AGRI-TECH: Agricultural Technology Platform for Ugandan Farmers
 
-A product of GODMINDERA ORGANISATION (U) LTD.
+A product of [GODMINDERA ORGANISATION (U) LTD](https://icanera.space/godmindera-organisation-u-ltd).
 
 ![AGRI-TECH Logo](frontend/public/vite.svg)
 
