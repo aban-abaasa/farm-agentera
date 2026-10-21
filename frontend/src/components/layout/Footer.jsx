@@ -4,6 +4,7 @@ import { Facebook, Twitter, Instagram, LinkedIn, Send, Phone, Email, LocationOn 
 import { BrandMark, Wordmark } from '../classic/Brand';
 import { DoubleRule, Ornament } from '../classic/Ornament';
 import { fonts } from '../../theme';
+import { PRODUCT_OWNER, PRODUCT_OWNER_URL } from '../../constants/brand';
 
 const INK = '#17231b';
 const PARCHMENT = '#f3ebd8';
@@ -149,7 +150,9 @@ const Footer = () => (
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
         <Typography variant="caption" sx={{ color: 'rgba(243,235,216,0.65)', letterSpacing: '0.08em' }}>
-          © {new Date().getFullYear()} AGRIBONE · A product of GODMINDERA ORGANISATION (U) LTD · All rights reserved
+          © {new Date().getFullYear()} AGRIBONE · A product of{' '}
+          <Link href={PRODUCT_OWNER_URL} target="_blank" rel="noopener noreferrer" color="inherit" underline="always">{PRODUCT_OWNER}</Link>
+          {' '}· All rights reserved
         </Typography>
         <Box sx={{ display: 'flex', gap: 3 }}>
           {['Privacy Policy', 'Terms of Service', 'Sitemap'].map((label) => (
