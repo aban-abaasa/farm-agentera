@@ -5,6 +5,9 @@
  */
 
 import { supabase } from '../lib/supabase/client';
+import { payoutFailure, icanEraFallbackError } from '../utils/payoutErrors';
+
+export { icanEraFallbackError, ICANERA_WALLET_URL, ICANERA_FALLBACK_HINT } from '../utils/payoutErrors';
 
 export const ICAN_TO_UGX = 5000;
 export const SOURCE_APP = 'farm-agent';
@@ -169,8 +172,8 @@ export async function requestIcanPayout({
       source_app: SOURCE_APP,
     },
   });
-  if (error) throw error;
-  if (!data?.success) throw new Error(data?.error ?? 'Payout failed');
+  if (error) throw await payoutFailure(error);
+  if (!data?.success) throw icanEraFallbackError(data?.error ?? 'Payout failed');
   return data;
 }
 

@@ -21,6 +21,7 @@ export default function SendIcanOut({ userId, balance = 0, onSuccess }) {
   const [beneficiaryName, setBeneficiaryName] = useState('');
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
+  const [walletUrl, setWalletUrl] = useState(''); // set when the payout was refused: where to send IcanEra instead
   const [result, setResult] = useState(null);
 
   const amount = parseFloat(icanAmount) || 0;
@@ -38,6 +39,7 @@ export default function SendIcanOut({ userId, balance = 0, onSuccess }) {
     if (!canSubmit) return;
     setProcessing(true);
     setError('');
+    setWalletUrl('');
     setResult(null);
     try {
       const data = await requestIcanPayout({
@@ -54,6 +56,7 @@ export default function SendIcanOut({ userId, balance = 0, onSuccess }) {
       if (onSuccess) onSuccess(data);
     } catch (err) {
       setError(err.message || 'Payout failed');
+      setWalletUrl(err.suggestIcanEra ? err.icanEraWalletUrl : '');
     } finally {
       setProcessing(false);
     }
@@ -160,7 +163,19 @@ export default function SendIcanOut({ userId, balance = 0, onSuccess }) {
         </Box>
       )}
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {error && (
+        <Alert
+          severity="error"
+          sx={{ mb: 2 }}
+          action={walletUrl && (
+            <Button color="inherit" size="small" href={walletUrl} target="_blank" rel="noopener noreferrer">
+              Open IcanEra Wallet
+            </Button>
+          )}
+        >
+          {error}
+        </Alert>
+      )}
       {result && (
         <Alert severity="success" sx={{ mb: 2 }}>
           {result.message} You'll receive UGX {Number(result.ugx_net).toLocaleString()}.

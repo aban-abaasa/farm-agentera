@@ -159,6 +159,7 @@ function SendDialog({ open, onClose, userId, balance, onDone }) {
   const [pin, setPin] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [walletUrl, setWalletUrl] = useState(''); // set when the payout was refused: where to send IcanEra instead
 
   const amountNum = parseFloat(amount) || 0;
   const isPayout = destination !== 'wallet';
@@ -174,6 +175,7 @@ function SendDialog({ open, onClose, userId, balance, onDone }) {
 
   const handleSend = async () => {
     setError('');
+    setWalletUrl('');
     if (!canSend) {
       setError(amountNum > (balance?.ican ?? 0) ? 'Amount is more than your ICAN balance' : 'Please fill in all fields, including your PIN');
       return;
@@ -212,6 +214,7 @@ function SendDialog({ open, onClose, userId, balance, onDone }) {
       onClose();
     } catch (e) {
       setError(e.message);
+      setWalletUrl(e.suggestIcanEra ? e.icanEraWalletUrl : '');
     } finally {
       setLoading(false);
     }
@@ -221,7 +224,19 @@ function SendDialog({ open, onClose, userId, balance, onDone }) {
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 4 } }}>
       <DialogTitle fontWeight={700}>Send</DialogTitle>
       <DialogContent>
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {error && (
+          <Alert
+            severity="error"
+            sx={{ mb: 2 }}
+            action={walletUrl && (
+              <Button color="inherit" size="small" href={walletUrl} target="_blank" rel="noopener noreferrer">
+                Open IcanEra Wallet
+              </Button>
+            )}
+          >
+            {error}
+          </Alert>
+        )}
 
         <Typography variant="body2" color="text.secondary" mb={1}>Send To</Typography>
         <ToggleButtonGroup fullWidth exclusive value={destination}
